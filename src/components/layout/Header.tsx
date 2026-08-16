@@ -6,7 +6,7 @@ import { categories } from "@/data/products";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { label: "Collections", to: "/", mega: true },
+  { label: "Collections", to: "/collections", mega: true },
   { label: "Bridal", to: "/" },
   { label: "New Arrivals", to: "/" },
   { label: "Gold Rate", to: "/" },
@@ -78,7 +78,8 @@ export function Header() {
                     {categories.map((c) => (
                       <Link
                         key={c.slug}
-                        to="/"
+                        to="/collections/$slug"
+                        params={{ slug: c.slug }}
                         className="font-display text-lg text-primary transition-colors hover:text-gold"
                       >
                         {c.name}

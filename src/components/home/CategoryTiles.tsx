@@ -14,7 +14,8 @@ export function CategoryTiles() {
           {categories.map((cat, i) => (
             <Reveal key={cat.slug} delay={(i % 3) * 80}>
               <Link
-                to="/"
+                to="/collections/$slug"
+                params={{ slug: cat.slug }}
                 className="group relative block aspect-[3/4] overflow-hidden bg-muted"
                 aria-label={`Browse ${cat.name}`}
               >
