@@ -25,9 +25,9 @@ export function StorySplit() {
             Three generations. One standard.
           </h2>
           <p className="mt-6 text-sm leading-relaxed text-warmgrey">
-            {SITE.founder} opened a single counter in Sarafa Market. The tools have changed. The rule
-            has not — weigh it in front of the customer, hallmark every piece, and stand behind it
-            for life.
+            {SITE.founder} opened a single counter in Sarafa Market. The tools have changed. The
+            rule has not — weigh it in front of the customer, hallmark every piece, and stand behind
+            it for life.
           </p>
           <p className="mt-4 text-sm leading-relaxed text-warmgrey">
             Today our karigars still finish each set by hand, from the first wax model to the final

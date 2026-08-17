@@ -51,7 +51,9 @@ export function ProductCard({ product }: { product: Product }) {
         <button
           type="button"
           onClick={() => setWished((v) => !v)}
-          aria-label={wished ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
+          aria-label={
+            wished ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`
+          }
           aria-pressed={wished}
           className="absolute right-2 top-9 grid h-9 w-9 place-items-center bg-ivory/90 opacity-0 transition-opacity duration-300 focus-visible:opacity-100 group-hover:opacity-100"
         >

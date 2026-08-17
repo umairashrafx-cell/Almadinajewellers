@@ -30,29 +30,29 @@ This is a CATALOGUE + ENQUIRY site, NOT a webshop.
 
 Colours (Tailwind theme tokens):
 
-  primary   #0B3D2E  (Madina Green - headers, footer, dark sections)
+primary #0B3D2E (Madina Green - headers, footer, dark sections)
 
-  primaryDeep #04180F (hero overlays, footer base)
+primaryDeep #04180F (hero overlays, footer base)
 
-  gold      #C9A24B  (accent, buttons, rules, active states)
+gold #C9A24B (accent, buttons, rules, active states)
 
-  champagne #E8D9B5  (soft fills, hover backgrounds)
+champagne #E8D9B5 (soft fills, hover backgrounds)
 
-  ivory     #FAF7F2  (page background - never pure white)
+ivory #FAF7F2 (page background - never pure white)
 
-  ink       #1E1C18  (body text)
+ink #1E1C18 (body text)
 
-  warmgrey  #8A8378  (secondary text, borders)
+warmgrey #8A8378 (secondary text, borders)
 
-  rose      #9B2C3F  (sale badges only, used sparingly)
+rose #9B2C3F (sale badges only, used sparingly)
 
 Typography (Google Fonts):
 
-  Display: "Cormorant Garamond" - weights 300/400/600. Used for h1, h2, h3, product names and hero headlines. Large sizes at weight 300 with tracking-wide.
+Display: "Cormorant Garamond" - weights 300/400/600. Used for h1, h2, h3, product names and hero headlines. Large sizes at weight 300 with tracking-wide.
 
-  Body/UI: "Inter" - weights 400/500/600. Paragraphs, nav, buttons, prices, specs.
+Body/UI: "Inter" - weights 400/500/600. Paragraphs, nav, buttons, prices, specs.
 
-  Prices and gram weights use tabular-nums so digits align.
+Prices and gram weights use tabular-nums so digits align.
 
 Design rules:
 
@@ -214,23 +214,23 @@ Build a production-ready application following all instructions below.
 
 ## Technology Stack
 
-* React (latest stable version)
+- React (latest stable version)
 
-* Vite
+- Vite
 
-* JavaScript only (NO TypeScript)
+- JavaScript only (NO TypeScript)
 
-* JSX files only
+- JSX files only
 
-* Tailwind CSS
+- Tailwind CSS
 
-* React Router DOM
+- React Router DOM
 
-* Axios for API calls
+- Axios for API calls
 
-* React Icons
+- React Icons
 
-* Context API for global state (if needed)
+- Context API for global state (if needed)
 
 ## Mandatory Development Rules
 
@@ -250,9 +250,9 @@ Build a production-ready application following all instructions below.
 
 8. Ensure the project can be opened directly in VS Code and run using:
 
-* npm install
+- npm install
 
-* npm run dev
+- npm run dev
 
 ## Folder Structure
 
@@ -262,43 +262,43 @@ src/
 
 ├── components/
 
-│   ├── Navbar.jsx
+│ ├── Navbar.jsx
 
-│   ├── Footer.jsx
+│ ├── Footer.jsx
 
-│   ├── Hero.jsx
+│ ├── Hero.jsx
 
-│   ├── Features.jsx
+│ ├── Features.jsx
 
-│   └── ...
+│ └── ...
 
 │
 
 ├── pages/
 
-│   ├── Home.jsx
+│ ├── Home.jsx
 
-│   ├── About.jsx
+│ ├── About.jsx
 
-│   └── Contact.jsx
+│ └── Contact.jsx
 
 │
 
 ├── layouts/
 
-│   └── MainLayout.jsx
+│ └── MainLayout.jsx
 
 │
 
 ├── services/
 
-│   └── api.js
+│ └── api.js
 
 │
 
 ├── context/
 
-│   └── AppContext.jsx
+│ └── AppContext.jsx
 
 │
 
@@ -320,39 +320,39 @@ src/
 
 ## UI Requirements
 
-* Fully responsive.
+- Fully responsive.
 
-* Mobile-first design.
+- Mobile-first design.
 
-* Modern and premium appearance.
+- Modern and premium appearance.
 
-* Proper spacing.
+- Proper spacing.
 
-* Consistent typography.
+- Consistent typography.
 
-* Smooth animations.
+- Smooth animations.
 
-* Accessibility support.
+- Accessibility support.
 
-* Loading states.
+- Loading states.
 
-* Error handling.
+- Error handling.
 
 ## Coding Standards
 
-* Maximum 150 lines per component.
+- Maximum 150 lines per component.
 
-* Reusable components whenever possible.
+- Reusable components whenever possible.
 
-* No inline CSS.
+- No inline CSS.
 
-* Use Tailwind classes.
+- Use Tailwind classes.
 
-* Keep business logic separate from UI.
+- Keep business logic separate from UI.
 
-* Use environment variables for secrets.
+- Use environment variables for secrets.
 
-* Avoid code duplication.
+- Avoid code duplication.
 
 ## Deliverables
 
