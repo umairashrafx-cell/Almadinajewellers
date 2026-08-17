@@ -39,7 +39,7 @@ export function Footer() {
             <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Visit Us</h3>
             <address className="mt-6 space-y-2 text-sm not-italic text-champagne/75">
               <p>{SITE.address}</p>
-              <p className="nums">Mon – Sat, 11:00 am – 8:00 pm </p>
+              <p className="nums">Mon – Sun, 11:00am – 8:00pm </p>
               {SITE.phones.map((p) => (
                 <p key={p} className="nums">
                   {p}
