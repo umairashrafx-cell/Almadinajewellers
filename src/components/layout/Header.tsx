@@ -102,10 +102,7 @@ export function Header() {
               key={label}
               type="button"
               aria-label={label}
-              className={cn(
-                "transition-colors hover:text-gold",
-                solid ? "text-ink" : "text-ivory",
-              )}
+              className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
             >
               <Icon className="h-5 w-5" strokeWidth={1.3} />
             </button>

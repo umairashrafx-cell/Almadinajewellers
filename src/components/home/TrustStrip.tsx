@@ -15,7 +15,12 @@ export function TrustStrip() {
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <ul className="grid grid-cols-2 gap-8 lg:grid-cols-4">
           {ITEMS.map(({ Icon, label }, i) => (
-            <Reveal as="li" key={label} delay={i * 80} className="flex flex-col items-center gap-3 text-center">
+            <Reveal
+              as="li"
+              key={label}
+              delay={i * 80}
+              className="flex flex-col items-center gap-3 text-center"
+            >
               <Icon className="h-6 w-6 text-gold" strokeWidth={1} />
               <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-warmgrey">
                 {label}

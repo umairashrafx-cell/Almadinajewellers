@@ -4,11 +4,25 @@ import { SITE } from "@/lib/site";
 const COLUMNS = [
   {
     title: "Collections",
-    links: ["Bridal Sets", "Gold Bangles", "Rings", "Earrings", "Lockets & Chains", "Silver Essentials"],
+    links: [
+      "Bridal Sets",
+      "Gold Bangles",
+      "Rings",
+      "Earrings",
+      "Lockets & Chains",
+      "Silver Essentials",
+    ],
   },
   {
     title: "Information",
-    links: ["Our Story", "Gold Rate", "Certification & Hallmarking", "Buy-Back Policy", "Delivery", "Contact"],
+    links: [
+      "Our Story",
+      "Gold Rate",
+      "Certification & Hallmarking",
+      "Buy-Back Policy",
+      "Delivery",
+      "Contact",
+    ],
   },
 ];
 
@@ -36,7 +50,9 @@ export function Footer() {
           ))}
 
           <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Visit Us</h3>
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              Visit Us
+            </h3>
             <address className="mt-6 space-y-2 text-sm not-italic text-champagne/75">
               <p>{SITE.address}</p>
               <p className="nums">Mon – Sat, 11:00 – 21:00</p>
@@ -49,7 +65,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Connect</h3>
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              Connect
+            </h3>
             <ul className="mt-6 space-y-3 text-sm text-champagne/75">
               <li>
                 <a

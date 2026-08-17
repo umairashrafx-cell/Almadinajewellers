@@ -27,9 +27,15 @@ export function GoldRateStrip() {
           <table className="w-full min-w-[420px] text-left">
             <thead>
               <tr className="border-b border-gold/40 text-[11px] uppercase tracking-[0.2em] text-champagne/70">
-                <th scope="col" className="py-3 font-medium">Purity</th>
-                <th scope="col" className="py-3 text-right font-medium">Per Gram</th>
-                <th scope="col" className="py-3 text-right font-medium">Per Tola</th>
+                <th scope="col" className="py-3 font-medium">
+                  Purity
+                </th>
+                <th scope="col" className="py-3 text-right font-medium">
+                  Per Gram
+                </th>
+                <th scope="col" className="py-3 text-right font-medium">
+                  Per Tola
+                </th>
               </tr>
             </thead>
             <tbody>
