@@ -61,9 +61,21 @@ export function Footer() {
                   WhatsApp {SITE.whatsappDisplay}
                 </a>
               </li>
-              <li>Instagram</li>
-              <li>Facebook</li>
-              <li>YouTube</li>
+              <li>
+  <a href={SITE.tiktok} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold nums">
+    Tiktok
+  </a>
+</li>
+<li>
+  <a href={SITE.instagram} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold nums">
+    Instagram
+  </a>
+</li>
+<li>
+  <a href={SITE.facebook} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold nums">
+    Facebook
+  </a>
+</li>
             </ul>
             <p className="mt-6 text-xs leading-relaxed text-champagne/60">
               Every piece is hallmarked and weighed in front of you. Payment is arranged in store or

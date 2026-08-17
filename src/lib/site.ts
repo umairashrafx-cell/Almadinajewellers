@@ -12,6 +12,9 @@ export const SITE = {
   founder: "Haji Ashraf Siddiqui",
   address: "Sarafa Market, Mandi Bahauddin, Punjab, Pakistan",
   announcement: "Free insured delivery across Pakistan",
+  instagram: "https://www.instagram.com/almadina.jewellers",
+  tiktok: "https://www.tiktok.com/@almadinaj",
+  facebook: "https://www.facebook.com/madinajewellerz",
 };
 
 /** Formats a PKR amount as "Rs. 1,250,000". */
