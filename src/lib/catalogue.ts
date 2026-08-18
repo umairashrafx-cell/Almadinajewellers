@@ -189,6 +189,97 @@ export async function fetchHomeRails(): Promise<{ bridal: Product[]; everyday: P
   };
 }
 
+/** Maps category slugs to display names, for queries that span categories. */
+async function categoryNames(): Promise<Map<string, string>> {
+  const { data, error } = await supabase.from("categories").select("slug, name");
+  if (error) throw new Error(error.message);
+  return new Map((data ?? []).map((c) => [c.slug, c.name]));
+}
+
+/**
+ * The whole catalogue. Only 48 rows, so search filters this in memory rather
+ * than issuing a query per keystroke — same reasoning as fetchCollection.
+ */
+export async function fetchAllProducts(): Promise<Product[]> {
+  const [names, productsResult] = await Promise.all([
+    categoryNames(),
+    supabase.from("products").select(BASE_COLUMNS).order("created_at", { ascending: false }),
+  ]);
+
+  if (productsResult.error) throw new Error(productsResult.error.message);
+
+  return (productsResult.data ?? []).map((row) => {
+    const r = row as ProductRow;
+    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug);
+  });
+}
+
+/** Pieces flagged new, newest first. */
+export async function fetchNewArrivals(): Promise<Product[]> {
+  const [names, productsResult] = await Promise.all([
+    categoryNames(),
+    supabase
+      .from("products")
+      .select(BASE_COLUMNS)
+      .eq("is_new", true)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  if (productsResult.error) throw new Error(productsResult.error.message);
+
+  return (productsResult.data ?? []).map((row) => {
+    const r = row as ProductRow;
+    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug);
+  });
+}
+
+/** Looks up saved wishlist entries by SKU. Returns [] for an empty list. */
+export async function fetchProductsBySkus(skus: string[]): Promise<Product[]> {
+  if (skus.length === 0) return [];
+
+  const [names, productsResult] = await Promise.all([
+    categoryNames(),
+    supabase.from("products").select(BASE_COLUMNS).in("sku", skus),
+  ]);
+
+  if (productsResult.error) throw new Error(productsResult.error.message);
+
+  const found = (productsResult.data ?? []).map((row) => {
+    const r = row as ProductRow;
+    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug);
+  });
+
+  // Preserve the order the visitor saved them in.
+  const bySku = new Map(found.map((p) => [p.sku, p]));
+  return skus.map((sku) => bySku.get(sku)).filter((p): p is Product => Boolean(p));
+}
+
+/**
+ * Simple relevance search over name, category and stones. Exact-ish name
+ * matches rank first, so typing "jhumka" does not surface a locket because its
+ * stone list happens to mention pearls.
+ */
+export function searchProducts(products: Product[], query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+
+  const scored = products
+    .map((p) => {
+      const name = p.name.toLowerCase();
+      let score = 0;
+      if (name.startsWith(q)) score = 100;
+      else if (name.includes(q)) score = 80;
+      else if (p.category.toLowerCase().includes(q)) score = 50;
+      else if (p.karat.toLowerCase() === q || p.metal.toLowerCase() === q) score = 40;
+      else if (p.stones.toLowerCase().includes(q)) score = 20;
+      return { p, score };
+    })
+    .filter((s) => s.score > 0);
+
+  scored.sort((a, b) => b.score - a.score || a.p.name.localeCompare(b.p.name));
+  return scored.map((s) => s.p);
+}
+
 /**
  * The three parts of a listed price. Seeded so they sum to price_pkr exactly —
  * a customer with a calculator is the intended audience for this panel.

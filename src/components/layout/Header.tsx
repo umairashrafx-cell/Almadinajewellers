@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Search, Heart, Menu, X, MessageCircle, ChevronDown } from "lucide-react";
 import { SITE } from "@/lib/site";
+import { useWishlist } from "@/hooks/use-wishlist";
+import { SearchOverlay } from "@/components/layout/SearchOverlay";
 import { categories } from "@/data/products";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +11,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { label: "Collections", to: "/collections", mega: true },
   { label: "Bridal", to: "/bridal" },
-  { label: "New Arrivals", to: "/" },
+  { label: "New Arrivals", to: "/new-arrivals" },
   { label: "Gold Rate", to: "/gold-rate" },
   { label: "Our Story", to: "/our-story" },
   { label: "Stores", to: "/stores" },
@@ -19,6 +21,8 @@ const NAV = [
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { skus } = useWishlist();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -95,19 +99,30 @@ export function Header() {
 
         {/* Right icons */}
         <div className="flex items-center gap-4">
-          {[
-            { Icon: Search, label: "Search" },
-            { Icon: Heart, label: "Wishlist" },
-          ].map(({ Icon, label }) => (
-            <button
-              key={label}
-              type="button"
-              aria-label={label}
-              className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
-            >
-              <Icon className="h-5 w-5" strokeWidth={1.3} />
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+            className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
+          >
+            <Search className="h-5 w-5" strokeWidth={1.3} />
+          </button>
+
+          <Link
+            to="/wishlist"
+            aria-label={skus.length > 0 ? `Wishlist, ${skus.length} saved` : "Wishlist"}
+            className={cn(
+              "relative transition-colors hover:text-gold",
+              solid ? "text-ink" : "text-ivory",
+            )}
+          >
+            <Heart className="h-5 w-5" strokeWidth={1.3} />
+            {skus.length > 0 && (
+              <span className="nums absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-semibold text-primary">
+                {skus.length}
+              </span>
+            )}
+          </Link>
           <a
             href={`https://wa.me/${SITE.whatsapp}`}
             target="_blank"
@@ -150,6 +165,8 @@ export function Header() {
           </nav>
         </div>
       )}
+
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

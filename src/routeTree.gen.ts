@@ -13,8 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BridalRouteImport } from './routes/bridal'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
+import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
 import { Route as StoresRouteImport } from './routes/stores'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
@@ -39,6 +41,11 @@ const GoldRateRoute = GoldRateRouteImport.update({
   path: '/gold-rate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewArrivalsRoute = NewArrivalsRouteImport.update({
+  id: '/new-arrivals',
+  path: '/new-arrivals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OurStoryRoute = OurStoryRouteImport.update({
   id: '/our-story',
   path: '/our-story',
@@ -47,6 +54,11 @@ const OurStoryRoute = OurStoryRouteImport.update({
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
   path: '/stores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
@@ -70,8 +82,10 @@ export interface FileRoutesByFullPath {
   '/bridal': typeof BridalRoute
   '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
+  '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/stores': typeof StoresRoute
+  '/wishlist': typeof WishlistRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -81,8 +95,10 @@ export interface FileRoutesByTo {
   '/bridal': typeof BridalRoute
   '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
+  '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/stores': typeof StoresRoute
+  '/wishlist': typeof WishlistRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/collections': typeof CollectionsIndexRoute
@@ -93,8 +109,10 @@ export interface FileRoutesById {
   '/bridal': typeof BridalRoute
   '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
+  '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/stores': typeof StoresRoute
+  '/wishlist': typeof WishlistRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -106,8 +124,10 @@ export interface FileRouteTypes {
     | '/bridal'
     | '/contact'
     | '/gold-rate'
+    | '/new-arrivals'
     | '/our-story'
     | '/stores'
+    | '/wishlist'
     | '/collections/$slug'
     | '/products/$slug'
     | '/collections/'
@@ -117,8 +137,10 @@ export interface FileRouteTypes {
     | '/bridal'
     | '/contact'
     | '/gold-rate'
+    | '/new-arrivals'
     | '/our-story'
     | '/stores'
+    | '/wishlist'
     | '/collections/$slug'
     | '/products/$slug'
     | '/collections'
@@ -128,8 +150,10 @@ export interface FileRouteTypes {
     | '/bridal'
     | '/contact'
     | '/gold-rate'
+    | '/new-arrivals'
     | '/our-story'
     | '/stores'
+    | '/wishlist'
     | '/collections/$slug'
     | '/products/$slug'
     | '/collections/'
@@ -140,8 +164,10 @@ export interface RootRouteChildren {
   BridalRoute: typeof BridalRoute
   ContactRoute: typeof ContactRoute
   GoldRateRoute: typeof GoldRateRoute
+  NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
   StoresRoute: typeof StoresRoute
+  WishlistRoute: typeof WishlistRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
@@ -177,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GoldRateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/new-arrivals': {
+      id: '/new-arrivals'
+      path: '/new-arrivals'
+      fullPath: '/new-arrivals'
+      preLoaderRoute: typeof NewArrivalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/our-story': {
       id: '/our-story'
       path: '/our-story'
@@ -189,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/stores'
       fullPath: '/stores'
       preLoaderRoute: typeof StoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collections/': {
@@ -220,8 +260,10 @@ const rootRouteChildren: RootRouteChildren = {
   BridalRoute: BridalRoute,
   ContactRoute: ContactRoute,
   GoldRateRoute: GoldRateRoute,
+  NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
   StoresRoute: StoresRoute,
+  WishlistRoute: WishlistRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
