@@ -71,6 +71,87 @@ export async function submitBridalEnquiry(values: BridalEnquiry): Promise<void> 
   }
 }
 
+export const CONTACT_SUBJECTS = [
+  "A piece I saw on the website",
+  "Bridal jewellery",
+  "Custom order",
+  "Gold rate and pricing",
+  "Buy-back or exchange",
+  "Delivery",
+  "Something else",
+] as const;
+
+export const contactEnquirySchema = z.object({
+  name: z.string().trim().min(2, "Please enter your name.").max(80, "That name is too long."),
+  phone: z
+    .string()
+    .trim()
+    .min(7, "Please enter a phone number we can reach you on.")
+    .max(25, "That number is too long.")
+    .regex(PHONE, "Please check the phone number."),
+  // Optional: most enquiries here arrive by phone or WhatsApp, not email.
+  email: z
+    .string()
+    .trim()
+    .max(120, "That email address is too long.")
+    .email("Please check the email address.")
+    .optional()
+    .or(z.literal("")),
+  subject: z.string().max(80).optional(),
+  message: z
+    .string()
+    .trim()
+    .min(4, "Please tell us how we can help.")
+    .max(1000, "Please keep it under 1000 characters."),
+});
+
+export type ContactEnquiry = z.infer<typeof contactEnquirySchema>;
+
+/** Inserts a general contact enquiry. Throws with a readable message. */
+export async function submitContactEnquiry(values: ContactEnquiry): Promise<void> {
+  const base = {
+    type: "contact" satisfies EnquiryType,
+    name: values.name.trim(),
+    phone: values.phone.trim(),
+    message: values.message.trim(),
+    handled: false,
+  };
+
+  const email = values.email?.trim() || null;
+  const subject = values.subject || null;
+
+  const { error } = await supabase.from("enquiries").insert({ ...base, email, subject });
+
+  if (!error) return;
+
+  // The email and subject columns arrive in a later migration than this code.
+  // Rather than lose an enquiry in that window, fold both into the message and
+  // insert without them. Losing a lead is far worse than losing a column.
+  // PGRST204 is Postgrest's "column not in the schema cache", which is what a
+  // missing column looks like on insert — it is not a Postgres "does not exist".
+  if (
+    error.code === "PGRST204" ||
+    /could not find the '(email|subject)' column/i.test(error.message)
+  ) {
+    const prefix = [subject ? `Subject: ${subject}` : null, email ? `Email: ${email}` : null]
+      .filter(Boolean)
+      .join("\n");
+
+    const { error: retryError } = await supabase.from("enquiries").insert({
+      ...base,
+      message: prefix ? `${prefix}\n\n${base.message}`.slice(0, 1000) : base.message,
+    });
+
+    if (!retryError) return;
+  }
+
+  throw new Error(
+    error.message.includes("violates")
+      ? "Please check the details and try again."
+      : "We could not send that just now. Please try again, or reach us on WhatsApp.",
+  );
+}
+
 /** Summary of a submitted booking, for the WhatsApp handoff after submit. */
 export function bridalHandoffMessage(values: BridalEnquiry): string {
   const parts = [

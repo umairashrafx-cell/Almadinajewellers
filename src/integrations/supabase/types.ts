@@ -33,6 +33,7 @@ export type Database = {
         Row: {
           budget_range: string | null;
           city: string | null;
+          email: string | null;
           created_at: string;
           handled: boolean;
           id: string;
@@ -42,12 +43,14 @@ export type Database = {
           preferred_time: string | null;
           product_id: string | null;
           product_sku: string | null;
+          subject: string | null;
           type: string;
           wedding_date: string | null;
         };
         Insert: {
           budget_range?: string | null;
           city?: string | null;
+          email?: string | null;
           created_at?: string;
           handled?: boolean;
           id?: string;
@@ -57,12 +60,14 @@ export type Database = {
           preferred_time?: string | null;
           product_id?: string | null;
           product_sku?: string | null;
+          subject?: string | null;
           type: string;
           wedding_date?: string | null;
         };
         Update: {
           budget_range?: string | null;
           city?: string | null;
+          email?: string | null;
           created_at?: string;
           handled?: boolean;
           id?: string;
@@ -72,6 +77,7 @@ export type Database = {
           preferred_time?: string | null;
           product_id?: string | null;
           product_sku?: string | null;
+          subject?: string | null;
           type?: string;
           wedding_date?: string | null;
         };

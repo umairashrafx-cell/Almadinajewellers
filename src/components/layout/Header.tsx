@@ -11,8 +11,8 @@ const NAV = [
   { label: "Bridal", to: "/bridal" },
   { label: "New Arrivals", to: "/" },
   { label: "Gold Rate", to: "/gold-rate" },
-  { label: "Our Story", to: "/" },
-  { label: "Stores", to: "/" },
+  { label: "Our Story", to: "/our-story" },
+  { label: "Stores", to: "/stores" },
 ];
 
 /** Sticky header: transparent over the hero, solid ivory once scrolled. */

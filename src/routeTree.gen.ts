@@ -11,7 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BridalRouteImport } from './routes/bridal'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
+import { Route as OurStoryRouteImport } from './routes/our-story'
+import { Route as StoresRouteImport } from './routes/stores'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
@@ -26,9 +29,24 @@ const BridalRoute = BridalRouteImport.update({
   path: '/bridal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GoldRateRoute = GoldRateRouteImport.update({
   id: '/gold-rate',
   path: '/gold-rate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OurStoryRoute = OurStoryRouteImport.update({
+  id: '/our-story',
+  path: '/our-story',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoresRoute = StoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
@@ -50,7 +68,10 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bridal': typeof BridalRoute
+  '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
+  '/our-story': typeof OurStoryRoute
+  '/stores': typeof StoresRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -58,7 +79,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bridal': typeof BridalRoute
+  '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
+  '/our-story': typeof OurStoryRoute
+  '/stores': typeof StoresRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/collections': typeof CollectionsIndexRoute
@@ -67,7 +91,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bridal': typeof BridalRoute
+  '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
+  '/our-story': typeof OurStoryRoute
+  '/stores': typeof StoresRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -77,7 +104,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/bridal'
+    | '/contact'
     | '/gold-rate'
+    | '/our-story'
+    | '/stores'
     | '/collections/$slug'
     | '/products/$slug'
     | '/collections/'
@@ -85,7 +115,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/bridal'
+    | '/contact'
     | '/gold-rate'
+    | '/our-story'
+    | '/stores'
     | '/collections/$slug'
     | '/products/$slug'
     | '/collections'
@@ -93,7 +126,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/bridal'
+    | '/contact'
     | '/gold-rate'
+    | '/our-story'
+    | '/stores'
     | '/collections/$slug'
     | '/products/$slug'
     | '/collections/'
@@ -102,7 +138,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BridalRoute: typeof BridalRoute
+  ContactRoute: typeof ContactRoute
   GoldRateRoute: typeof GoldRateRoute
+  OurStoryRoute: typeof OurStoryRoute
+  StoresRoute: typeof StoresRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
@@ -124,11 +163,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BridalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/gold-rate': {
       id: '/gold-rate'
       path: '/gold-rate'
       fullPath: '/gold-rate'
       preLoaderRoute: typeof GoldRateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/our-story': {
+      id: '/our-story'
+      path: '/our-story'
+      fullPath: '/our-story'
+      preLoaderRoute: typeof OurStoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stores': {
+      id: '/stores'
+      path: '/stores'
+      fullPath: '/stores'
+      preLoaderRoute: typeof StoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collections/': {
@@ -158,7 +218,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BridalRoute: BridalRoute,
+  ContactRoute: ContactRoute,
   GoldRateRoute: GoldRateRoute,
+  OurStoryRoute: OurStoryRoute,
+  StoresRoute: StoresRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,

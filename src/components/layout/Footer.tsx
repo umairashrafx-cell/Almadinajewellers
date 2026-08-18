@@ -1,14 +1,32 @@
 import { Link } from "@tanstack/react-router";
 import { SITE } from "@/lib/site";
 
+/**
+ * Footer navigation. Every entry resolves to a real page — the policy links
+ * point at the section that actually answers them rather than at stub pages.
+ */
 const COLUMNS = [
   {
     title: "Collections",
-    links: ["Bridal Sets", "Gold Bangles", "Rings", "Earrings", "Lockets & Chains", "Silver Essentials"],
+    links: [
+      { label: "Bridal Sets", to: "/collections/bridal-sets" },
+      { label: "Gold Bangles", to: "/collections/gold-bangles" },
+      { label: "Rings", to: "/collections/rings" },
+      { label: "Earrings", to: "/collections/earrings" },
+      { label: "Lockets & Chains", to: "/collections/lockets-chains" },
+      { label: "Silver Essentials", to: "/collections/silver-essentials" },
+    ],
   },
   {
     title: "Information",
-    links: ["Our Story", "Gold Rate", "Certification & Hallmarking", "Buy-Back Policy", "Delivery", "Contact"],
+    links: [
+      { label: "Our Story", to: "/our-story" },
+      { label: "Gold Rate", to: "/gold-rate" },
+      { label: "Certification & Hallmarking", to: "/our-story#standards" },
+      { label: "Buy-Back Policy", to: "/contact#faq" },
+      { label: "Delivery", to: "/contact#faq" },
+      { label: "Contact", to: "/contact" },
+    ],
   },
 ];
 
@@ -25,10 +43,17 @@ export function Footer() {
               </h3>
               <ul className="mt-6 space-y-3 text-sm text-champagne/75">
                 {col.links.map((l) => (
-                  <li key={l}>
-                    <Link to="/" className="transition-colors hover:text-gold">
-                      {l}
-                    </Link>
+                  <li key={l.label}>
+                    {/* Anchor links need a plain <a>; Link would not scroll to the hash. */}
+                    {l.to.includes("#") ? (
+                      <a href={l.to} className="transition-colors hover:text-gold">
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link to={l.to} className="transition-colors hover:text-gold">
+                        {l.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -36,7 +61,9 @@ export function Footer() {
           ))}
 
           <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Visit Us</h3>
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              Visit Us
+            </h3>
             <address className="mt-6 space-y-2 text-sm not-italic text-champagne/75">
               <p>{SITE.address}</p>
               <p className="nums">Mon – Sun, 11:00am – 8:00pm </p>
@@ -49,7 +76,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Connect</h3>
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              Connect
+            </h3>
             <ul className="mt-6 space-y-3 text-sm text-champagne/75">
               <li>
                 <a
@@ -62,20 +91,35 @@ export function Footer() {
                 </a>
               </li>
               <li>
-  <a href={SITE.tiktok} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold nums">
-    Tiktok
-  </a>
-</li>
-<li>
-  <a href={SITE.instagram} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold nums">
-    Instagram
-  </a>
-</li>
-<li>
-  <a href={SITE.facebook} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-gold nums">
-    Facebook
-  </a>
-</li>
+                <a
+                  href={SITE.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-gold nums"
+                >
+                  Tiktok
+                </a>
+              </li>
+              <li>
+                <a
+                  href={SITE.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-gold nums"
+                >
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a
+                  href={SITE.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-gold nums"
+                >
+                  Facebook
+                </a>
+              </li>
             </ul>
             <p className="mt-6 text-xs leading-relaxed text-champagne/60">
               Every piece is hallmarked and weighed in front of you. Payment is arranged in store or
