@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Reveal } from "@/components/ui/Reveal";
 import { SITE, whatsappLink } from "@/lib/site";
 import {
@@ -81,14 +82,22 @@ export function GoldRateStrip() {
           {isError && " Today's published rate could not be loaded — please confirm on WhatsApp."}
         </p>
 
-        <a
-          href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-block border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
-        >
-          Confirm today's rate on WhatsApp
-        </a>
+        <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <Link
+            to="/gold-rate"
+            className="border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
+          >
+            Full rate table &amp; calculator
+          </Link>
+          <a
+            href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-b border-gold/40 pb-1 text-[12px] font-semibold uppercase tracking-widest text-champagne/80 transition-colors hover:text-gold"
+          >
+            Confirm on WhatsApp
+          </a>
+        </div>
         <span className="sr-only">{SITE.whatsappDisplay}</span>
       </div>
     </section>

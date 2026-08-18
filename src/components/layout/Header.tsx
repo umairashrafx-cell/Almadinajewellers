@@ -5,11 +5,12 @@ import { SITE } from "@/lib/site";
 import { categories } from "@/data/products";
 import { cn } from "@/lib/utils";
 
+// Items still pointing at "/" are placeholders until those pages are built.
 const NAV = [
   { label: "Collections", to: "/collections", mega: true },
   { label: "Bridal", to: "/" },
   { label: "New Arrivals", to: "/" },
-  { label: "Gold Rate", to: "/" },
+  { label: "Gold Rate", to: "/gold-rate" },
   { label: "Our Story", to: "/" },
   { label: "Stores", to: "/" },
 ];
@@ -102,10 +103,7 @@ export function Header() {
               key={label}
               type="button"
               aria-label={label}
-              className={cn(
-                "transition-colors hover:text-gold",
-                solid ? "text-ink" : "text-ivory",
-              )}
+              className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
             >
               <Icon className="h-5 w-5" strokeWidth={1.3} />
             </button>

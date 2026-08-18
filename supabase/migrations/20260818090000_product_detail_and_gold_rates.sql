@@ -1,15 +1,23 @@
--- Product detail page support + gold rate corrections.
+-- Product detail page support + rate rebasing.
 --
--- Three things happen here:
---   1. gold_rates is brought fully under migration control. The table already
---      exists in the live project (created outside this folder), so every
---      statement below is written to be safe against that.
---   2. products gains the fields the detail page needs, including a three-part
+-- Four things happen here:
+--   1. gold_rates is brought under migration control. The table already exists
+--      in the live project (created outside this folder), so every statement is
+--      written to be safe against that.
+--   2. Per-tola is treated as the authoritative rate. 24K and 22K were updated
+--      to real market figures (450,000 and 412,500 per tola, exactly in purity
+--      ratio with each other) while 21K and 18K were left at stale values, and
+--      every per-gram figure was left behind entirely. All four karats are now
+--      derived from the 24K per-tola anchor by purity ratio, and per-gram is
+--      derived from per-tola. 1 tola = 11.6638 g.
+--   3. products gains the fields the detail page needs, including a three-part
 --      price decomposition (metal + making + stones) that always sums to the
 --      listed price. That panel is the trust builder in this market, so the
 --      arithmetic has to survive a customer checking it on a calculator.
---   3. Pieces whose listed price sat below their own metal value are lifted to a
---      12% making floor. Roughly half the seeded catalogue was in that state.
+--   4. The catalogue is rebased onto the corrected rates. Each piece keeps the
+--      making percentage its listed price implied, floored at 12% for the pieces
+--      that were priced below their own metal value. Gold pieces rise 33-110%;
+--      silver is unaffected because the silver rate does not change.
 
 -- ---------------------------------------------------------------------------
 -- Gold rates
@@ -56,21 +64,13 @@ BEGIN
   END IF;
 END $$;
 
--- The 24K per-tola figure is inconsistent with its own per-gram rate:
--- 27,850 × 11.6638 = 324,837, not 445,000. Every other karat already agrees
--- with its per-gram rate, so the per-tola value is the one at fault.
-UPDATE public.gold_rates
-SET rate_per_tola_pkr = round(rate_per_gram_pkr * 11.6638)
-WHERE karat = '24K'
-  AND rate_per_tola_pkr <> round(rate_per_gram_pkr * 11.6638);
-
--- Sterling silver rate, needed so silver pieces can be valued too. Added
--- against the most recent published day rather than today, so it joins the
--- rates already in the table.
+-- Sterling silver rate, needed so silver pieces can be valued too. Inserted
+-- before the products backfill so silver rows are not skipped. Silver is quoted
+-- per gram in practice; the per-tola figure is filled in for consistency.
 INSERT INTO public.gold_rates (rate_date, karat, rate_per_gram_pkr, rate_per_tola_pkr)
 SELECT max(rate_date), '925', 345, round(345 * 11.6638)
 FROM public.gold_rates
-WHERE EXISTS (SELECT 1 FROM public.gold_rates)
+HAVING max(rate_date) IS NOT NULL
 ON CONFLICT (rate_date, karat) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
@@ -88,8 +88,8 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS stone_value_pkr integer,
   ADD COLUMN IF NOT EXISTS rate_basis_pkr_per_g integer;
 
--- Physical specs, copy, and the rate this piece is priced against. Joined on
--- the latest published rates, which are not necessarily today's.
+-- Physical specs and copy. Stone-set pieces lose ~6% of gross weight to
+-- stones; 1 g = 5 ct.
 UPDATE public.products p SET
   net_weight_g = round(p.gross_weight_g * CASE WHEN p.stones IN ('Plain polished gold', 'Hand-engraved, no stones') THEN 1.0 ELSE 0.94 END, 2),
   stone_weight_ct = CASE
@@ -97,7 +97,6 @@ UPDATE public.products p SET
     WHEN p.stones IN ('Plain polished gold', 'Hand-engraved, no stones') THEN NULL
     ELSE round(p.gross_weight_g * 0.06 * 5, 2)
   END,
-  rate_basis_pkr_per_g = r.rate_per_gram_pkr,
   dimensions = CASE p.category_slug
     WHEN 'bridal-sets' THEN 'Necklace 18 cm drop · Earrings 5.2 cm · Tikka 6 cm'
     WHEN 'gold-bangles' THEN 'Inner diameter 6.4 cm · Width 12 mm'
@@ -115,14 +114,10 @@ UPDATE public.products p SET
     WHEN 'lockets-chains' THEN 'A locket for keeping. Hallmarked gold, hand-polished, and the kind of piece that gets worn for years.'
     ELSE '925 sterling silver, properly stamped and hand-finished. Made for daily wear.'
   END || ' Finished in ' || p.karat || CASE p.metal WHEN 'silver' THEN ' sterling silver' ELSE ' gold' END
-    || ' at ' || to_char(p.gross_weight_g, 'FM999990.00') || ' g gross, ' || lower(p.stones) || '.'
-FROM public.gold_rates r
-WHERE r.karat = p.karat
-  AND r.rate_date = (SELECT max(rate_date) FROM public.gold_rates);
+    || ' at ' || to_char(p.gross_weight_g, 'FM999990.00') || ' g gross, ' || lower(p.stones) || '.';
 
--- Metal value at the basis rate, and stone value at trade per-carat figures.
+-- Stone value at trade per-carat figures. Independent of the metal rate.
 UPDATE public.products SET
-  metal_value_pkr = round(net_weight_g * rate_basis_pkr_per_g),
   stone_value_pkr = round(coalesce(stone_weight_ct, 0) * CASE stones
     WHEN 'Certified Diamond 0.32 ct' THEN 180000
     WHEN 'Emerald & Pearl' THEN 3500
@@ -132,14 +127,59 @@ UPDATE public.products SET
     WHEN 'Ruby & Zircon' THEN 1200
     WHEN 'Cubic zircon' THEN 600
     ELSE 0
-  END)
-WHERE net_weight_g IS NOT NULL AND rate_basis_pkr_per_g IS NOT NULL;
+  END);
 
--- Making charges are the remainder of the listed price, which keeps the shop's
--- own pricing intact. Where the listed price sat below metal + stone value the
--- piece was priced under its own melt value, so the price is lifted to a 12%
--- making floor instead. Sale prices keep their original discount.
+-- Metal value and making charges at the PRE-correction rates, so each piece's
+-- implied making percentage can be read off its current listed price. Making is
+-- floored at 12% of metal for pieces listed below their own metal value.
 UPDATE public.products p SET
+  rate_basis_pkr_per_g = r.rate_per_gram_pkr,
+  metal_value_pkr = round(p.net_weight_g * r.rate_per_gram_pkr),
+  making_charges_pkr = greatest(
+    p.price_pkr - round(p.net_weight_g * r.rate_per_gram_pkr) - p.stone_value_pkr,
+    round(round(p.net_weight_g * r.rate_per_gram_pkr) * 0.12)
+  )
+FROM public.gold_rates r
+WHERE r.karat = p.karat
+  AND r.rate_date = (SELECT max(rate_date) FROM public.gold_rates);
+
+-- ---------------------------------------------------------------------------
+-- Rate correction: per-tola is authoritative
+-- ---------------------------------------------------------------------------
+
+-- All four karats derive from the 24K per-tola anchor by purity ratio, and
+-- per-gram derives from per-tola. 22K already agrees with the anchor, so it is
+-- unchanged; 21K and 18K are lifted off their stale values.
+UPDATE public.gold_rates g SET
+  rate_per_tola_pkr = t.tola,
+  rate_per_gram_pkr = round(t.tola / 11.6638)
+FROM (
+  SELECT g2.id,
+    round(
+      a.tola24 * (CASE g2.karat WHEN '24K' THEN 24 WHEN '22K' THEN 22 WHEN '21K' THEN 21 WHEN '18K' THEN 18 END)::numeric / 24
+    ) AS tola
+  FROM public.gold_rates g2
+  CROSS JOIN (
+    SELECT rate_date, rate_per_tola_pkr AS tola24
+    FROM public.gold_rates
+    WHERE karat = '24K'
+    ORDER BY rate_date DESC
+    LIMIT 1
+  ) a
+  WHERE g2.rate_date = a.rate_date
+    AND g2.karat IN ('24K', '22K', '21K', '18K')
+) t
+WHERE t.id = g.id;
+
+-- ---------------------------------------------------------------------------
+-- Rebase the catalogue onto the corrected rates
+-- ---------------------------------------------------------------------------
+
+-- Each piece keeps the making percentage it implied before, applied to its new
+-- metal value. Sale prices keep their original discount.
+UPDATE public.products p SET
+  rate_basis_pkr_per_g = n.new_rate,
+  metal_value_pkr = n.new_metal,
   price_pkr = n.new_price,
   sale_price_pkr = CASE
     WHEN p.sale_price_pkr IS NOT NULL
@@ -147,12 +187,25 @@ UPDATE public.products p SET
     ELSE NULL
   END
 FROM (
-  SELECT id,
-    (round((metal_value_pkr
-            + greatest(price_pkr - metal_value_pkr - stone_value_pkr, round(metal_value_pkr * 0.12))
-            + stone_value_pkr) / 1000.0) * 1000)::int AS new_price
-  FROM public.products
-  WHERE metal_value_pkr IS NOT NULL AND stone_value_pkr IS NOT NULL
+  SELECT p2.id,
+    r.rate_per_gram_pkr AS new_rate,
+    round(p2.net_weight_g * r.rate_per_gram_pkr)::int AS new_metal,
+    greatest(
+      (round(
+        (round(p2.net_weight_g * r.rate_per_gram_pkr)
+          * (1 + p2.making_charges_pkr::numeric / p2.metal_value_pkr)
+          + p2.stone_value_pkr) / 1000
+      ) * 1000)::int,
+      1000
+    ) AS new_price
+  FROM public.products p2
+  JOIN public.gold_rates r
+    ON r.karat = p2.karat
+   AND r.rate_date = (SELECT max(rate_date) FROM public.gold_rates)
+  WHERE p2.metal_value_pkr IS NOT NULL
+    AND p2.metal_value_pkr > 0
+    AND p2.making_charges_pkr IS NOT NULL
+    AND p2.stone_value_pkr IS NOT NULL
 ) n
 WHERE n.id = p.id;
 

@@ -27,10 +27,10 @@ export type RateSnapshot = {
 export const FALLBACK_SNAPSHOT: RateSnapshot = {
   date: "",
   rates: [
-    { karat: "24K", perGram: 27850, perTola: 324840 },
-    { karat: "22K", perGram: 25530, perTola: 297770 },
-    { karat: "21K", perGram: 24370, perTola: 284240 },
-    { karat: "18K", perGram: 20890, perTola: 243630 },
+    { karat: "24K", perGram: 38581, perTola: 450000 },
+    { karat: "22K", perGram: 35366, perTola: 412500 },
+    { karat: "21K", perGram: 33758, perTola: 393750 },
+    { karat: "18K", perGram: 28936, perTola: 337500 },
   ],
 };
 
@@ -61,6 +61,33 @@ export async function fetchRateSnapshot(): Promise<RateSnapshot> {
         perTola: r.rate_per_tola_pkr,
       })),
   };
+}
+
+/**
+ * Recent published days, newest first, for the rate history table.
+ * Returns one snapshot per date. Only the gold karats are carried through.
+ */
+export async function fetchRateHistory(days = 10): Promise<RateSnapshot[]> {
+  const { data, error } = await supabase
+    .from("gold_rates")
+    .select("rate_date, karat, rate_per_gram_pkr, rate_per_tola_pkr")
+    .order("rate_date", { ascending: false })
+    // Five metal rows per day at most, so this covers the requested window.
+    .limit(days * 5);
+
+  if (error) throw new Error(error.message);
+
+  const byDate = new Map<string, MetalRate[]>();
+  for (const row of data ?? []) {
+    if (!byDate.has(row.rate_date)) byDate.set(row.rate_date, []);
+    byDate.get(row.rate_date)!.push({
+      karat: row.karat,
+      perGram: row.rate_per_gram_pkr,
+      perTola: row.rate_per_tola_pkr,
+    });
+  }
+
+  return [...byDate.entries()].slice(0, days).map(([date, rates]) => ({ date, rates }));
 }
 
 /** Gold rows only, in 24K → 18K order, for the public rate table. */
