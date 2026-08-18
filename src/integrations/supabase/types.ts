@@ -29,6 +29,62 @@ export type Database = {
         };
         Relationships: [];
       };
+      enquiries: {
+        Row: {
+          budget_range: string | null;
+          city: string | null;
+          created_at: string;
+          handled: boolean;
+          id: string;
+          message: string | null;
+          name: string;
+          phone: string;
+          preferred_time: string | null;
+          product_id: string | null;
+          product_sku: string | null;
+          type: string;
+          wedding_date: string | null;
+        };
+        Insert: {
+          budget_range?: string | null;
+          city?: string | null;
+          created_at?: string;
+          handled?: boolean;
+          id?: string;
+          message?: string | null;
+          name: string;
+          phone: string;
+          preferred_time?: string | null;
+          product_id?: string | null;
+          product_sku?: string | null;
+          type: string;
+          wedding_date?: string | null;
+        };
+        Update: {
+          budget_range?: string | null;
+          city?: string | null;
+          created_at?: string;
+          handled?: boolean;
+          id?: string;
+          message?: string | null;
+          name?: string;
+          phone?: string;
+          preferred_time?: string | null;
+          product_id?: string | null;
+          product_sku?: string | null;
+          type?: string;
+          wedding_date?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "enquiries_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       gold_rates: {
         Row: {
           created_at: string;

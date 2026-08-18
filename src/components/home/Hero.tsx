@@ -1,6 +1,6 @@
 import heroImage from "@/assets/hero-bridal.jpg";
 import { ActionLink } from "@/components/ui/ActionButton";
-import { SITE, whatsappLink } from "@/lib/site";
+import { SITE } from "@/lib/site";
 
 /** Full-screen hero with a slow Ken Burns zoom and green gradient. */
 export function Hero() {
@@ -29,19 +29,12 @@ export function Hero() {
           {SITE.tagline}
         </h1>
         <p className="mt-6 max-w-xl text-sm leading-relaxed text-champagne/85 sm:text-base">
-          Hallmarked 21K and 22K gold, certified diamonds and 925 silver — made by three
-          generations of one family.
+          Hallmarked 21K and 22K gold, certified diamonds and 925 silver — made by three generations
+          of one family.
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <ActionLink href="#categories">Explore Collections</ActionLink>
-          <ActionLink
-            variant="ghostLight"
-            href={whatsappLink(
-              "Assalam-o-Alaikum, I would like to book a bridal consultation at Al-Madina Jewellers.",
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <ActionLink variant="ghostLight" href="/bridal#consultation">
             Book a Bridal Consultation
           </ActionLink>
         </div>

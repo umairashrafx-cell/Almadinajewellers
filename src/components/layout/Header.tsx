@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 // Items still pointing at "/" are placeholders until those pages are built.
 const NAV = [
   { label: "Collections", to: "/collections", mega: true },
-  { label: "Bridal", to: "/" },
+  { label: "Bridal", to: "/bridal" },
   { label: "New Arrivals", to: "/" },
   { label: "Gold Rate", to: "/gold-rate" },
   { label: "Our Story", to: "/" },
