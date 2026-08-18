@@ -55,6 +55,23 @@ type ProductRow = {
   created_at: string;
 };
 
+/**
+ * Detail-only columns. Optional because a product added before the detail
+ * migration — or through a future admin screen that skips them — must still
+ * render a usable page rather than an error.
+ */
+type ProductDetailRow = ProductRow & {
+  description?: string | null;
+  net_weight_g?: number | null;
+  stone_weight_ct?: number | null;
+  dimensions?: string | null;
+  sizes?: string[] | null;
+  metal_value_pkr?: number | null;
+  making_charges_pkr?: number | null;
+  stone_value_pkr?: number | null;
+  rate_basis_pkr_per_g?: number | null;
+};
+
 /** Maps a database row onto the Product shape ProductCard already consumes. */
 export function mapProduct(row: ProductRow, categoryName: string): Product {
   return {
@@ -134,6 +151,166 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
     products: (productsResult.data ?? []).map((row) =>
       mapProduct(row as ProductRow, category.name),
     ),
+  };
+}
+
+/**
+ * Homepage product rails, from the same catalogue the collection pages use.
+ * They were static fixtures before, which meant the homepage advertised pieces
+ * that were not in the catalogue at all and could not be linked to.
+ *
+ * bridal  — the heaviest sets, price high to low, to anchor price perception.
+ * everyday — the most accessible gold, price low to high, for the visitor the
+ *            bridal rail just priced out.
+ */
+export async function fetchHomeRails(): Promise<{ bridal: Product[]; everyday: Product[] }> {
+  const [bridalResult, everydayResult] = await Promise.all([
+    supabase
+      .from("products")
+      .select(BASE_COLUMNS)
+      .eq("category_slug", "bridal-sets")
+      .order("price_pkr", { ascending: false })
+      .limit(6),
+    supabase
+      .from("products")
+      .select(BASE_COLUMNS)
+      .neq("category_slug", "bridal-sets")
+      .eq("metal", "gold")
+      .order("price_pkr", { ascending: true })
+      .limit(8),
+  ]);
+
+  if (bridalResult.error) throw new Error(bridalResult.error.message);
+  if (everydayResult.error) throw new Error(everydayResult.error.message);
+
+  return {
+    bridal: (bridalResult.data ?? []).map((r) => mapProduct(r as ProductRow, "Bridal Sets")),
+    everyday: (everydayResult.data ?? []).map((r) => mapProduct(r as ProductRow, "Everyday Gold")),
+  };
+}
+
+/**
+ * The three parts of a listed price. Seeded so they sum to price_pkr exactly —
+ * a customer with a calculator is the intended audience for this panel.
+ */
+export type PriceBreakdown = {
+  metalValuePkr: number;
+  makingChargesPkr: number;
+  stoneValuePkr: number;
+  /** The per-gram rate the metal value was struck at. */
+  rateBasisPkrPerG: number;
+};
+
+export type ProductDetail = Product & {
+  categorySlug: string;
+  description: string;
+  netWeightG: number;
+  stoneWeightCt?: number;
+  dimensions?: string;
+  sizes: string[];
+  /** Absent when the piece has no stored decomposition. */
+  breakdown?: PriceBreakdown;
+};
+
+export type ProductPage = {
+  product: ProductDetail;
+  categoryName: string;
+  related: Product[];
+};
+
+const BASE_COLUMNS =
+  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, stones, price_pkr, sale_price_pkr, image_keys, is_new, created_at";
+
+const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, net_weight_g, stone_weight_ct, dimensions, sizes, metal_value_pkr, making_charges_pkr, stone_value_pkr, rate_basis_pkr_per_g`;
+
+/**
+ * Fetches one product, falling back to the base columns if the detail columns
+ * are not in the database yet. Postgrest rejects the whole select when a column
+ * is unknown, so without this the page would break in the window between a
+ * deploy and its migration being applied.
+ */
+async function selectProductRow(slug: string): Promise<ProductDetailRow> {
+  const full = await supabase
+    .from("products")
+    .select(DETAIL_COLUMNS)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!full.error) {
+    if (!full.data) throw new Error(`No product found for "${slug}".`);
+    return full.data as ProductDetailRow;
+  }
+
+  const base = await supabase.from("products").select(BASE_COLUMNS).eq("slug", slug).maybeSingle();
+
+  if (base.error) throw new Error(base.error.message);
+  if (!base.data) throw new Error(`No product found for "${slug}".`);
+
+  console.warn(
+    "[catalogue] Product detail columns are missing — run the product_detail_and_gold_rates migration.",
+  );
+  return base.data as ProductDetailRow;
+}
+
+function mapDetail(row: ProductDetailRow, categoryName: string): ProductDetail {
+  const base = mapProduct(row, categoryName);
+
+  const parts = [row.metal_value_pkr, row.making_charges_pkr, row.stone_value_pkr];
+  const hasBreakdown =
+    parts.every((v) => typeof v === "number") && typeof row.rate_basis_pkr_per_g === "number";
+
+  return {
+    ...base,
+    categorySlug: row.category_slug,
+    description: row.description ?? "",
+    // Net weight is what the metal is actually valued on; fall back to gross.
+    netWeightG: Number(row.net_weight_g ?? row.gross_weight_g),
+    sizes: row.sizes ?? [],
+    // exactOptionalPropertyTypes: omit rather than set undefined.
+    ...(row.stone_weight_ct != null ? { stoneWeightCt: Number(row.stone_weight_ct) } : {}),
+    ...(row.dimensions ? { dimensions: row.dimensions } : {}),
+    ...(hasBreakdown
+      ? {
+          breakdown: {
+            metalValuePkr: row.metal_value_pkr as number,
+            makingChargesPkr: row.making_charges_pkr as number,
+            stoneValuePkr: row.stone_value_pkr as number,
+            rateBasisPkrPerG: row.rate_basis_pkr_per_g as number,
+          },
+        }
+      : {}),
+  };
+}
+
+/**
+ * One product plus its category name and four siblings for "You may also like".
+ * The category and related queries need the product's category_slug, so this is
+ * two waves rather than one.
+ */
+export async function fetchProductPage(slug: string): Promise<ProductPage> {
+  const productRow = await selectProductRow(slug);
+
+  const [categoryResult, relatedResult] = await Promise.all([
+    supabase.from("categories").select("name").eq("slug", productRow.category_slug).maybeSingle(),
+    supabase
+      .from("products")
+      .select(
+        "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, stones, price_pkr, sale_price_pkr, image_keys, is_new, created_at",
+      )
+      .eq("category_slug", productRow.category_slug)
+      .neq("slug", slug)
+      .limit(4),
+  ]);
+
+  if (categoryResult.error) throw new Error(categoryResult.error.message);
+  if (relatedResult.error) throw new Error(relatedResult.error.message);
+
+  const categoryName = categoryResult.data?.name ?? productRow.category_slug;
+
+  return {
+    product: mapDetail(productRow, categoryName),
+    categoryName,
+    related: (relatedResult.data ?? []).map((r) => mapProduct(r as ProductRow, categoryName)),
   };
 }
 

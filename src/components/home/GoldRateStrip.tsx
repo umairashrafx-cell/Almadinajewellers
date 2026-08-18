@@ -1,15 +1,32 @@
-import { Link } from "@tanstack/react-router";
-import { goldRates } from "@/data/products";
+import { useQuery } from "@tanstack/react-query";
 import { Reveal } from "@/components/ui/Reveal";
+import { SITE, whatsappLink } from "@/lib/site";
+import {
+  FALLBACK_SNAPSHOT,
+  fetchRateSnapshot,
+  formatRateDate,
+  goldOnly,
+  type MetalRate,
+} from "@/lib/rates";
 
-const today = new Date().toLocaleDateString("en-GB", {
-  day: "2-digit",
-  month: "long",
-  year: "numeric",
-});
-
-/** Dark green band with today's per-gram and per-tola rates. */
+/**
+ * Dark green band with today's per-gram and per-tola rates.
+ * Rates come from the gold_rates table — nothing here is hardcoded. If the
+ * query fails the band still renders, on fallback figures and without a date,
+ * because an empty band on the homepage looks worse than a dated one.
+ */
 export function GoldRateStrip() {
+  const { data, isPending, isError } = useQuery({
+    queryKey: ["gold-rates"],
+    queryFn: fetchRateSnapshot,
+    // Rates change once a day; no need to refetch on every mount.
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const snapshot = data ?? FALLBACK_SNAPSHOT;
+  const rates: MetalRate[] = goldOnly(snapshot);
+  const stamp = snapshot.date ? `Updated ${formatRateDate(snapshot.date)}` : "Indicative rates";
+
   return (
     <section className="bg-primary py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -20,28 +37,36 @@ export function GoldRateStrip() {
               Live Gold Rate
             </h2>
           </div>
-          <p className="text-xs text-champagne/70 nums">Updated {today} · Indicative, PKR</p>
+          <p className="nums text-xs text-champagne/70">
+            {isPending ? "Loading rates…" : `${stamp} · PKR`}
+          </p>
         </Reveal>
 
         <Reveal delay={80} className="mt-10 overflow-x-auto">
           <table className="w-full min-w-[420px] text-left">
             <thead>
               <tr className="border-b border-gold/40 text-[11px] uppercase tracking-[0.2em] text-champagne/70">
-                <th scope="col" className="py-3 font-medium">Purity</th>
-                <th scope="col" className="py-3 text-right font-medium">Per Gram</th>
-                <th scope="col" className="py-3 text-right font-medium">Per Tola</th>
+                <th scope="col" className="py-3 font-medium">
+                  Purity
+                </th>
+                <th scope="col" className="py-3 text-right font-medium">
+                  Per Gram
+                </th>
+                <th scope="col" className="py-3 text-right font-medium">
+                  Per Tola
+                </th>
               </tr>
             </thead>
             <tbody>
-              {goldRates.map((rate) => (
+              {rates.map((rate) => (
                 <tr key={rate.karat} className="border-b border-gold/15">
                   <th scope="row" className="py-4 font-display text-xl font-normal text-ivory">
                     {rate.karat}
                   </th>
-                  <td className="py-4 text-right text-sm text-champagne nums">
+                  <td className="nums py-4 text-right text-sm text-champagne">
                     {rate.perGram.toLocaleString("en-US")}
                   </td>
-                  <td className="py-4 text-right text-sm text-champagne nums">
+                  <td className="nums py-4 text-right text-sm text-champagne">
                     {rate.perTola.toLocaleString("en-US")}
                   </td>
                 </tr>
@@ -50,12 +75,21 @@ export function GoldRateStrip() {
           </table>
         </Reveal>
 
-        <Link
-          to="/"
-          className="mt-8 inline-block border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
+        <p className="mt-8 max-w-xl text-xs leading-relaxed text-champagne/60">
+          Rates are indicative. Your final price is confirmed against the day's rate at the time of
+          purchase, and every piece is weighed in front of you.
+          {isError && " Today's published rate could not be loaded — please confirm on WhatsApp."}
+        </p>
+
+        <a
+          href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-block border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
         >
-          View full rate history
-        </Link>
+          Confirm today's rate on WhatsApp
+        </a>
+        <span className="sr-only">{SITE.whatsappDisplay}</span>
       </div>
     </section>
   );

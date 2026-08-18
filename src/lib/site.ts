@@ -6,6 +6,9 @@
 export const SITE = {
   name: "Al-Madina Jewellers",
   tagline: "Heirlooms in the Making",
+  /** Canonical origin. Used for share URLs and WhatsApp prefills, which must be
+   * identical on the server and the client, so window.location is never read. */
+  origin: "https://www.almadinajeweller.com",
   whatsapp: "92546502244", // wa.me number, digits only
   whatsappDisplay: "+92 54 6502244",
   phones: ["+92 321 7759959", "+92 321 7744282"],
@@ -30,6 +33,11 @@ export function formatGrams(grams: number) {
 /** Builds a wa.me link with a pre-filled message. */
 export function whatsappLink(message: string) {
   return `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(message)}`;
+}
+
+/** Canonical URL for a product page. */
+export function productUrl(slug: string) {
+  return `${SITE.origin}/products/${slug}`;
 }
 
 /** Pre-filled product enquiry message. */
