@@ -10,10 +10,10 @@ import type { Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * The products table stores `image_keys` as short strings ("bridal", "rings"),
- * not URLs — real photography is not uploaded yet. This maps those keys onto
- * the bundled placeholder assets. When real images land in Supabase Storage,
- * replace imageFor() with a public-URL builder and nothing else has to change.
+ * Bundled placeholder art, keyed by the short strings ("bridal", "rings") that
+ * products.image_keys held before real photography existed. Rows still carrying
+ * those keys keep rendering; rows the admin panel has uploaded a photograph for
+ * carry a storage object path instead.
  */
 const IMAGES: Record<string, string> = {
   bridal,
@@ -27,8 +27,25 @@ const IMAGES: Record<string, string> = {
 
 const FALLBACK_IMAGE = bridal;
 
+/** Bucket the admin panel uploads product photography into. */
+export const PRODUCT_IMAGE_BUCKET = "product-images";
+
+/**
+ * Resolves one image_keys entry to something an <img src> can use.
+ *
+ * Three shapes are accepted, in the order the catalogue is migrating through:
+ * a placeholder key, an uploaded storage object path (always contains a slash),
+ * or an absolute URL. An unrecognised value falls back to a placeholder rather
+ * than rendering a broken image.
+ */
 export function imageFor(key: string | undefined): string {
-  return (key && IMAGES[key]) || FALLBACK_IMAGE;
+  if (!key) return FALLBACK_IMAGE;
+  if (IMAGES[key]) return IMAGES[key];
+  if (/^https?:\/\//i.test(key)) return key;
+  if (key.includes("/")) {
+    return supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(key).data.publicUrl;
+  }
+  return FALLBACK_IMAGE;
 }
 
 export type Category = {

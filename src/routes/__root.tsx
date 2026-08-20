@@ -12,24 +12,89 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
+import { ActionLink } from "@/components/ui/ActionButton";
+import { SITE, whatsappLink } from "@/lib/site";
+
+/** Where a lost visitor is most likely to have been heading. */
+const RECOVERY_LINKS = [
+  { to: "/collections", label: "All collections" },
+  { to: "/bridal", label: "Bridal" },
+  { to: "/new-arrivals", label: "New arrivals" },
+  { to: "/gold-rate", label: "Today's gold rate" },
+  { to: "/stores", label: "Visit the shop" },
+  { to: "/contact", label: "Contact" },
+];
+
+/**
+ * A missing page in the house style, with the full navigation attached.
+ *
+ * Most 404s here will be a mistyped or retired product URL, so this offers the
+ * catalogue and the WhatsApp handoff rather than a dead end — the visitor was
+ * looking for a specific piece and someone at the shop can find it for them.
+ */
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-ivory">
+      <AnnouncementBar />
+      <Header />
+
+      <main>
+        <section className="bg-primary px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-[11px] uppercase tracking-widest text-gold">Error 404</p>
+            <h1 className="mt-6 font-display text-4xl font-light tracking-wide text-ivory sm:text-5xl">
+              We could not find that page
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-champagne/80">
+              The address may have changed, or the piece you were looking at has been sold. Tell us
+              what you were after and we will send photographs and a current price.
+            </p>
+            <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+              <ActionLink
+                href={whatsappLink(
+                  "Assalam-o-Alaikum, I was looking for a piece on your website but the page did not open.",
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ask on WhatsApp
+              </ActionLink>
+              <ActionLink variant="ghostLight" href="/collections">
+                Browse the catalogue
+              </ActionLink>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
+          <h2 className="font-display text-2xl font-light tracking-wide text-primary">
+            Or start from here
+          </h2>
+          <div className="hairline mx-auto mt-6 max-w-24" />
+          <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm">
+            {RECOVERY_LINKS.map((link) => (
+              <li key={link.to}>
+                <Link
+                  to={link.to}
+                  className="text-warmgrey underline-offset-4 transition-colors hover:text-primary hover:underline"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-10 text-xs text-warmgrey">
+            {SITE.address} · {SITE.whatsappDisplay}
+          </p>
+        </section>
+      </main>
+
+      <Footer />
+      <FloatingWhatsApp />
     </div>
   );
 }
@@ -78,7 +143,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Al-Madina Jewellers" },
-      { name: "description", content: "Heirlooms in the Making — fine gold, diamond and silver jewellery." },
+      {
+        name: "description",
+        content: "Heirlooms in the Making — fine gold, diamond and silver jewellery.",
+      },
       { name: "author", content: "Al-Madina Jewellers" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
