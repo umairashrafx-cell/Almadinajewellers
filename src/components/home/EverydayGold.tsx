@@ -20,7 +20,7 @@ export function EverydayGold() {
   const from = products.length > 0 ? products[0]! : undefined;
 
   return (
-    <section className="bg-ivory py-24 lg:py-28">
+    <section className="section-y bg-ivory">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow={from ? `From ${formatPKR(from.salePricePkr ?? from.pricePkr)}` : "Everyday"}

@@ -49,7 +49,7 @@ function NewArrivalsPage() {
       <Header />
 
       <main>
-        <section className="bg-primary px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <nav aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-widest text-champagne/70">
@@ -74,7 +74,7 @@ function NewArrivalsPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="nums border-b border-gold/30 pb-4 text-xs text-warmgrey">
             {isPending
               ? "Loading…"

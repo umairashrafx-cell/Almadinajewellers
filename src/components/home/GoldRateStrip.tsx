@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Reveal } from "@/components/ui/Reveal";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SITE, whatsappLink } from "@/lib/site";
 import {
   FALLBACK_SNAPSHOT,
+  GOLD_KARATS,
   fetchRateSnapshot,
   formatRateDate,
   goldOnly,
@@ -12,9 +14,16 @@ import {
 
 /**
  * Dark green band with today's per-gram and per-tola rates.
+ *
  * Rates come from the gold_rates table — nothing here is hardcoded. If the
  * query fails the band still renders, on fallback figures and without a date,
  * because an empty band on the homepage looks worse than a dated one.
+ *
+ * While the query is still in flight the figures are skeletons rather than
+ * those fallbacks. Showing a plausible number that silently changes a moment
+ * later is the one failure this band cannot afford: the whole argument of the
+ * page is that our prices are checkable. The karat labels are fixed, so they
+ * stay, and only the numbers load in.
  */
 export function GoldRateStrip() {
   const { data, isPending, isError } = useQuery({
@@ -29,7 +38,7 @@ export function GoldRateStrip() {
   const stamp = snapshot.date ? `Updated ${formatRateDate(snapshot.date)}` : "Indicative rates";
 
   return (
-    <section className="bg-primary py-20 lg:py-24">
+    <section className="section-y bg-primary">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -59,19 +68,33 @@ export function GoldRateStrip() {
               </tr>
             </thead>
             <tbody>
-              {rates.map((rate) => (
-                <tr key={rate.karat} className="border-b border-gold/15">
-                  <th scope="row" className="py-4 font-display text-xl font-normal text-ivory">
-                    {rate.karat}
-                  </th>
-                  <td className="nums py-4 text-right text-sm text-champagne">
-                    {rate.perGram.toLocaleString("en-US")}
-                  </td>
-                  <td className="nums py-4 text-right text-sm text-champagne">
-                    {rate.perTola.toLocaleString("en-US")}
-                  </td>
-                </tr>
-              ))}
+              {isPending
+                ? GOLD_KARATS.map((karat) => (
+                    <tr key={karat} className="border-b border-gold/15">
+                      <th scope="row" className="py-4 font-display text-xl font-normal text-ivory">
+                        {karat}
+                      </th>
+                      <td className="py-4">
+                        <Skeleton className="ml-auto h-4 w-20 bg-champagne/20" />
+                      </td>
+                      <td className="py-4">
+                        <Skeleton className="ml-auto h-4 w-24 bg-champagne/20" />
+                      </td>
+                    </tr>
+                  ))
+                : rates.map((rate) => (
+                    <tr key={rate.karat} className="border-b border-gold/15">
+                      <th scope="row" className="py-4 font-display text-xl font-normal text-ivory">
+                        {rate.karat}
+                      </th>
+                      <td className="nums py-4 text-right text-sm text-champagne">
+                        {rate.perGram.toLocaleString("en-US")}
+                      </td>
+                      <td className="nums py-4 text-right text-sm text-champagne">
+                        {rate.perTola.toLocaleString("en-US")}
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </Reveal>

@@ -82,7 +82,7 @@ function ContactPage() {
       <Header />
 
       <main>
-        <section className="bg-primary px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <nav aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-widest text-champagne/70">
@@ -108,7 +108,7 @@ function ContactPage() {
         </section>
 
         {/* Direct channels */}
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section className="section-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 sm:grid-cols-3">
             <Reveal>
               <div className="border-t border-gold/40 pt-6">
@@ -170,7 +170,7 @@ function ContactPage() {
         <ContactForm />
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-24 py-24 lg:py-28">
+        <section id="faq" className="section-y scroll-mt-24">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Questions"
@@ -222,7 +222,7 @@ function ContactForm() {
 
   if (sent) {
     return (
-      <section className="bg-champagne/25 py-24 lg:py-28">
+      <section className="section-y bg-champagne/25">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-gold">
             <Check className="h-6 w-6 text-primary" strokeWidth={2} />
@@ -251,7 +251,7 @@ function ContactForm() {
   }
 
   return (
-    <section className="bg-champagne/25 py-24 lg:py-28">
+    <section className="section-y bg-champagne/25">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Send a Message"

@@ -112,7 +112,7 @@ function BridalPage() {
         </section>
 
         {/* Editorial intro */}
-        <section className="py-24 lg:py-28">
+        <section className="section-y">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
               <Reveal>
@@ -152,7 +152,7 @@ function BridalPage() {
         </section>
 
         {/* Bridal sets grid */}
-        <section id="sets" className="scroll-mt-24 bg-champagne/20 py-24 lg:py-28">
+        <section id="sets" className="section-y scroll-mt-24 bg-champagne/20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="The Collection"
@@ -225,7 +225,7 @@ function Consultation() {
 
   if (submitted) {
     return (
-      <section id="consultation" className="scroll-mt-24 py-24 lg:py-28">
+      <section id="consultation" className="section-y scroll-mt-24">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-gold">
             <Check className="h-6 w-6 text-primary" strokeWidth={2} />
@@ -255,7 +255,7 @@ function Consultation() {
   }
 
   return (
-    <section id="consultation" className="scroll-mt-24 bg-primary py-24 lg:py-28">
+    <section id="consultation" className="section-y scroll-mt-24 bg-primary">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Private Appointment"

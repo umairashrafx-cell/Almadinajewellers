@@ -133,6 +133,33 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Vertical rhythm. Two sizes, defined once.
+ *
+ * Section spacing had drifted across four different values as pages were added
+ * one at a time — py-16/20, py-20/24, py-24/28 and a stray py-32 — which read as
+ * carelessness when you moved between pages. These replace the literals so the
+ * rhythm is set in one place rather than re-decided per page.
+ */
+
+/* Dark-green page header band, and other secondary bands. */
+@utility band-y {
+  padding-block: 4rem;
+
+  @media (width >= 64rem) {
+    padding-block: 5rem;
+  }
+}
+
+/* Main content sections. The home page rhythm, now used everywhere. */
+@utility section-y {
+  padding-block: 6rem;
+
+  @media (width >= 64rem) {
+    padding-block: 7rem;
+  }
+}
+
 /* Scroll reveal: fade-up 24px, 500ms ease-out */
 @utility reveal {
   opacity: 0;
@@ -193,5 +220,60 @@
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/*
+ * Page transition. Keyed on the pathname in __root, so it plays once per
+ * navigation. Deliberately brief — a page change should feel immediate, and
+ * anything longer reads as the site being slow rather than considered.
+ *
+ * Opacity only, no translate. The wrapper this runs on encloses the whole page,
+ * and a transform on it would become the containing block for every fixed
+ * descendant — the floating WhatsApp button would drift for the duration of the
+ * animation and the full-screen search overlay would be clipped to the wrapper
+ * instead of the viewport. No fill-mode, so the element is left with no
+ * animated value once it finishes and creates no lasting stacking context.
+ */
+@utility page-enter {
+  animation: page-enter 260ms ease-out;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * Honour a reduced-motion preference.
+ *
+ * Everything decorative is turned off rather than merely shortened: the Ken
+ * Burns hero zoom and the pulsing rate dot run continuously, and for a visitor
+ * with vestibular sensitivity a slow perpetual animation is the worst kind.
+ * Content that fades in must still end up visible, so the reveal is forced to
+ * its final state rather than left at opacity 0.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .page-enter {
+    animation: none;
+  }
+
+  .ken-burns,
+  .pulse-gold {
+    animation: none;
   }
 }

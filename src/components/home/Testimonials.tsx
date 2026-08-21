@@ -4,7 +4,7 @@ import { Reveal } from "@/components/ui/Reveal";
 /** Three quotes in Cormorant italic on champagne. */
 export function Testimonials() {
   return (
-    <section className="bg-champagne py-24 lg:py-28">
+    <section className="section-y bg-champagne">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="text-center text-[11px] uppercase tracking-[0.3em] text-primary/70">
           In Their Words
