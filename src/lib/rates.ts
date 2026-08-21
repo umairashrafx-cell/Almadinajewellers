@@ -60,9 +60,22 @@ export async function fetchRateSnapshot(): Promise<RateSnapshot> {
   const latest = data[0]!.rate_date;
   const today = data.filter((r) => r.rate_date === latest);
 
-  // The newest row wins: publishing again during the day upserts each karat, so
-  // the latest created_at is when the shop last touched the figures.
+  /*
+   * Timed from the gold rows only.
+   *
+   * Silver is stored in this same table but is never shown on the rate table or
+   * the homepage band, and it is often saved separately from the gold figures.
+   * Taking the newest row across all karats therefore stamped a gold table with
+   * the moment silver happened to be touched — on 21 August that read "3:16 pm"
+   * for rates the shop actually set at 12:12.
+   *
+   * Within the gold rows the newest wins: publishing again during the day
+   * upserts each karat, so the latest created_at is when the shop last revised
+   * the figures a visitor is looking at.
+   */
+  const goldKarats: readonly string[] = GOLD_KARATS;
   const publishedAt = today
+    .filter((r) => goldKarats.includes(r.karat))
     .map((r) => r.created_at)
     .filter(Boolean)
     .sort()
