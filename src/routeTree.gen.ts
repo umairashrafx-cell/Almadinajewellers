@@ -16,6 +16,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
+import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as WishlistRouteImport } from './routes/wishlist'
@@ -59,6 +60,11 @@ const NewArrivalsRoute = NewArrivalsRouteImport.update({
 const OurStoryRoute = OurStoryRouteImport.update({
   id: '/our-story',
   path: '/our-story',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliciesRoute = PoliciesRouteImport.update({
+  id: '/policies',
+  path: '/policies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
+  '/policies': typeof PoliciesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
+  '/policies': typeof PoliciesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
+  '/policies': typeof PoliciesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
+    | '/policies'
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
+    | '/policies'
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
+    | '/policies'
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   GoldRateRoute: typeof GoldRateRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
+  PoliciesRoute: typeof PoliciesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
@@ -282,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/our-story'
       fullPath: '/our-story'
       preLoaderRoute: typeof OurStoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/policies': {
+      id: '/policies'
+      path: '/policies'
+      fullPath: '/policies'
+      preLoaderRoute: typeof PoliciesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoldRateRoute: GoldRateRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
+  PoliciesRoute: PoliciesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,

@@ -28,6 +28,7 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/our-story", changefreq: "yearly", priority: "0.5" },
   { path: "/stores", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "monthly", priority: "0.6" },
+  { path: "/policies", changefreq: "yearly", priority: "0.4" },
 ];
 
 function urlNode(entry: Entry): string {
