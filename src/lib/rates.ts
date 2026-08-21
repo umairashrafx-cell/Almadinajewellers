@@ -1,4 +1,24 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * gold_rates.updated_at is newer than the generated Database type, which the
+ * platform regenerates and which must not be hand-edited. Reading that one
+ * column through an untyped handle keeps the rest of this module typed, and
+ * RateRow below restores the shape the query actually returns.
+ */
+const untyped = supabase as unknown as SupabaseClient;
+
+type RateRow = {
+  rate_date: string;
+  karat: string;
+  rate_per_gram_pkr: number;
+  rate_per_tola_pkr: number;
+  created_at: string;
+  /** Absent on rows written before the column was added. */
+  updated_at?: string | null;
+};
 
 /** 1 tola = 11.6638 g. Older buyers still price in tola. */
 export const TOLA_IN_GRAMS = 11.6638;
@@ -47,18 +67,42 @@ export const FALLBACK_SNAPSHOT: RateSnapshot = {
  * so this pulls the latest handful and keeps the rows sharing the newest date —
  * cheaper than a max(rate_date) subquery for a table this small.
  */
-export async function fetchRateSnapshot(): Promise<RateSnapshot> {
-  const { data, error } = await supabase
+const RATE_COLUMNS = "rate_date, karat, rate_per_gram_pkr, rate_per_tola_pkr, created_at";
+
+/**
+ * Reads the rate rows, preferring updated_at but tolerating its absence.
+ *
+ * Postgrest rejects the whole select when one column is unknown, so asking for
+ * updated_at before its migration has run would take down the rate band, the
+ * rate page and every live price at once. Retrying without it decouples this
+ * deploy from that migration entirely — the stamp is simply less precise until
+ * the column exists.
+ */
+async function selectRateRows(): Promise<RateRow[]> {
+  const withUpdated = await untyped
     .from("gold_rates")
-    .select("rate_date, karat, rate_per_gram_pkr, rate_per_tola_pkr, created_at")
+    .select(`${RATE_COLUMNS}, updated_at`)
+    .order("rate_date", { ascending: false })
+    .limit(24);
+
+  if (!withUpdated.error) return (withUpdated.data ?? []) as RateRow[];
+
+  const { data, error } = await untyped
+    .from("gold_rates")
+    .select(RATE_COLUMNS)
     .order("rate_date", { ascending: false })
     .limit(24);
 
   if (error) throw new Error(error.message);
-  if (!data || data.length === 0) throw new Error("No gold rates have been published yet.");
+  return (data ?? []) as RateRow[];
+}
 
-  const latest = data[0]!.rate_date;
-  const today = data.filter((r) => r.rate_date === latest);
+export async function fetchRateSnapshot(): Promise<RateSnapshot> {
+  const rows = await selectRateRows();
+  if (rows.length === 0) throw new Error("No gold rates have been published yet.");
+
+  const latest = rows[0]!.rate_date;
+  const today = rows.filter((r) => r.rate_date === latest);
 
   /*
    * Timed from the gold rows only.
@@ -76,7 +120,10 @@ export async function fetchRateSnapshot(): Promise<RateSnapshot> {
   const goldKarats: readonly string[] = GOLD_KARATS;
   const publishedAt = today
     .filter((r) => goldKarats.includes(r.karat))
-    .map((r) => r.created_at)
+    // updated_at moves every time a rate is republished; created_at only ever
+    // records the day's first save, so a corrected rate would keep claiming the
+    // morning's time. Falls back for rows written before that column existed.
+    .map((r) => r.updated_at ?? r.created_at)
     .filter(Boolean)
     .sort()
     .at(-1);
@@ -158,7 +205,9 @@ export function formatRateTimestamp(iso: string): string {
     timeZone: SHOP_TIME_ZONE,
   });
 
-  return `${date} at ${time}`;
+  // Labelled, because a bare time on a page read from Dubai, London or Toronto
+  // invites the reader to assume it is their own.
+  return `${date} at ${time} PKT`;
 }
 
 /**
