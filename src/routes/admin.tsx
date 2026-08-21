@@ -1,9 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { Outlet, createFileRoute, Link } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, LogOut } from "lucide-react";
+import { Coins, Inbox, Loader2, LogOut, Gem, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,49 +50,89 @@ function AdminLayout() {
   if (status === "not-admin") return <NotAdminScreen email={email} error={error} />;
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <span className="font-display text-lg font-normal tracking-wide text-primary">
-            Al-Madina Admin
-          </span>
+    <div className="min-h-screen bg-ivory">
+      {/*
+        Deep green chrome carrying the brand into the back office, with a gold
+        hairline under it. The storefront's restraint is the right call for
+        customers; behind the counter, a screen someone looks at every morning
+        can afford to look like it belongs to this shop.
+      */}
+      <header className="bg-gradient-to-br from-primary-deep via-primary to-primary-deep">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-4 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-gold/15 text-gold">
+              <Gem className="h-5 w-5" strokeWidth={1.4} />
+            </span>
+            <span>
+              <span className="block font-display text-lg leading-tight tracking-wide text-ivory">
+                Al-Madina
+              </span>
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
+                Admin
+              </span>
+            </span>
+          </div>
 
-          <nav className="flex gap-1 text-sm">
-            <NavTab to="/admin" exact>
+          <nav className="order-3 flex w-full gap-1 text-sm sm:order-none sm:w-auto">
+            <NavTab to="/admin" exact icon={Inbox}>
               Enquiries
             </NavTab>
-            <NavTab to="/admin/products">Products</NavTab>
-            <NavTab to="/admin/rates">Gold rate</NavTab>
+            <NavTab to="/admin/products" icon={Gem}>
+              Products
+            </NavTab>
+            <NavTab to="/admin/rates" icon={Coins}>
+              Gold rate
+            </NavTab>
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-            <a href="/" className="hover:text-foreground">
+          <div className="ml-auto flex items-center gap-4 text-xs">
+            <a
+              href="/"
+              className="hidden items-center gap-1.5 text-champagne/70 transition-colors hover:text-gold sm:inline-flex"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
               View site
             </a>
-            <span className="hidden sm:inline">{email}</span>
-            <Button variant="outline" size="sm" onClick={() => void signOut()}>
-              <LogOut aria-hidden="true" />
+            <span className="hidden text-champagne/60 md:inline">{email}</span>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gold/40 px-3 py-1.5 font-medium text-champagne transition-colors hover:bg-gold hover:text-primary"
+            >
+              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               Sign out
-            </Button>
+            </button>
           </div>
         </div>
+        <div className="h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <Outlet />
       </main>
     </div>
   );
 }
 
-function NavTab({ to, exact, children }: { to: string; exact?: boolean; children: ReactNode }) {
+function NavTab({
+  to,
+  exact,
+  icon: Icon,
+  children,
+}: {
+  to: string;
+  exact?: boolean;
+  icon: ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
   return (
     <Link
       to={to}
       activeOptions={{ exact: exact ?? false }}
-      className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
+      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 font-medium text-champagne/70 transition-colors hover:bg-ivory/10 hover:text-ivory sm:flex-none"
+      activeProps={{ className: "bg-gold text-primary hover:bg-gold hover:text-primary" }}
     >
+      <Icon className="h-4 w-4" />
       {children}
     </Link>
   );
@@ -100,7 +140,7 @@ function NavTab({ to, exact, children }: { to: string; exact?: boolean; children
 
 function Centred({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
+    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-primary-deep via-primary to-primary-deep px-4">
       <div className="w-full max-w-sm text-center">{children}</div>
     </div>
   );
