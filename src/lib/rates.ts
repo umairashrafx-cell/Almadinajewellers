@@ -16,6 +16,14 @@ export type MetalRate = {
 export type RateSnapshot = {
   /** ISO date the rates were set, e.g. "2026-08-18". */
   date: string;
+  /**
+   * When the day's rates were actually published, from the newest row's
+   * created_at. rate_date is only a date, so on a day the rate is revised it
+   * cannot show that anything changed — this is what makes "updated at 2:15pm"
+   * meaningful to someone checking whether they are looking at the morning
+   * figure or an updated one. Absent when the rates came from the fallback.
+   */
+  publishedAt?: string;
   rates: MetalRate[];
 };
 
@@ -42,7 +50,7 @@ export const FALLBACK_SNAPSHOT: RateSnapshot = {
 export async function fetchRateSnapshot(): Promise<RateSnapshot> {
   const { data, error } = await supabase
     .from("gold_rates")
-    .select("rate_date, karat, rate_per_gram_pkr, rate_per_tola_pkr")
+    .select("rate_date, karat, rate_per_gram_pkr, rate_per_tola_pkr, created_at")
     .order("rate_date", { ascending: false })
     .limit(24);
 
@@ -50,16 +58,24 @@ export async function fetchRateSnapshot(): Promise<RateSnapshot> {
   if (!data || data.length === 0) throw new Error("No gold rates have been published yet.");
 
   const latest = data[0]!.rate_date;
+  const today = data.filter((r) => r.rate_date === latest);
+
+  // The newest row wins: publishing again during the day upserts each karat, so
+  // the latest created_at is when the shop last touched the figures.
+  const publishedAt = today
+    .map((r) => r.created_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
 
   return {
     date: latest,
-    rates: data
-      .filter((r) => r.rate_date === latest)
-      .map((r) => ({
-        karat: r.karat,
-        perGram: r.rate_per_gram_pkr,
-        perTola: r.rate_per_tola_pkr,
-      })),
+    ...(publishedAt ? { publishedAt } : {}),
+    rates: today.map((r) => ({
+      karat: r.karat,
+      perGram: r.rate_per_gram_pkr,
+      perTola: r.rate_per_tola_pkr,
+    })),
   };
 }
 
@@ -99,6 +115,49 @@ export function goldOnly(snapshot: RateSnapshot): MetalRate[] {
 
 export function rateFor(snapshot: RateSnapshot | undefined, karat: string): MetalRate | undefined {
   return snapshot?.rates.find((r) => r.karat === karat);
+}
+
+/**
+ * The shop's own clock. Pinned rather than left to the runtime for two reasons:
+ * the server renders in UTC and the browser in the visitor's zone, and an
+ * unpinned format would differ between them and trip a hydration mismatch; and
+ * a rate published at 10am in Mandi Bahauddin should read as 10am to a customer
+ * in London, because it describes when the shop set the price.
+ */
+const SHOP_TIME_ZONE = "Asia/Karachi";
+
+/** "21 August 2026 at 2:15 pm" — the moment the day's rates were published. */
+export function formatRateTimestamp(iso: string): string {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return "";
+
+  const date = at.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: SHOP_TIME_ZONE,
+  });
+
+  const time = at.toLocaleTimeString("en-GB", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: SHOP_TIME_ZONE,
+  });
+
+  return `${date} at ${time}`;
+}
+
+/**
+ * Whichever is more precise: the publish timestamp when we have it, the plain
+ * date when we do not.
+ */
+export function formatRateStamp(snapshot: RateSnapshot): string {
+  if (snapshot.publishedAt) {
+    const stamp = formatRateTimestamp(snapshot.publishedAt);
+    if (stamp) return stamp;
+  }
+  return formatRateDate(snapshot.date);
 }
 
 /** "18 August 2026" from an ISO date string. */
