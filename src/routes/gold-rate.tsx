@@ -18,6 +18,7 @@ import {
   fetchRateHistory,
   fetchRateSnapshot,
   formatRateDate,
+  formatRateStamp,
   goldOnly,
   rateFor,
   type RateSnapshot,
@@ -92,7 +93,7 @@ function GoldRatePage() {
 
             {/* Large last-updated stamp */}
             <p className="nums mt-8 font-display text-2xl font-light text-gold">
-              {snapshot.date ? `Updated ${formatRateDate(snapshot.date)}` : "Indicative rates"}
+              {snapshot.date ? `Updated ${formatRateStamp(snapshot)}` : "Indicative rates"}
             </p>
           </div>
         </section>

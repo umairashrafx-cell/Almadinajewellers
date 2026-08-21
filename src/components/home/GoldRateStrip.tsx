@@ -7,7 +7,7 @@ import {
   FALLBACK_SNAPSHOT,
   GOLD_KARATS,
   fetchRateSnapshot,
-  formatRateDate,
+  formatRateStamp,
   goldOnly,
   type MetalRate,
 } from "@/lib/rates";
@@ -35,7 +35,7 @@ export function GoldRateStrip() {
 
   const snapshot = data ?? FALLBACK_SNAPSHOT;
   const rates: MetalRate[] = goldOnly(snapshot);
-  const stamp = snapshot.date ? `Updated ${formatRateDate(snapshot.date)}` : "Indicative rates";
+  const stamp = snapshot.date ? `Updated ${formatRateStamp(snapshot)}` : "Indicative rates";
 
   return (
     <section className="section-y bg-primary">
