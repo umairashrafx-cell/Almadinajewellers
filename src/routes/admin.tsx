@@ -40,8 +40,8 @@ function AdminLayout() {
   if (status === "loading") {
     return (
       <Centred>
-        <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
-        <p className="mt-4 text-sm text-muted-foreground">Checking your session…</p>
+        <Loader2 className="mx-auto h-5 w-5 animate-spin text-gold" />
+        <p className="mt-4 text-sm text-champagne/80">Checking your session…</p>
       </Centred>
     );
   }
@@ -140,8 +140,26 @@ function NavTab({
 
 function Centred({ children }: { children: ReactNode }) {
   return (
-    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-primary-deep via-primary to-primary-deep px-4">
+    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-primary-deep via-primary to-primary-deep px-4 py-10">
       <div className="w-full max-w-sm text-center">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * A light card to stand content on.
+ *
+ * The gradient behind it is the brand's deep green, and text placed straight
+ * onto it has to be light — which is a trap, because every shared control here
+ * (labels, inputs, the primary button, field errors) is built for a light
+ * ground. Giving the form its own surface keeps all of those correct instead of
+ * re-colouring each one and missing some.
+ */
+function Panel({ children }: { children: ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-lift)]">
+      <div className="h-1 bg-gradient-to-r from-gold via-champagne to-gold" aria-hidden="true" />
+      <div className="p-8">{children}</div>
     </div>
   );
 }
@@ -180,49 +198,52 @@ function SignInScreen({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <Centred>
-      <h1 className="font-display text-3xl font-light tracking-wide text-primary">
-        Al-Madina Admin
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">Staff sign-in.</p>
+      <Panel>
+        <h1 className="font-display text-3xl font-light tracking-wide text-primary">
+          Al-Madina Admin
+        </h1>
+        {/* ink/70 not warmgrey: warmgrey lands at 3.96:1 on white, under AA. */}
+        <p className="mt-2 text-sm text-ink/70">Staff sign-in.</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-8 space-y-4 text-left">
-        <div>
-          <Label htmlFor="admin-email">Email</Label>
-          <Input
-            id="admin-email"
-            type="email"
-            autoComplete="username"
-            className="mt-1.5"
-            {...register("email")}
-          />
-          <FieldError message={errors.email?.message} />
-        </div>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-8 space-y-4 text-left">
+          <div>
+            <Label htmlFor="admin-email">Email</Label>
+            <Input
+              id="admin-email"
+              type="email"
+              autoComplete="username"
+              className="mt-1.5"
+              {...register("email")}
+            />
+            <FieldError message={errors.email?.message} />
+          </div>
 
-        <div>
-          <Label htmlFor="admin-password">Password</Label>
-          <Input
-            id="admin-password"
-            type="password"
-            autoComplete="current-password"
-            className="mt-1.5"
-            {...register("password")}
-          />
-          <FieldError message={errors.password?.message} />
-        </div>
+          <div>
+            <Label htmlFor="admin-password">Password</Label>
+            <Input
+              id="admin-password"
+              type="password"
+              autoComplete="current-password"
+              className="mt-1.5"
+              {...register("password")}
+            />
+            <FieldError message={errors.password?.message} />
+          </div>
 
-        {failure ? (
-          <p role="alert" className="text-sm text-destructive">
-            {failure}
-          </p>
-        ) : null}
+          {failure ? (
+            <p role="alert" className="text-sm text-destructive">
+              {failure}
+            </p>
+          ) : null}
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
-          Sign in
-        </Button>
-      </form>
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+            Sign in
+          </Button>
+        </form>
+      </Panel>
 
-      <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-6 text-xs leading-relaxed text-champagne/70">
         Accounts are created in the Supabase dashboard, not here. There is no sign-up and no
         password reset by design — ask whoever administers the project.
       </p>
@@ -233,16 +254,18 @@ function SignInScreen({ onSignedIn }: { onSignedIn: () => void }) {
 function NotAdminScreen({ email, error }: { email: string | null; error: string | null }) {
   return (
     <Centred>
-      <h1 className="font-display text-2xl font-light tracking-wide text-primary">
-        Not an administrator
-      </h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {error ??
-          `${email ?? "This account"} is signed in but is not listed as staff, so there is nothing here to show.`}
-      </p>
-      <Button variant="outline" className="mt-6" onClick={() => void signOut()}>
-        Sign out
-      </Button>
+      <Panel>
+        <h1 className="font-display text-2xl font-light tracking-wide text-primary">
+          Not an administrator
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-ink/70">
+          {error ??
+            `${email ?? "This account"} is signed in but is not listed as staff, so there is nothing here to show.`}
+        </p>
+        <Button variant="outline" className="mt-6" onClick={() => void signOut()}>
+          Sign out
+        </Button>
+      </Panel>
     </Centred>
   );
 }
