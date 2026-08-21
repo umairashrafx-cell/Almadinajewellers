@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Search, Heart, Menu, X, MessageCircle, ChevronDown } from "lucide-react";
+import { Search, Heart, Menu, X, ChevronDown } from "lucide-react";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE } from "@/lib/site";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { SearchOverlay } from "@/components/layout/SearchOverlay";
@@ -130,7 +131,7 @@ export function Header() {
             aria-label="Chat on WhatsApp"
             className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
           >
-            <MessageCircle className="h-5 w-5" strokeWidth={1.3} />
+            <WhatsAppIcon className="h-5 w-5" />
           </a>
           <button
             type="button"
