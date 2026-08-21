@@ -1,0 +1,91 @@
+import { rateFor, type RateSnapshot } from "@/lib/rates";
+
+/**
+ * Live pricing.
+ *
+ * A listed price is not a stored number — it is rebuilt from the day's gold
+ * rate every time it is shown:
+ *
+ *     price = (net weight × today's rate for the karat) + making + stones
+ *
+ * Only the metal moves. **Making charges stay fixed in rupees**, because making
+ * is labour: the workshop's time does not cost more because gold rose this
+ * morning, and a customer reading the price panel can check that for
+ * themselves. Stone value is fixed for the same reason — a carat of emerald is
+ * not indexed to bullion.
+ *
+ * Nothing is rounded beyond the rupee. The panel's whole argument is that the
+ * three parts add up to the total, and a tidier headline figure would break
+ * that arithmetic for anyone who checks it on a calculator — which is exactly
+ * the customer this feature is for.
+ */
+
+/** The stored, rate-independent parts of a price. */
+export type PriceParts = {
+  metal: string;
+  karat: string;
+  netWeightG: number;
+  makingChargesPkr: number;
+  stoneValuePkr: number;
+};
+
+export type LivePrice = {
+  pricePkr: number;
+  metalValuePkr: number;
+  /** The per-gram rate this price was built from — today's, by definition. */
+  ratePerGram: number;
+};
+
+/**
+ * Silver is priced as merchandised and does not track the metal rate.
+ *
+ * Silver making runs to several times its metal value — a 7 g cuff holds a few
+ * thousand rupees of silver inside a twenty-thousand rupee piece — so
+ * recalculating it against the 925 rate would move the price by a rounding
+ * error while adding daily churn to figures the shop set deliberately.
+ */
+export function tracksMetalRate(metal: string): boolean {
+  return metal !== "silver";
+}
+
+/**
+ * Today's price for a piece, or undefined when it cannot be computed — no
+ * published rate for that karat, no stored parts, or a metal that does not
+ * track the rate. Callers fall back to the stored price, so a missing rate
+ * shows yesterday's number rather than nothing at all.
+ */
+export function livePriceFor(
+  parts: PriceParts,
+  snapshot: RateSnapshot | undefined,
+): LivePrice | undefined {
+  if (!tracksMetalRate(parts.metal)) return undefined;
+  if (!parts.netWeightG) return undefined;
+
+  const rate = rateFor(snapshot, parts.karat);
+  if (!rate?.perGram) return undefined;
+
+  const metalValuePkr = Math.round(parts.netWeightG * rate.perGram);
+
+  return {
+    metalValuePkr,
+    pricePkr: metalValuePkr + parts.makingChargesPkr + parts.stoneValuePkr,
+    ratePerGram: rate.perGram,
+  };
+}
+
+/**
+ * Carries a sale through to the new price by preserving its discount, so a
+ * piece marked down 8% stays 8% off once the rate moves. Holding the discount
+ * in rupees instead would let it drift into meaninglessness — or, if gold fell
+ * far enough, past the price itself.
+ */
+export function liveSalePrice(
+  storedPricePkr: number,
+  storedSalePkr: number | null | undefined,
+  livePricePkr: number,
+): number | undefined {
+  if (storedSalePkr == null || storedPricePkr <= 0) return undefined;
+  if (storedSalePkr >= storedPricePkr) return undefined;
+
+  return Math.round(livePricePkr * (storedSalePkr / storedPricePkr));
+}

@@ -8,6 +8,8 @@ import heroBridal from "@/assets/hero-bridal.jpg";
 
 import type { Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchRateSnapshot, type RateSnapshot } from "@/lib/rates";
+import { livePriceFor, liveSalePrice } from "@/lib/pricing";
 
 /**
  * Bundled placeholder art, keyed by the short strings ("bridal", "rings") that
@@ -56,6 +58,9 @@ export type Category = {
 };
 
 type ProductRow = {
+  net_weight_g?: number | null;
+  making_charges_pkr?: number | null;
+  stone_value_pkr?: number | null;
   id: string;
   sku: string;
   name: string;
@@ -89,8 +94,46 @@ type ProductDetailRow = ProductRow & {
   rate_basis_pkr_per_g?: number | null;
 };
 
+/**
+ * Today's price for a row, or the stored one when it cannot be rebuilt.
+ *
+ * price_pkr is the figure the piece was last saved at. It is kept as a fallback
+ * and for coarse ordering in SQL, but what a visitor sees is recomputed here
+ * against the published rate, so the catalogue never quotes a stale gold price.
+ */
+function priceOf(row: ProductRow, snapshot: RateSnapshot | undefined) {
+  const live = livePriceFor(
+    {
+      metal: row.metal,
+      karat: row.karat,
+      netWeightG: Number(row.net_weight_g ?? row.gross_weight_g),
+      makingChargesPkr: row.making_charges_pkr ?? 0,
+      stoneValuePkr: row.stone_value_pkr ?? 0,
+    },
+    snapshot,
+  );
+
+  // A piece with no stored making charge would price at bare metal value, which
+  // would be a real and expensive lie. Fall back to the stored figure instead.
+  if (!live || row.making_charges_pkr == null) {
+    return { pricePkr: row.price_pkr, salePricePkr: row.sale_price_pkr ?? undefined };
+  }
+
+  return {
+    pricePkr: live.pricePkr,
+    salePricePkr: liveSalePrice(row.price_pkr, row.sale_price_pkr, live.pricePkr),
+    live,
+  };
+}
+
 /** Maps a database row onto the Product shape ProductCard already consumes. */
-export function mapProduct(row: ProductRow, categoryName: string): Product {
+export function mapProduct(
+  row: ProductRow,
+  categoryName: string,
+  snapshot?: RateSnapshot | undefined,
+): Product {
+  const { pricePkr, salePricePkr } = priceOf(row, snapshot);
+
   return {
     id: row.id,
     sku: row.sku,
@@ -101,13 +144,28 @@ export function mapProduct(row: ProductRow, categoryName: string): Product {
     karat: row.karat,
     grossWeightG: Number(row.gross_weight_g),
     stones: row.stones,
-    pricePkr: row.price_pkr,
+    pricePkr,
     // tsconfig sets exactOptionalPropertyTypes, so an optional field must be
     // omitted entirely rather than set to undefined.
-    ...(row.sale_price_pkr !== null ? { salePricePkr: row.sale_price_pkr } : {}),
+    ...(salePricePkr !== undefined ? { salePricePkr } : {}),
     images: [imageFor(row.image_keys?.[0]), imageFor(row.image_keys?.[1] ?? row.image_keys?.[0])],
     isNew: row.is_new,
   };
+}
+
+/**
+ * The day's rates, or undefined if they cannot be read.
+ *
+ * Prices degrade to the last saved figure when this fails. A catalogue showing
+ * yesterday's price is a small problem; a catalogue that will not load because
+ * the rate table hiccuped is a much larger one.
+ */
+async function safeRateSnapshot(): Promise<RateSnapshot | undefined> {
+  try {
+    return await fetchRateSnapshot();
+  } catch {
+    return undefined;
+  }
 }
 
 export async function fetchCategories(): Promise<Category[]> {
@@ -137,7 +195,8 @@ export type CollectionData = {
  * that keeps live filter counts exact and avoids a query per facet change.
  */
 export async function fetchCollection(slug: string): Promise<CollectionData> {
-  const [categoryResult, productsResult] = await Promise.all([
+  const [snapshot, categoryResult, productsResult] = await Promise.all([
+    safeRateSnapshot(),
     supabase
       .from("categories")
       .select("slug, name, image_key, sort_order")
@@ -145,9 +204,7 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
       .maybeSingle(),
     supabase
       .from("products")
-      .select(
-        "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, stones, price_pkr, sale_price_pkr, image_keys, is_new, created_at",
-      )
+      .select(BASE_COLUMNS)
       .eq("category_slug", slug)
       .order("created_at", { ascending: false }),
   ]);
@@ -166,7 +223,7 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
   return {
     category,
     products: (productsResult.data ?? []).map((row) =>
-      mapProduct(row as ProductRow, category.name),
+      mapProduct(row as ProductRow, category.name, snapshot),
     ),
   };
 }
@@ -181,7 +238,8 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
  *            bridal rail just priced out.
  */
 export async function fetchHomeRails(): Promise<{ bridal: Product[]; everyday: Product[] }> {
-  const [bridalResult, everydayResult] = await Promise.all([
+  const [snapshot, bridalResult, everydayResult] = await Promise.all([
+    safeRateSnapshot(),
     supabase
       .from("products")
       .select(BASE_COLUMNS)
@@ -200,10 +258,18 @@ export async function fetchHomeRails(): Promise<{ bridal: Product[]; everyday: P
   if (bridalResult.error) throw new Error(bridalResult.error.message);
   if (everydayResult.error) throw new Error(everydayResult.error.message);
 
-  return {
-    bridal: (bridalResult.data ?? []).map((r) => mapProduct(r as ProductRow, "Bridal Sets")),
-    everyday: (everydayResult.data ?? []).map((r) => mapProduct(r as ProductRow, "Everyday Gold")),
-  };
+  // The SQL above orders by the stored price_pkr, which is only ever an
+  // approximation of today's. Re-sort on the live figures so the rails really
+  // are the heaviest sets and the most accessible gold.
+  const bridal = (bridalResult.data ?? [])
+    .map((r) => mapProduct(r as ProductRow, "Bridal Sets", snapshot))
+    .sort((a, b) => (b.salePricePkr ?? b.pricePkr) - (a.salePricePkr ?? a.pricePkr));
+
+  const everyday = (everydayResult.data ?? [])
+    .map((r) => mapProduct(r as ProductRow, "Everyday Gold", snapshot))
+    .sort((a, b) => (a.salePricePkr ?? a.pricePkr) - (b.salePricePkr ?? b.pricePkr));
+
+  return { bridal, everyday };
 }
 
 /** Maps category slugs to display names, for queries that span categories. */
@@ -218,7 +284,8 @@ async function categoryNames(): Promise<Map<string, string>> {
  * than issuing a query per keystroke — same reasoning as fetchCollection.
  */
 export async function fetchAllProducts(): Promise<Product[]> {
-  const [names, productsResult] = await Promise.all([
+  const [snapshot, names, productsResult] = await Promise.all([
+    safeRateSnapshot(),
     categoryNames(),
     supabase.from("products").select(BASE_COLUMNS).order("created_at", { ascending: false }),
   ]);
@@ -227,13 +294,14 @@ export async function fetchAllProducts(): Promise<Product[]> {
 
   return (productsResult.data ?? []).map((row) => {
     const r = row as ProductRow;
-    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug);
+    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
   });
 }
 
 /** Pieces flagged new, newest first. */
 export async function fetchNewArrivals(): Promise<Product[]> {
-  const [names, productsResult] = await Promise.all([
+  const [snapshot, names, productsResult] = await Promise.all([
+    safeRateSnapshot(),
     categoryNames(),
     supabase
       .from("products")
@@ -246,7 +314,7 @@ export async function fetchNewArrivals(): Promise<Product[]> {
 
   return (productsResult.data ?? []).map((row) => {
     const r = row as ProductRow;
-    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug);
+    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
   });
 }
 
@@ -254,7 +322,8 @@ export async function fetchNewArrivals(): Promise<Product[]> {
 export async function fetchProductsBySkus(skus: string[]): Promise<Product[]> {
   if (skus.length === 0) return [];
 
-  const [names, productsResult] = await Promise.all([
+  const [snapshot, names, productsResult] = await Promise.all([
+    safeRateSnapshot(),
     categoryNames(),
     supabase.from("products").select(BASE_COLUMNS).in("sku", skus),
   ]);
@@ -263,7 +332,7 @@ export async function fetchProductsBySkus(skus: string[]): Promise<Product[]> {
 
   const found = (productsResult.data ?? []).map((row) => {
     const r = row as ProductRow;
-    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug);
+    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
   });
 
   // Preserve the order the visitor saved them in.
@@ -326,10 +395,15 @@ export type ProductPage = {
   related: Product[];
 };
 
+/**
+ * net_weight_g, making_charges_pkr and stone_value_pkr are here because prices
+ * are rebuilt from them against the day's rate — see lib/pricing. Without them
+ * a product card could only show the price the piece was last saved at.
+ */
 const BASE_COLUMNS =
-  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, stones, price_pkr, sale_price_pkr, image_keys, is_new, created_at";
+  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, making_charges_pkr, stone_value_pkr, image_keys, is_new, created_at";
 
-const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, net_weight_g, stone_weight_ct, dimensions, sizes, metal_value_pkr, making_charges_pkr, stone_value_pkr, rate_basis_pkr_per_g`;
+const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_ct, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
 
 /**
  * Fetches one product, falling back to the base columns if the detail columns
@@ -360,8 +434,13 @@ async function selectProductRow(slug: string): Promise<ProductDetailRow> {
   return base.data as ProductDetailRow;
 }
 
-function mapDetail(row: ProductDetailRow, categoryName: string): ProductDetail {
-  const base = mapProduct(row, categoryName);
+function mapDetail(
+  row: ProductDetailRow,
+  categoryName: string,
+  snapshot?: RateSnapshot | undefined,
+): ProductDetail {
+  const base = mapProduct(row, categoryName, snapshot);
+  const { live } = priceOf(row, snapshot);
 
   const parts = [row.metal_value_pkr, row.making_charges_pkr, row.stone_value_pkr];
   const hasBreakdown =
@@ -377,13 +456,16 @@ function mapDetail(row: ProductDetailRow, categoryName: string): ProductDetail {
     // exactOptionalPropertyTypes: omit rather than set undefined.
     ...(row.stone_weight_ct != null ? { stoneWeightCt: Number(row.stone_weight_ct) } : {}),
     ...(row.dimensions ? { dimensions: row.dimensions } : {}),
+    // The metal value and the rate it was struck at come from today's rate when
+    // one is published, so the panel's arithmetic matches the price above it.
+    // Making and stone value are stored figures and do not move.
     ...(hasBreakdown
       ? {
           breakdown: {
-            metalValuePkr: row.metal_value_pkr as number,
+            metalValuePkr: live?.metalValuePkr ?? (row.metal_value_pkr as number),
             makingChargesPkr: row.making_charges_pkr as number,
             stoneValuePkr: row.stone_value_pkr as number,
-            rateBasisPkrPerG: row.rate_basis_pkr_per_g as number,
+            rateBasisPkrPerG: live?.ratePerGram ?? (row.rate_basis_pkr_per_g as number),
           },
         }
       : {}),
@@ -398,13 +480,12 @@ function mapDetail(row: ProductDetailRow, categoryName: string): ProductDetail {
 export async function fetchProductPage(slug: string): Promise<ProductPage> {
   const productRow = await selectProductRow(slug);
 
-  const [categoryResult, relatedResult] = await Promise.all([
+  const [snapshot, categoryResult, relatedResult] = await Promise.all([
+    safeRateSnapshot(),
     supabase.from("categories").select("name").eq("slug", productRow.category_slug).maybeSingle(),
     supabase
       .from("products")
-      .select(
-        "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, stones, price_pkr, sale_price_pkr, image_keys, is_new, created_at",
-      )
+      .select(BASE_COLUMNS)
       .eq("category_slug", productRow.category_slug)
       .neq("slug", slug)
       .limit(4),
@@ -416,9 +497,11 @@ export async function fetchProductPage(slug: string): Promise<ProductPage> {
   const categoryName = categoryResult.data?.name ?? productRow.category_slug;
 
   return {
-    product: mapDetail(productRow, categoryName),
+    product: mapDetail(productRow, categoryName, snapshot),
     categoryName,
-    related: (relatedResult.data ?? []).map((r) => mapProduct(r as ProductRow, categoryName)),
+    related: (relatedResult.data ?? []).map((r) =>
+      mapProduct(r as ProductRow, categoryName, snapshot),
+    ),
   };
 }
 

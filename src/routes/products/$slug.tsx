@@ -403,8 +403,11 @@ function PriceBreakdownPanel({ product, listed }: { product: ProductDetail; list
 
           <p className="mt-4 text-xs leading-relaxed text-warmgrey">
             {rateMoved
-              ? `Today's ${product.karat} rate is Rs. ${today.perGram.toLocaleString("en-US")}/g. This price was struck at Rs. ${breakdown.rateBasisPkrPerG.toLocaleString("en-US")}/g and is confirmed against the rate on the day you buy.`
-              : "Your price is confirmed against the day's rate at the time of purchase."}{" "}
+              ? // Only reachable when no rate is published for this karat, so the
+                // price fell back to the figure it was last saved at. Say so
+                // plainly rather than implying it is today's.
+                `Today's ${product.karat} rate is Rs. ${today.perGram.toLocaleString("en-US")}/g. This price was last set against Rs. ${breakdown.rateBasisPkrPerG.toLocaleString("en-US")}/g and is confirmed against the rate on the day you buy.`
+              : `The gold value above is calculated against today's ${product.karat} rate, so this price moves with the market. Making charges are fixed and do not rise with the rate.`}{" "}
             We weigh every piece in front of you before it is billed.
           </p>
         </div>
