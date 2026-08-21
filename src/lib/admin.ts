@@ -379,7 +379,88 @@ export async function deleteProduct(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Sanity bound on what comes off the camera, not a quality limit — anything
+ * under this is resized and re-encoded below rather than refused.
+ */
+const MAX_SOURCE_BYTES = 40 * 1024 * 1024;
+
+/** Longest edge after resizing. Ample for a full-width product gallery. */
+const MAX_EDGE = 1600;
+
+/** WebP quality. 0.82 is the point where jewellery detail survives and the
+ *  file is a fraction of the JPEG it came from. */
+const WEBP_QUALITY = 0.82;
+
+export type PreparedImage = { blob: Blob; extension: string; contentType: string };
+
+/**
+ * Resizes and re-encodes a photograph for the web before it is uploaded.
+ *
+ * The shop photographs stock on a phone, and a phone photo is routinely 4–8 MB
+ * of 4000px JPEG. Uploading that as-is would put a single image well past the
+ * 2 MB-per-page budget the launch checklist sets, on a catalogue whose whole
+ * job is to load quickly on Pakistani mobile data.
+ *
+ * `imageOrientation: "from-image"` is the important part. Phones record
+ * portrait shots as landscape pixels plus an EXIF rotation flag; drawing to a
+ * canvas discards that flag, so without this every portrait photograph would
+ * upload on its side. Bitmap decoding also happens off the main thread, so the
+ * panel does not lock up on a 12-megapixel file.
+ *
+ * Aspect ratio is deliberately preserved. The brief asks the photographer for
+ * square shots — that is a decision for whoever frames the picture, and a
+ * centre crop applied here would quietly cut the top off a necklace.
+ */
+export async function prepareProductImage(file: File): Promise<PreparedImage> {
+  const fallbackExtension =
+    file.name
+      .split(".")
+      .pop()
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]/g, "") || "jpg";
+
+  // Older browsers, or a decode failure on an odd file: upload what we were
+  // given rather than refuse it. A large image is worse than a small one, but
+  // both are better than a shop that cannot add its own stock.
+  if (typeof createImageBitmap !== "function" || typeof document === "undefined") {
+    return { blob: file, extension: fallbackExtension, contentType: file.type };
+  }
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    return { blob: file, extension: fallbackExtension, contentType: file.type };
+  }
+
+  try {
+    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) return { blob: file, extension: fallbackExtension, contentType: file.type };
+
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    const encoded = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", WEBP_QUALITY),
+    );
+
+    // Re-encoding a small or already-optimised file can make it bigger. Keep
+    // whichever is smaller.
+    if (!encoded || encoded.size >= file.size) {
+      return { blob: file, extension: fallbackExtension, contentType: file.type };
+    }
+
+    return { blob: encoded, extension: "webp", contentType: "image/webp" };
+  } finally {
+    bitmap.close();
+  }
+}
 
 /**
  * Uploads one photograph and returns the object path to store in image_keys.
@@ -392,21 +473,16 @@ export async function uploadProductImage(file: File, sku: string): Promise<strin
     throw new Error("Images must be JPEG, PNG, WebP or AVIF.");
   }
 
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("That image is over 5 MB. Export it smaller — the site targets 2 MB a page.");
+  if (file.size > MAX_SOURCE_BYTES) {
+    throw new Error("That file is enormous. Export it under 40 MB and try again.");
   }
 
-  const extension =
-    file.name
-      .split(".")
-      .pop()
-      ?.toLowerCase()
-      .replace(/[^a-z0-9]/g, "") || "jpg";
+  const { blob, extension, contentType } = await prepareProductImage(file);
   const folder = slugify(sku) || "unfiled";
   const path = `${folder}/${crypto.randomUUID()}.${extension}`;
 
-  const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).upload(path, file, {
-    contentType: file.type,
+  const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).upload(path, blob, {
+    contentType,
     // Immutable: the random path means a new upload is always a new object.
     cacheControl: "31536000",
     upsert: false,

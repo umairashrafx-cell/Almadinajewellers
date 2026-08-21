@@ -540,8 +540,9 @@ function ProductForm({
             <FieldError message={errors.imageKeys?.message} />
 
             <p className="mt-2 text-xs text-muted-foreground">
-              JPEG, PNG, WebP or AVIF, under 5 MB each. Removing an uploaded photograph deletes it
-              from storage.
+              JPEG, PNG, WebP or AVIF. Straight off a phone is fine — each photograph is resized and
+              re-encoded in the browser before it is uploaded. Removing an uploaded photograph
+              deletes it from storage.
             </p>
           </div>
         </Section>
