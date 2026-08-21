@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+import { Analytics } from "@/components/layout/Analytics";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -208,6 +209,8 @@ function RootComponent() {
       <div key={pathname} className="page-enter">
         <Outlet />
       </div>
+      {/* Renders nothing and loads nothing unless the tracking IDs are set. */}
+      <Analytics />
     </QueryClientProvider>
   );
 }
