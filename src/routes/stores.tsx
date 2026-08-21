@@ -9,7 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { Reveal } from "@/components/ui/Reveal";
-import { SITE, STORES, directionsUrl, mapEmbedUrl } from "@/lib/site";
+import { SITE, STORES, directionsUrl, mapEmbedUrl, placeUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/stores")({
   head: () => {
@@ -138,7 +138,7 @@ function StoresPage() {
 
                     <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                       <ActionLink
-                        href={directionsUrl(store.mapQuery)}
+                        href={directionsUrl(store.mapQuery, store.placeId)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -199,6 +199,9 @@ function StoreSchema() {
     description: SITE.tagline,
     url: `${SITE.origin}/stores`,
     telephone: store.phones[0],
+    // How Google confirms that this site, the Business Profile and the social
+    // accounts are one business rather than several with a similar name.
+    sameAs: [placeUrl(store.placeId), SITE.instagram, SITE.facebook, SITE.tiktok],
     founder: { "@type": "Person", name: SITE.founder },
     address: {
       "@type": "PostalAddress",
