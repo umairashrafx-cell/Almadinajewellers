@@ -45,9 +45,21 @@ function loadGoogleAnalytics(w: TrackingWindow) {
   document.head.appendChild(tag);
 
   w.dataLayer = w.dataLayer ?? [];
-  const gtag: Gtag = (...args) => {
-    w.dataLayer!.push(args);
-  };
+
+  /*
+   * This must push the `arguments` object itself, not a rest-parameter array.
+   *
+   * gtag.js decides what a dataLayer entry means by its type: an Arguments
+   * object is a command, anything else is inert data. The modern spelling —
+   * `(...args) => dataLayer.push(args)` — pushes a plain array, so every
+   * command is silently ignored. The library still loads and the dataLayer
+   * still fills up, which is what makes it such a convincing false positive:
+   * nothing errors, and the only symptom is that no hit is ever sent.
+   */
+  const gtag = function (this: unknown) {
+    // eslint-disable-next-line prefer-rest-params
+    w.dataLayer!.push(arguments);
+  } as Gtag;
   w.gtag = gtag;
 
   gtag("js", new Date());
