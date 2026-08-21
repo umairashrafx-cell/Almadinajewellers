@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { SITE } from "@/lib/site";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
+import { SITE, whatsappLink } from "@/lib/site";
 
 /**
  * Footer navigation. Every entry resolves to a real page — the policy links
@@ -68,9 +69,15 @@ export function Footer() {
             <address className="mt-6 space-y-2 text-sm not-italic text-champagne/75">
               <p>{SITE.address}</p>
               <p className="nums">Mon – Sun, 11:00am – 8:00pm </p>
-              {SITE.phones.map((p) => (
-                <p key={p} className="nums">
-                  {p}
+              {SITE.phones.map((phone) => (
+                <p key={phone}>
+                  <a
+                    // Strip spaces: a dialler will not parse "+92 321 7759959".
+                    href={`tel:${phone.replace(/\s/g, "")}`}
+                    className="nums transition-colors hover:text-gold"
+                  >
+                    {phone}
+                  </a>
                 </p>
               ))}
             </address>
@@ -83,12 +90,17 @@ export function Footer() {
             <ul className="mt-6 space-y-3 text-sm text-champagne/75">
               <li>
                 <a
-                  href={`https://wa.me/${SITE.whatsapp}`}
+                  href={whatsappLink(
+                    `Assalam-o-Alaikum, I would like to know more about ${SITE.name}.`,
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-gold nums"
+                  className="group inline-flex items-center gap-2.5 transition-colors hover:text-gold"
                 >
-                  WhatsApp {SITE.whatsappDisplay}
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gold/15 text-gold transition-colors group-hover:bg-gold group-hover:text-primary">
+                    <WhatsAppIcon className="h-4 w-4" />
+                  </span>
+                  <span className="nums">{SITE.whatsappDisplay}</span>
                 </a>
               </li>
               <li>
