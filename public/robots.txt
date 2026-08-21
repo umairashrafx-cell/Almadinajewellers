@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Staff tooling and a per-visitor page. Both also carry a noindex meta tag —
+# this only saves the crawl.
+Disallow: /admin
+Disallow: /wishlist
+
+Sitemap: https://www.almadinajeweller.com/sitemap.xml

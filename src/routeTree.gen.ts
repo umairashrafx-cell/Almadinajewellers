@@ -10,13 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BridalRouteImport } from './routes/bridal'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminProductsRouteImport } from './routes/admin/products'
+import { Route as AdminRatesRouteImport } from './routes/admin/rates'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
@@ -24,6 +29,11 @@ import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BridalRoute = BridalRouteImport.update({
@@ -51,6 +61,11 @@ const OurStoryRoute = OurStoryRouteImport.update({
   path: '/our-story',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -60,6 +75,21 @@ const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRatesRoute = AdminRatesRouteImport.update({
+  id: '/rates',
+  path: '/rates',
+  getParentRoute: () => AdminRoute,
 } as any)
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
@@ -79,15 +109,20 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bridal': typeof BridalRoute
   '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/rates': typeof AdminRatesRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -97,39 +132,53 @@ export interface FileRoutesByTo {
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/rates': typeof AdminRatesRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/collections': typeof CollectionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bridal': typeof BridalRoute
   '/contact': typeof ContactRoute
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/rates': typeof AdminRatesRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/bridal'
     | '/contact'
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
+    | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/products'
+    | '/admin/rates'
     | '/collections/$slug'
     | '/products/$slug'
+    | '/admin/'
     | '/collections/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -139,33 +188,44 @@ export interface FileRouteTypes {
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
+    | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/products'
+    | '/admin/rates'
     | '/collections/$slug'
     | '/products/$slug'
+    | '/admin'
     | '/collections'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/bridal'
     | '/contact'
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
+    | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/products'
+    | '/admin/rates'
     | '/collections/$slug'
     | '/products/$slug'
+    | '/admin/'
     | '/collections/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BridalRoute: typeof BridalRoute
   ContactRoute: typeof ContactRoute
   GoldRateRoute: typeof GoldRateRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
@@ -180,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bridal': {
@@ -217,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OurStoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stores': {
       id: '/stores'
       path: '/stores'
@@ -230,6 +304,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/wishlist'
       preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/rates': {
+      id: '/admin/rates'
+      path: '/rates'
+      fullPath: '/admin/rates'
+      preLoaderRoute: typeof AdminRatesRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/collections/': {
       id: '/collections/'
@@ -255,13 +350,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminRatesRoute: typeof AdminRatesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminProductsRoute: AdminProductsRoute,
+  AdminRatesRoute: AdminRatesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   BridalRoute: BridalRoute,
   ContactRoute: ContactRoute,
   GoldRateRoute: GoldRateRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
