@@ -1,0 +1,23 @@
+-- Keep anon out of is_admin().
+--
+-- The admin_panel migration revoked EXECUTE from PUBLIC and granted it to
+-- `authenticated`, which is not enough on its own: Supabase's default
+-- privileges hand `anon` an EXECUTE grant of its own on every new function in
+-- the public schema, applied after the migration's REVOKE has run. The result
+-- is an explicit anon=X entry in the ACL, and the database linter flags
+-- is_admin() as an anon-callable SECURITY DEFINER function.
+--
+-- The exposure is nil in practice — auth.uid() is NULL for anon, so the
+-- function returns false and tells an anonymous caller nothing it did not
+-- already know. But a SECURITY DEFINER function that the whole internet can
+-- invoke through /rest/v1/rpc is not something to leave lying around on the
+-- grounds that today's implementation happens to be harmless.
+--
+-- Nothing calls is_admin() as anon: the admin panel only reaches it once a
+-- session exists, and the RLS policies that depend on it are evaluated inside
+-- the server, where the caller's EXECUTE privilege is not consulted.
+
+-- Scoped to this one function on purpose. Revoking the schema-wide default
+-- would also block anon on any future RPC that is meant to be public, which is
+-- a bigger decision than this migration should be making on its own.
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM anon;
