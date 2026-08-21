@@ -9,7 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { Reveal } from "@/components/ui/Reveal";
-import { SITE, STORES, directionsUrl, mapEmbedUrl, placeUrl } from "@/lib/site";
+import { SITE, STORES, directionsUrl, mapEmbedUrl, placeUrl, reviewUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/stores")({
   head: () => {
@@ -152,6 +152,24 @@ function StoresPage() {
                     <p className="mt-8 text-xs leading-relaxed text-warmgrey">
                       Coming from out of town? Message us before you travel and we will have the
                       pieces you want to see ready at the counter.
+                    </p>
+
+                    {/*
+                      Aimed at someone who has already bought, so it stays a
+                      quiet line rather than a third button competing with the
+                      two actions above.
+                    */}
+                    <p className="mt-4 text-xs leading-relaxed text-warmgrey">
+                      Bought from us before?{" "}
+                      <a
+                        href={reviewUrl(store.placeId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="border-b border-gold/50 pb-0.5 text-ink transition-colors hover:text-gold"
+                      >
+                        Leave a review on Google
+                      </a>{" "}
+                      — it is how families in {store.city} find us.
                     </p>
                   </div>
                 </article>
