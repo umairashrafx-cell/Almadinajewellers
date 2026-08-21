@@ -25,6 +25,7 @@ import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminRatesRouteImport } from './routes/admin/rates'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
+import { Route as OurStoryFounderRouteImport } from './routes/our-story_.founder'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -107,6 +108,11 @@ const CollectionsSlugRoute = CollectionsSlugRouteImport.update({
   path: '/collections/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OurStoryFounderRoute = OurStoryFounderRouteImport.update({
+  id: '/our-story_/founder',
+  path: '/our-story/founder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products/$slug',
   path: '/products/$slug',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
   '/collections/$slug': typeof CollectionsSlugRoute
+  '/our-story/founder': typeof OurStoryFounderRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
   '/collections/$slug': typeof CollectionsSlugRoute
+  '/our-story/founder': typeof OurStoryFounderRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/collections': typeof CollectionsIndexRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
   '/collections/$slug': typeof CollectionsSlugRoute
+  '/our-story_/founder': typeof OurStoryFounderRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/rates'
     | '/collections/$slug'
+    | '/our-story/founder'
     | '/products/$slug'
     | '/admin/'
     | '/collections/'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/rates'
     | '/collections/$slug'
+    | '/our-story/founder'
     | '/products/$slug'
     | '/admin'
     | '/collections'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/rates'
     | '/collections/$slug'
+    | '/our-story_/founder'
     | '/products/$slug'
     | '/admin/'
     | '/collections/'
@@ -242,6 +254,7 @@ export interface RootRouteChildren {
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
+  OurStoryFounderRoute: typeof OurStoryFounderRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
 }
@@ -360,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/our-story_/founder': {
+      id: '/our-story_/founder'
+      path: '/our-story/founder'
+      fullPath: '/our-story/founder'
+      preLoaderRoute: typeof OurStoryFounderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products/$slug': {
       id: '/products/$slug'
       path: '/products/$slug'
@@ -397,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
+  OurStoryFounderRoute: OurStoryFounderRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
 }

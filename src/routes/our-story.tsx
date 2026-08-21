@@ -114,7 +114,13 @@ function OurStoryPage() {
               Three generations. One standard.
             </h1>
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-champagne/85 sm:text-base">
-              A family jewellery house in Sarafa Market, Mandi Bahauddin — founded by {SITE.founder}
+              A family jewellery house in Sarafa Market, Mandi Bahauddin — founded in 1985 by{" "}
+              <Link
+                to="/our-story/founder"
+                className="border-b border-gold/50 pb-0.5 text-ivory transition-colors hover:text-gold"
+              >
+                {SITE.founder}
+              </Link>
               .
             </p>
           </div>

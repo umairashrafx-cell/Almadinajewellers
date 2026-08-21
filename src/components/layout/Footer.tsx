@@ -21,6 +21,7 @@ const COLUMNS = [
     title: "Information",
     links: [
       { label: "Our Story", to: "/our-story" },
+      { label: "Our Founder", to: "/our-story/founder" },
       { label: "Gold Rate", to: "/gold-rate" },
       { label: "Certification & Hallmarking", to: "/our-story#standards" },
       { label: "Buy-Back & Exchange", to: "/policies#exchange" },
@@ -130,11 +131,27 @@ export function Footer() {
 
         <div className="hairline mt-16" />
 
-        <div className="mt-8 flex flex-col gap-3 text-xs text-champagne/60 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-4 text-xs text-champagne/60 sm:flex-row sm:items-center sm:justify-between">
           <p className="nums">
-            © {new Date().getFullYear()} {SITE.name}. Founded by {SITE.founder}.
+            © {new Date().getFullYear()} {SITE.name}
           </p>
-          <p className="font-display text-base tracking-wide text-gold">{SITE.tagline}</p>
+
+          <p className="font-display text-base tracking-wide text-gold sm:order-2">
+            {SITE.tagline}
+          </p>
+
+          {/* Build credit, kept quiet and last in the reading order. */}
+          <p className="sm:order-3">
+            Project built by{" "}
+            <a
+              href="https://www.automa8.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-b border-champagne/30 pb-0.5 transition-colors hover:border-gold hover:text-gold"
+            >
+              Automa8
+            </a>
+          </p>
         </div>
       </div>
     </footer>
