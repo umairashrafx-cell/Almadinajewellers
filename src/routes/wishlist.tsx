@@ -52,7 +52,7 @@ function WishlistPage() {
       <Header />
 
       <main>
-        <section className="bg-primary px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <nav aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-widest text-champagne/70">
@@ -77,7 +77,7 @@ function WishlistPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {loading ? (
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:gap-x-6 xl:grid-cols-4">
               {Array.from({ length: Math.min(skus.length, 8) }).map((_, i) => (

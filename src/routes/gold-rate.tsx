@@ -66,7 +66,7 @@ function GoldRatePage() {
 
       <main>
         {/* Banner */}
-        <section className="bg-primary px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <nav aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-widest text-champagne/70">
@@ -98,7 +98,7 @@ function GoldRatePage() {
         </section>
 
         {/* Rate table */}
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="section-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-left">
               <caption className="sr-only">
@@ -190,7 +190,7 @@ function Calculator({ snapshot }: { snapshot: RateSnapshot }) {
   }, [amount, unit, rate]);
 
   return (
-    <section className="bg-champagne/25 py-20 lg:py-24">
+    <section className="section-y bg-champagne/25">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Calculator"
@@ -299,7 +299,7 @@ function RateHistory() {
   if (history.length < 2) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+    <section className="section-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <SectionHeading
         eyebrow="History"
         title="Recent Rates"
@@ -349,7 +349,7 @@ function RateError() {
     <div className="min-h-screen bg-ivory">
       <AnnouncementBar />
       <Header />
-      <div className="mx-auto max-w-2xl px-4 py-32 text-center">
+      <div className="section-y mx-auto max-w-2xl px-4 text-center">
         <h1 className="font-display text-4xl font-light tracking-wide text-primary">
           Today's rate isn't loading
         </h1>

@@ -18,7 +18,7 @@ export function SignatureBridal() {
   const sets = data?.bridal ?? [];
 
   return (
-    <section className="bg-primary py-24 lg:py-28">
+    <section className="section-y bg-primary">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Flagship"

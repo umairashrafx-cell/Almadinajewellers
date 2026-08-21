@@ -39,7 +39,7 @@ function CollectionsIndex() {
       <Header />
 
       <main>
-        <section className="bg-primary px-4 py-20 sm:px-6 lg:px-8">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <h1 className="font-display text-4xl font-light tracking-wide text-ivory sm:text-5xl">
               Collections
@@ -48,7 +48,7 @@ function CollectionsIndex() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <section className="band-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading eyebrow="The House" title="Browse the catalogue" />
 
           <div className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6">

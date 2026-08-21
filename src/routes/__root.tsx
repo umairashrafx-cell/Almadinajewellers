@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -43,7 +44,7 @@ function NotFoundComponent() {
       <Header />
 
       <main>
-        <section className="bg-primary px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-[11px] uppercase tracking-widest text-gold">Error 404</p>
             <h1 className="mt-6 font-display text-4xl font-light tracking-wide text-ivory sm:text-5xl">
@@ -70,7 +71,7 @@ function NotFoundComponent() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <section className="section-y mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-light tracking-wide text-primary">
             Or start from here
           </h2>
@@ -177,6 +178,15 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/*
+          The server sends every revealed section at opacity 0 and JavaScript
+          fades it in. With scripting off that second half never happens, so the
+          page would render as a blank ivory column. Undo the reveal in that
+          case rather than let a decorative animation hide the catalogue.
+        */}
+        <noscript>
+          <style>{".reveal{opacity:1 !important;transform:none !important}"}</style>
+        </noscript>
       </head>
       <body>
         {children}
@@ -188,11 +198,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Keyed on the pathname alone, not the full href: the collection filters and
+  // the search overlay must not restart the transition as they change state.
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div key={pathname} className="page-enter">
+        <Outlet />
+      </div>
     </QueryClientProvider>
   );
 }

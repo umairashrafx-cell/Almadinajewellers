@@ -6,7 +6,7 @@ import { Reveal } from "@/components/ui/Reveal";
 /** Six tall image tiles with the category name overlaid. */
 export function CategoryTiles() {
   return (
-    <section id="categories" className="scroll-mt-24 bg-ivory py-24 lg:py-28">
+    <section id="categories" className="section-y scroll-mt-24 bg-ivory">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading eyebrow="The House" title="Shop by Category" />
 

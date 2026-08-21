@@ -121,7 +121,7 @@ function OurStoryPage() {
         </section>
 
         {/* Timeline */}
-        <section className="py-24 lg:py-28">
+        <section className="section-y">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
             <SectionHeading eyebrow="The House" title="How the shop was built" align="left" />
 
@@ -146,7 +146,7 @@ function OurStoryPage() {
         </section>
 
         {/* Craftsmanship */}
-        <section className="bg-champagne/20 py-24 lg:py-28">
+        <section className="section-y bg-champagne/20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
               <Reveal>
@@ -189,7 +189,7 @@ function OurStoryPage() {
         </section>
 
         {/* Standards */}
-        <section id="standards" className="scroll-mt-24 py-24 lg:py-28">
+        <section id="standards" className="section-y scroll-mt-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Certification & Hallmarking"
@@ -213,7 +213,7 @@ function OurStoryPage() {
         </section>
 
         {/* Visit */}
-        <section className="relative overflow-hidden bg-primary py-24 lg:py-28">
+        <section className="section-y relative overflow-hidden bg-primary">
           <img
             src={bridalImage}
             alt=""

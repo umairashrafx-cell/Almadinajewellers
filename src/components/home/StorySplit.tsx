@@ -6,7 +6,7 @@ import { SITE } from "@/lib/site";
 /** Editorial split: image left, house story right. */
 export function StorySplit() {
   return (
-    <section className="bg-ivory py-24 lg:py-28">
+    <section className="section-y bg-ivory">
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
         <Reveal>
           <img

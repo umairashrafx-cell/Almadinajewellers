@@ -1,3 +1,4 @@
+import { useReveal } from "@/hooks/use-reveal";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -9,7 +10,18 @@ type Props = {
   className?: string;
 };
 
-/** Editorial section heading: small tracked eyebrow + Cormorant title. */
+/**
+ * Editorial section heading: small tracked eyebrow + Cormorant title.
+ *
+ * The scroll reveal lives here rather than at the call sites. Section content
+ * was already revealing — product grids, story panels — while the heading above
+ * it appeared instantly, so sections animated from the middle outwards. Putting
+ * it on the heading itself means every section leads with the same motion
+ * without twenty call sites having to remember to wrap it.
+ *
+ * The reveal is applied to the existing container rather than a new wrapper, so
+ * layout classes passed in through `className` keep working unchanged.
+ */
 export function SectionHeading({
   eyebrow,
   title,
@@ -18,10 +30,14 @@ export function SectionHeading({
   tone = "dark",
   className,
 }: Props) {
+  const { ref, shown } = useReveal<HTMLDivElement>();
+
   return (
     <div
+      ref={ref}
       className={cn(
-        "max-w-2xl",
+        "reveal max-w-2xl",
+        shown && "reveal-in",
         align === "center" ? "mx-auto text-center" : "text-left",
         className,
       )}

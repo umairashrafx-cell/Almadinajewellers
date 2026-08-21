@@ -102,7 +102,7 @@ function ProductDetailPage() {
           </ol>
         </nav>
 
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
+        <div className="band-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-2 lg:gap-16">
             <Gallery product={product} />
 
@@ -185,7 +185,7 @@ function ProductDetailPage() {
         </div>
 
         {related.length > 0 && (
-          <section className="border-t border-gold/20 py-16 lg:py-24">
+          <section className="section-y border-t border-gold/20">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <h2 className="font-display text-3xl font-light tracking-wide text-primary">
                 You may also like
@@ -489,7 +489,7 @@ function ProductError() {
     <div className="min-h-screen bg-ivory">
       <AnnouncementBar />
       <Header />
-      <div className="mx-auto max-w-2xl px-4 py-32 text-center">
+      <div className="section-y mx-auto max-w-2xl px-4 text-center">
         <h1 className="font-display text-4xl font-light tracking-wide text-primary">
           This piece isn't available
         </h1>

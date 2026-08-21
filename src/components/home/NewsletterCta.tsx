@@ -15,7 +15,7 @@ export function NewsletterCta() {
   }
 
   return (
-    <section className="bg-ivory py-24 lg:py-28">
+    <section className="section-y bg-ivory">
       <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:px-6 lg:grid-cols-2 lg:gap-24 lg:px-8">
         <Reveal>
           <h2 className="font-display text-3xl font-light tracking-wide text-primary sm:text-4xl">

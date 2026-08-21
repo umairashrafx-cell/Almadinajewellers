@@ -105,7 +105,7 @@ function CollectionPage() {
 
       <main>
         {/* Banner */}
-        <section className="bg-primary px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <section className="band-y bg-primary px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <nav aria-label="Breadcrumb">
               <ol className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-widest text-champagne/70">
@@ -136,7 +136,7 @@ function CollectionPage() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="band-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="lg:flex lg:gap-12">
             {/* Desktop sidebar */}
             <aside className="hidden w-64 shrink-0 lg:block">

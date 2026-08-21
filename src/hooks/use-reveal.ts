@@ -12,6 +12,14 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>() {
     const el = ref.current;
     if (!el) return;
 
+    // Fail open. The reveal is decoration; the content is not. Without this, a
+    // browser with no IntersectionObserver leaves every revealed section at
+    // opacity 0 permanently — the animation failing would take the page with it.
+    if (typeof IntersectionObserver === "undefined") {
+      setShown(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
