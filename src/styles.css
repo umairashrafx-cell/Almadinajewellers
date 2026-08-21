@@ -47,6 +47,18 @@
   --color-warmgrey: var(--warmgrey);
   --color-rose: var(--rose);
 
+  /* Admin accents — see the :root block for why these exist. */
+  --color-bridal: var(--bridal);
+  --color-bridal-tint: var(--bridal-tint);
+  --color-enquiry: var(--enquiry);
+  --color-enquiry-tint: var(--enquiry-tint);
+  --color-callback: var(--callback);
+  --color-callback-tint: var(--callback-tint);
+  --color-piece: var(--piece);
+  --color-piece-tint: var(--piece-tint);
+  --color-settled: var(--settled);
+  --color-settled-tint: var(--settled-tint);
+
   /* Typography */
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -87,6 +99,30 @@
   --border: oklch(0.72 0.1 85 / 0.28);
   --input: oklch(0.72 0.1 85 / 0.4);
   --ring: var(--gold);
+
+  /*
+   * Admin accents.
+   *
+   * The storefront is deliberately austere — green, gold, ivory and nothing
+   * else. The admin has a different job: staff scan it under counter pressure,
+   * and colour that carries meaning is faster to read than a label. These give
+   * each kind of work its own identity so a bridal booking is distinguishable
+   * from a rate question at a glance.
+   *
+   * Mixed in oklch at the same lightness and chroma as the brand palette rather
+   * than pulled from a stock ramp, so they read as a family with the green and
+   * gold instead of as a framework's defaults dropped on top.
+   */
+  --bridal: oklch(0.5 0.14 12); /* deep rose — the highest-value enquiry */
+  --bridal-tint: oklch(0.5 0.14 12 / 0.1);
+  --enquiry: oklch(0.5 0.1 232); /* blue — general contact */
+  --enquiry-tint: oklch(0.5 0.1 232 / 0.1);
+  --callback: oklch(0.5 0.12 300); /* violet — asked us to ring back */
+  --callback-tint: oklch(0.5 0.12 300 / 0.1);
+  --piece: oklch(0.55 0.1 70); /* bronze — about a specific piece */
+  --piece-tint: oklch(0.55 0.1 70 / 0.12);
+  --settled: oklch(0.5 0.1 160); /* green — dealt with */
+  --settled-tint: oklch(0.5 0.1 160 / 0.1);
 }
 
 @layer base {

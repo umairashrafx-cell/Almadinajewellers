@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Plus, Upload, X } from "lucide-react";
 
-import { Banner, FieldError, PageHeading } from "@/components/admin/ui";
+import { Banner, Card, Chip, FieldError, PageHeading } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,12 +92,12 @@ function ProductsScreen() {
           placeholder="Search by name or SKU"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="max-w-xs bg-card"
+          className="max-w-xs rounded-lg bg-card"
         />
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="h-9 rounded-md border border-input bg-card px-3 text-sm"
+          className="h-9 rounded-lg border border-input bg-card px-3 text-sm"
         >
           <option value="">All categories</option>
           {(categories.data ?? []).map((c) => (
@@ -111,42 +111,56 @@ function ProductsScreen() {
       {products.isPending ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))}
         </div>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
-          {shown.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                onClick={() => setEditing({ mode: "edit", row: p })}
-                className="flex w-full items-center gap-4 px-3 py-3 text-left transition-colors hover:bg-muted"
-              >
-                <img
-                  src={imageFor(p.image_keys?.[0])}
-                  alt=""
-                  loading="lazy"
-                  className="h-12 w-12 shrink-0 object-cover"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{p.name}</span>
-                  <span className="nums block truncate text-xs text-muted-foreground">
-                    {p.sku} · {p.karat} · {Number(p.gross_weight_g).toFixed(3)} g
+        <Card className="overflow-hidden">
+          <ul className="divide-y divide-gold/15">
+            {shown.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => setEditing({ mode: "edit", row: p })}
+                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-champagne/20"
+                >
+                  <img
+                    src={imageFor(p.image_keys?.[0])}
+                    alt=""
+                    loading="lazy"
+                    className="h-14 w-14 shrink-0 rounded-lg border border-gold/20 object-cover"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-medium text-ink">{p.name}</span>
+                      <Chip tone={p.metal === "silver" ? "neutral" : "product"}>{p.karat}</Chip>
+                      {p.is_new ? <Chip tone="settled">New</Chip> : null}
+                      {p.sale_price_pkr != null ? <Chip tone="bridal">Sale</Chip> : null}
+                    </span>
+                    <span className="nums mt-1 block truncate text-xs text-warmgrey">
+                      {p.sku} · {Number(p.gross_weight_g).toFixed(3)} g · {p.stones || "No stones"}
+                    </span>
                   </span>
-                </span>
-                <span className="nums shrink-0 text-sm">
-                  {formatPKR(p.sale_price_pkr ?? p.price_pkr)}
-                </span>
-              </button>
-            </li>
-          ))}
-          {shown.length === 0 ? (
-            <li className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Nothing matches that.
-            </li>
-          ) : null}
-        </ul>
+                  <span className="shrink-0 text-right">
+                    <span className="nums block font-display text-lg text-primary">
+                      {formatPKR(p.sale_price_pkr ?? p.price_pkr)}
+                    </span>
+                    {p.sale_price_pkr != null ? (
+                      <span className="nums block text-xs text-warmgrey line-through">
+                        {formatPKR(p.price_pkr)}
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {shown.length === 0 ? (
+              <li className="px-4 py-16 text-center text-sm text-warmgrey">
+                Nothing matches that.
+              </li>
+            ) : null}
+          </ul>
+        </Card>
       )}
     </>
   );
@@ -613,10 +627,10 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <fieldset className="rounded-md border border-border bg-card p-4">
-      <legend className="px-1 text-sm font-medium">{title}</legend>
-      {hint ? <p className="mb-3 text-xs text-muted-foreground">{hint}</p> : null}
-      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+    <fieldset className="rounded-xl border border-gold/25 bg-card p-6 shadow-[var(--shadow-soft)]">
+      <legend className="px-2 font-display text-lg text-primary">{title}</legend>
+      {hint ? <p className="mb-5 max-w-2xl text-xs leading-relaxed text-warmgrey">{hint}</p> : null}
+      <div className="grid gap-5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
 }
@@ -636,8 +650,8 @@ function Field({
 }) {
   return (
     <label className={cn("block", className)}>
-      <span className="text-sm font-medium">{label}</span>
-      {hint ? <span className="ml-2 text-xs text-muted-foreground">{hint}</span> : null}
+      <span className="text-sm font-medium text-ink">{label}</span>
+      {hint ? <span className="ml-2 text-xs text-warmgrey">{hint}</span> : null}
       <div className="mt-1.5">{children}</div>
       <FieldError message={error} />
     </label>

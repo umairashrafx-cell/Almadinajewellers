@@ -1,10 +1,19 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, MessageCircle, Phone } from "lucide-react";
+import { CalendarHeart, Check, Inbox, Loader2, Phone, Sparkles } from "lucide-react";
 
-import { Banner, PageHeading } from "@/components/admin/ui";
-import { Button } from "@/components/ui/button";
+import {
+  Banner,
+  Card,
+  Chip,
+  PageHeading,
+  StatCard,
+  toneBar,
+  toneFor,
+  type Tone,
+} from "@/components/admin/ui";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import {
@@ -31,11 +40,21 @@ const FILTERS = [
 
 type FilterKey = (typeof FILTERS)[number]["key"];
 
+/** Initials for the avatar disc, from however many names were given. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (
+    (parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "")
+  ).toUpperCase();
+}
+
 /**
- * The enquiry inbox — the screen that actually gets opened every day.
+ * The enquiry inbox — the screen that gets opened every morning.
  *
  * Unhandled first by default, because the cost of this table is a bridal
- * booking sitting unanswered, not a missing feature.
+ * booking sitting unanswered, not a missing feature. Each kind of enquiry
+ * carries its own colour so the shape of the day is readable before a single
+ * label is.
  */
 function EnquiriesScreen() {
   const [filter, setFilter] = useState<FilterKey>("new");
@@ -62,6 +81,11 @@ function EnquiriesScreen() {
     return byKey;
   }, [all]);
 
+  const thisWeek = useMemo(() => {
+    const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return all.filter((e) => new Date(e.created_at).getTime() >= since).length;
+  }, [all]);
+
   const shown = useMemo(() => {
     if (filter === "all") return all;
     if (filter === "new") return all.filter((e) => !e.handled);
@@ -72,44 +96,84 @@ function EnquiriesScreen() {
     <>
       <PageHeading
         title="Enquiries"
-        hint="Everything submitted through the website. Marking one handled only clears it from this list — nothing is sent to the customer."
+        hint="Everything submitted through the website. Marking one handled clears it from this list — nothing is sent to the customer."
       />
 
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Needs a reply"
+          value={counts["new"] ?? 0}
+          tone={(counts["new"] ?? 0) > 0 ? "bridal" : "settled"}
+          hint={(counts["new"] ?? 0) > 0 ? "Waiting on you" : "All caught up"}
+          icon={Inbox}
+        />
+        <StatCard
+          label="Bridal bookings"
+          value={counts["bridal"] ?? 0}
+          tone="bridal"
+          hint="Highest value enquiry"
+          icon={CalendarHeart}
+        />
+        <StatCard label="Last 7 days" value={thisWeek} tone="contact" icon={Sparkles} />
+        <StatCard label="All time" value={all.length} tone="neutral" />
+      </div>
+
       <div className="mb-6 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setFilter(f.key)}
-            className={cn(
-              "rounded-md border px-3 py-1.5 text-sm transition-colors",
-              filter === f.key
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {f.label}
-            <span className="nums ml-2 text-xs opacity-70">{counts[f.key] ?? 0}</span>
-          </button>
-        ))}
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          const tone: Tone = f.key === "new" || f.key === "all" ? "neutral" : toneFor(f.key);
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "border-primary bg-primary text-ivory"
+                  : "border-gold/30 bg-card text-warmgrey hover:border-gold hover:text-primary",
+              )}
+            >
+              {f.key !== "new" && f.key !== "all" ? (
+                <span
+                  className={cn("h-2 w-2 rounded-full", active ? "bg-gold" : toneBar(tone))}
+                  aria-hidden="true"
+                />
+              ) : null}
+              {f.label}
+              <span className={cn("nums text-xs", active ? "text-champagne" : "text-warmgrey/70")}>
+                {counts[f.key] ?? 0}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {error ? <Banner tone="error">{(error as Error).message}</Banner> : null}
-
       {handled.error ? <Banner tone="error">{(handled.error as Error).message}</Banner> : null}
 
       {isPending ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full" />
+            <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
       ) : shown.length === 0 ? (
-        <p className="rounded-md border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
-          {filter === "new" ? "Nothing waiting for a reply." : "No enquiries of this kind yet."}
-        </p>
+        <Card className="px-6 py-16 text-center">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-settled-tint text-settled">
+            <Check className="h-6 w-6" strokeWidth={1.5} />
+          </span>
+          <p className="mt-6 font-display text-2xl font-light text-primary">
+            {filter === "new" ? "Nothing waiting for a reply" : "No enquiries of this kind yet"}
+          </p>
+          <p className="mt-2 text-sm text-warmgrey">
+            {filter === "new"
+              ? "Every enquiry has been dealt with."
+              : "They will appear here as they come in."}
+          </p>
+        </Card>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {shown.map((enquiry) => (
             <EnquiryCard
               key={enquiry.id}
@@ -134,6 +198,7 @@ function EnquiryCard({
   onToggle: (value: boolean) => void;
 }) {
   const wa = whatsappNumber(enquiry.phone);
+  const tone = enquiry.handled ? "settled" : toneFor(enquiry.type);
 
   const details: [string, string | null][] = [
     ["City", enquiry.city],
@@ -146,71 +211,88 @@ function EnquiryCard({
   ];
 
   return (
-    <li
-      className={cn(
-        "rounded-md border bg-card p-4",
-        enquiry.handled ? "border-border opacity-60" : "border-primary/30",
-      )}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">{enquiry.name}</span>
-            <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-              {enquiry.type}
-            </span>
-          </p>
-          <p className="nums mt-1 text-xs text-muted-foreground">
-            {formatEnquiryDate(enquiry.created_at)}
-          </p>
-        </div>
+    <li>
+      <Card className={cn("relative overflow-hidden", enquiry.handled && "opacity-70")}>
+        {/* The colour bar is the type; it turns green once dealt with. */}
+        <span className={cn("absolute inset-y-0 left-0 w-1", toneBar(tone))} aria-hidden="true" />
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <a href={`tel:${enquiry.phone.replace(/\s/g, "")}`}>
-              <Phone aria-hidden="true" />
-              {enquiry.phone}
-            </a>
-          </Button>
-          {wa ? (
-            <Button variant="outline" size="sm" asChild>
-              <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer">
-                <MessageCircle aria-hidden="true" />
-                WhatsApp
-              </a>
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-        {details
-          .filter(([, value]) => Boolean(value))
-          .map(([label, value]) => (
-            <div key={label} className="flex gap-2">
-              <dt className="text-muted-foreground">{label}:</dt>
-              <dd>{value}</dd>
+        <div className="p-5 pl-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  "nums grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-semibold",
+                  enquiry.handled ? "bg-settled-tint text-settled" : "bg-primary text-ivory",
+                )}
+                aria-hidden="true"
+              >
+                {initials(enquiry.name)}
+              </span>
+              <div>
+                <p className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-ink">{enquiry.name}</span>
+                  <Chip tone={tone}>{enquiry.handled ? "Handled" : enquiry.type}</Chip>
+                </p>
+                <p className="nums mt-1 text-xs text-warmgrey">
+                  {formatEnquiryDate(enquiry.created_at)}
+                </p>
+              </div>
             </div>
-          ))}
-      </dl>
 
-      {enquiry.message ? (
-        <p className="mt-3 whitespace-pre-wrap border-l-2 border-border pl-3 text-sm leading-relaxed">
-          {enquiry.message}
-        </p>
-      ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={`tel:${enquiry.phone.replace(/\s/g, "")}`}
+                className="nums inline-flex items-center gap-2 rounded-lg border border-gold/30 px-3 py-2 text-sm text-ink transition-colors hover:border-gold hover:text-primary"
+              >
+                <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+                {enquiry.phone}
+              </a>
+              {wa ? (
+                <a
+                  href={`https://wa.me/${wa}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-settled px-3 py-2 text-sm font-medium text-ivory transition-opacity hover:opacity-90"
+                >
+                  <WhatsAppIcon className="h-4 w-4" />
+                  WhatsApp
+                </a>
+              ) : null}
+            </div>
+          </div>
 
-      <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={enquiry.handled}
-          disabled={busy}
-          onChange={(e) => onToggle(e.target.checked)}
-          className="h-4 w-4 accent-primary"
-        />
-        Handled
-        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : null}
-      </label>
+          {details.some(([, v]) => v) ? (
+            <dl className="mt-4 grid gap-x-8 gap-y-2 border-t border-gold/15 pt-4 text-sm sm:grid-cols-2">
+              {details
+                .filter(([, value]) => Boolean(value))
+                .map(([label, value]) => (
+                  <div key={label} className="flex gap-2">
+                    <dt className="text-warmgrey">{label}:</dt>
+                    <dd className="text-ink">{value}</dd>
+                  </div>
+                ))}
+            </dl>
+          ) : null}
+
+          {enquiry.message ? (
+            <p className="mt-4 whitespace-pre-wrap rounded-lg bg-champagne/25 px-4 py-3 text-sm leading-relaxed text-ink">
+              {enquiry.message}
+            </p>
+          ) : null}
+
+          <label className="mt-5 inline-flex cursor-pointer select-none items-center gap-2.5 text-sm text-warmgrey">
+            <input
+              type="checkbox"
+              checked={enquiry.handled}
+              disabled={busy}
+              onChange={(e) => onToggle(e.target.checked)}
+              className="h-4 w-4 rounded accent-settled"
+            />
+            Mark handled
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : null}
+          </label>
+        </div>
+      </Card>
     </li>
   );
 }

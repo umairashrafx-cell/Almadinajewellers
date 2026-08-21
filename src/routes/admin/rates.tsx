@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import { Banner, PageHeading } from "@/components/admin/ui";
+import { Banner, Card, PageHeading } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { perGramFromTola, publishRates } from "@/lib/admin";
 import { GOLD_KARATS, fetchRateSnapshot, formatRateDate } from "@/lib/rates";
 import { formatPKR } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/rates")({
   component: RatesScreen,
@@ -113,7 +114,7 @@ function RatesScreen() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-        <div className="rounded-md border border-border bg-card p-4">
+        <Card className="p-6">
           <div className="max-w-xs">
             <Label htmlFor="rate-date">Rate date</Label>
             <Input
@@ -125,44 +126,63 @@ function RatesScreen() {
             />
           </div>
 
-          <table className="mt-6 w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="pb-2 font-medium">Metal</th>
-                <th className="pb-2 font-medium">Per tola (PKR)</th>
-                <th className="pb-2 text-right font-medium">Per gram</th>
-              </tr>
-            </thead>
-            <tbody>
-              {KARAT_ROWS.map((row) => {
-                const value = Number(tola[row.karat] ?? 0);
-                return (
-                  <tr key={row.karat} className="border-b border-border/60">
-                    <td className="py-2 pr-4">
-                      <Label htmlFor={`rate-${row.karat}`}>{row.label}</Label>
-                    </td>
-                    <td className="py-2 pr-4">
-                      <Input
-                        id={`rate-${row.karat}`}
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        step={1}
-                        value={tola[row.karat] ?? ""}
-                        onChange={(e) =>
-                          setTola((current) => ({ ...current, [row.karat]: e.target.value }))
-                        }
-                        className="nums max-w-40"
-                      />
-                    </td>
-                    <td className="nums py-2 text-right text-muted-foreground">
-                      {value > 0 ? perGramFromTola(value).toLocaleString("en-US") : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="mt-6 space-y-3">
+            {KARAT_ROWS.map((row) => {
+              const value = Number(tola[row.karat] ?? 0);
+              const filled = value > 0;
+              return (
+                <div
+                  key={row.karat}
+                  className={cn(
+                    "flex flex-wrap items-center gap-4 rounded-lg border p-3 transition-colors",
+                    filled ? "border-gold/40 bg-champagne/20" : "border-gold/15 bg-transparent",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "nums grid h-11 w-14 shrink-0 place-items-center rounded-md font-display text-lg",
+                      row.karat === "925"
+                        ? "bg-muted text-warmgrey"
+                        : "bg-gradient-to-br from-gold to-champagne text-primary",
+                    )}
+                    aria-hidden="true"
+                  >
+                    {row.karat}
+                  </span>
+
+                  <div className="min-w-[10rem] flex-1">
+                    <Label htmlFor={`rate-${row.karat}`} className="text-xs text-warmgrey">
+                      {row.label} — per tola
+                    </Label>
+                    <Input
+                      id={`rate-${row.karat}`}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      step={1}
+                      value={tola[row.karat] ?? ""}
+                      onChange={(e) =>
+                        setTola((current) => ({ ...current, [row.karat]: e.target.value }))
+                      }
+                      className="nums mt-1"
+                    />
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-widest text-warmgrey">Per gram</p>
+                    <p
+                      className={cn(
+                        "nums mt-1 font-display text-2xl",
+                        filled ? "text-primary" : "text-warmgrey/50",
+                      )}
+                    >
+                      {filled ? perGramFromTola(value).toLocaleString("en-US") : "—"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
             <Button onClick={() => void onPublish()} disabled={saving}>
@@ -188,9 +208,9 @@ function RatesScreen() {
             Existing product prices are not recalculated; they hold the rate they were struck at
             until you edit them.
           </p>
-        </div>
+        </Card>
 
-        <aside className="rounded-md border border-border bg-card p-4">
+        <Card className="h-fit p-6">
           <h2 className="text-sm font-medium">Currently live</h2>
           {isPending ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
@@ -209,7 +229,7 @@ function RatesScreen() {
               </dl>
             </>
           )}
-        </aside>
+        </Card>
       </div>
     </>
   );
