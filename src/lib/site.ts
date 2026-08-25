@@ -46,14 +46,20 @@ export const STORES = [
      */
     placeId: "ChIJxX07bsF9HzkR428mpQWvxm8",
     /**
-     * The shop's coordinates, read off the Business Profile listing.
+     * The query the embedded map is built from. **It must name the business.**
      *
-     * The embedded map is built from these rather than from a name or address
-     * search. Sarafa Bazar is a street of jewellers and Google was resolving
-     * "Sarafa Market, Mandi Bahauddin" to a neighbouring shop's listing —
-     * a map on our own Visit Us page showing a competitor. Coordinates cannot
-     * be mis-resolved.
+     * An address-only search — "Sarafa Market, Mandi Bahauddin" — resolved to a
+     * neighbouring jeweller's listing, because Sarafa Bazar is a street of
+     * jewellers and the address alone does not distinguish us from the shop
+     * next door. Naming the business resolves to our own listing, which is what
+     * puts our name, and our rating, on the pin.
+     *
+     * The city stays in the string deliberately: it is what keeps the result
+     * correct for someone opening the page from Dubai or London rather than
+     * from down the road.
      */
+    mapEmbedQuery: "Al-Madina Jewellers, Sarafa Market, Mandi Bahauddin",
+    /** Coordinates from the Business Profile, for the GeoCoordinates schema. */
     lat: 32.5855319,
     lng: 73.4924667,
   },
@@ -62,18 +68,15 @@ export const STORES = [
 /**
  * Google Maps iframe source for a branch. No API key needed for this form.
  *
- * Built from coordinates, not from a query. A text search put a neighbouring
- * jeweller's listing on our own Visit Us page, and the place-ID form cannot be
- * verified from the served response because the embed renders entirely
- * client-side — both times it was tried, a valid ID and a deliberately invalid
- * one returned byte-identical shells.
+ * Pass a query that names the business, not a bare address — see mapEmbedQuery
+ * for why. A named result carries the shop's own label and rating on the pin,
+ * which plain coordinates cannot.
  *
- * Coordinates have no such ambiguity: Google drops a pin exactly there. The
- * trade is that the pin carries no business name, which is a fair price for a
- * map that is definitely of the right shop.
+ * hl=en pins the map's labels to English so the embed reads the same for every
+ * visitor rather than following whatever locale their browser reports.
  */
-export function mapEmbedUrl(lat: number, lng: number) {
-  return `https://www.google.com/maps?q=${lat},${lng}&z=17&output=embed`;
+export function mapEmbedUrl(query: string) {
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&hl=en&output=embed`;
 }
 
 /**
