@@ -82,7 +82,7 @@ function StoresPage() {
                     <div className="mt-6 aspect-[4/3] w-full border border-gold/30">
                       <iframe
                         title={`Map of ${SITE.name}, ${store.name}`}
-                        src={mapEmbedUrl(store.mapQuery)}
+                        src={mapEmbedUrl(store.lat, store.lng)}
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                         className="h-full w-full"
@@ -221,6 +221,13 @@ function StoreSchema() {
     // accounts are one business rather than several with a similar name.
     sameAs: [placeUrl(store.placeId), SITE.instagram, SITE.facebook, SITE.tiktok],
     founder: { "@type": "Person", name: SITE.founder },
+    // Exact coordinates, so search engines place the shop where it is rather
+    // than geocoding a street name shared with every jeweller on it.
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: store.lat,
+      longitude: store.lng,
+    },
     address: {
       "@type": "PostalAddress",
       streetAddress: store.name,

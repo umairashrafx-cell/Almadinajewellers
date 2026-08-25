@@ -45,21 +45,35 @@ export const STORES = [
      * rather than whatever Google matches for the text that day.
      */
     placeId: "ChIJxX07bsF9HzkR428mpQWvxm8",
+    /**
+     * The shop's coordinates, read off the Business Profile listing.
+     *
+     * The embedded map is built from these rather than from a name or address
+     * search. Sarafa Bazar is a street of jewellers and Google was resolving
+     * "Sarafa Market, Mandi Bahauddin" to a neighbouring shop's listing —
+     * a map on our own Visit Us page showing a competitor. Coordinates cannot
+     * be mis-resolved.
+     */
+    lat: 32.5855319,
+    lng: 73.4924667,
   },
 ];
 
 /**
  * Google Maps iframe source for a branch. No API key needed for this form.
  *
- * Deliberately still a text query rather than the place ID. The keyless embed
- * renders entirely client-side, so there is no way to confirm from the served
- * response whether it resolved a place ID or silently fell back — and a map
- * that quietly points at the wrong shop is worse than one built from a query
- * that is known to work. Pinning this to placeId needs either the Google Embed
- * API (which takes a key) or a human confirming it on screen first.
+ * Built from coordinates, not from a query. A text search put a neighbouring
+ * jeweller's listing on our own Visit Us page, and the place-ID form cannot be
+ * verified from the served response because the embed renders entirely
+ * client-side — both times it was tried, a valid ID and a deliberately invalid
+ * one returned byte-identical shells.
+ *
+ * Coordinates have no such ambiguity: Google drops a pin exactly there. The
+ * trade is that the pin carries no business name, which is a fair price for a
+ * map that is definitely of the right shop.
  */
-export function mapEmbedUrl(query: string) {
-  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+export function mapEmbedUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps?q=${lat},${lng}&z=17&output=embed`;
 }
 
 /**
