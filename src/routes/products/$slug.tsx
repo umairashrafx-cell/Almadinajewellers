@@ -9,6 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ActionLink } from "@/components/ui/ActionButton";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import {
   Accordion,
@@ -30,6 +31,7 @@ import {
   whatsappLink,
 } from "@/lib/site";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { productShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/products/$slug")({
@@ -166,6 +168,16 @@ function ProductDetailPage() {
                   />
                   {wished ? "Saved to wishlist" : "Save to wishlist"}
                 </button>
+
+                <a
+                  href={shareOnWhatsApp(productShareMessage(product, listed))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
+                >
+                  <WhatsAppIcon className="h-4 w-4 text-primary" />
+                  Share this piece
+                </a>
 
                 <a
                   href={whatsappLink(

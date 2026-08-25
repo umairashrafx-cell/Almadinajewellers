@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ActionLink } from "@/components/ui/ActionButton";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -24,6 +25,7 @@ import {
   type RateSnapshot,
 } from "@/lib/rates";
 import { SITE, formatPKR, whatsappLink } from "@/lib/site";
+import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/gold-rate")({
@@ -145,15 +147,25 @@ function GoldRatePage() {
               Your final price is confirmed against the rate at the time of purchase, and every
               piece is weighed in front of you before it is billed.
             </p>
-            <ActionLink
-              variant="outline"
-              className="mt-8"
-              href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Confirm today's rate on WhatsApp
-            </ActionLink>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              {/* Share first: this is the page the shop forwards every morning. */}
+              <ActionLink
+                href={shareOnWhatsApp(rateShareMessage(snapshot))}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+                Share today's rate
+              </ActionLink>
+              <ActionLink
+                variant="outline"
+                href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Confirm on WhatsApp
+              </ActionLink>
+            </div>
           </Reveal>
         </section>
 
