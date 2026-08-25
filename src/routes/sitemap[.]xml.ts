@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import { SITE } from "@/lib/site";
@@ -15,7 +16,17 @@ import { SITE } from "@/lib/site";
  * and /admin is staff tooling.
  */
 
+/**
+ * products.updated_at is newer than the generated Database type, which the
+ * platform regenerates and which must not be hand-edited. Reaching just this
+ * one query through an untyped handle keeps the rest of the file typed — the
+ * same approach admin.ts and orders.ts take for the tables they added.
+ */
+const untyped = supabase as unknown as SupabaseClient;
+
 type Entry = { path: string; changefreq: string; priority: string; lastmod?: string };
+
+type ProductRow = { slug: string; created_at: string; updated_at: string | null };
 
 const STATIC_ENTRIES: Entry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
@@ -46,10 +57,26 @@ function urlNode(entry: Entry): string {
     .join("\n");
 }
 
+/** The date the shop last published a rate, for /gold-rate's lastmod. */
+async function lastRateDate(): Promise<string | undefined> {
+  const { data, error } = await supabase
+    .from("gold_rates")
+    .select("rate_date")
+    .order("rate_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return undefined;
+  return data.rate_date.slice(0, 10);
+}
+
 async function catalogueEntries(): Promise<Entry[]> {
   const [categories, products] = await Promise.all([
     supabase.from("categories").select("slug").order("sort_order"),
-    supabase.from("products").select("slug, created_at").order("created_at", { ascending: false }),
+    untyped
+      .from("products")
+      .select("slug, created_at, updated_at")
+      .order("created_at", { ascending: false }),
   ]);
 
   // A database hiccup should still produce a valid sitemap of the fixed pages
@@ -65,11 +92,21 @@ async function catalogueEntries(): Promise<Entry[]> {
       changefreq: "weekly",
       priority: "0.8",
     })),
-    ...(products.data ?? []).map((p) => ({
+    ...((products.data ?? []) as ProductRow[]).map((p) => ({
       path: `/products/${p.slug}`,
       changefreq: "monthly",
       priority: "0.7",
-      lastmod: p.created_at.slice(0, 10),
+      /*
+       * When the shop last edited this piece — not when the price last moved.
+       *
+       * Listed prices are rebuilt from the day's gold rate, so in one sense
+       * every product page changes every morning. Saying so would mark all
+       * forty-nine as modified daily, which is indistinguishable from a site
+       * gaming the field, and a crawler that stops trusting lastmod stops
+       * using it at all. The rate itself is what changed, and /gold-rate is
+       * where that is declared.
+       */
+      lastmod: (p.updated_at ?? p.created_at).slice(0, 10),
     })),
   ];
 }
@@ -78,7 +115,14 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const entries = [...STATIC_ENTRIES, ...(await catalogueEntries())];
+        const [rateDate, catalogue] = await Promise.all([lastRateDate(), catalogueEntries()]);
+
+        const entries = [
+          ...STATIC_ENTRIES.map((entry) =>
+            entry.path === "/gold-rate" && rateDate ? { ...entry, lastmod: rateDate } : entry,
+          ),
+          ...catalogue,
+        ];
 
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
