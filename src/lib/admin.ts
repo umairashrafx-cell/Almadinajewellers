@@ -583,3 +583,55 @@ export function whatsappNumber(phone: string): string {
   if (digits.startsWith("0")) return `92${digits.slice(1)}`;
   return digits;
 }
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+export type OrderStatus = "new" | "confirmed" | "completed" | "cancelled";
+
+export type OrderItem = {
+  sku: string;
+  name: string;
+  slug: string;
+  karat: string;
+  grossWeightG: number;
+  unitPricePkr: number;
+  quantity: number;
+};
+
+/** `orders` postdates the generated Database type, so it is read untyped. */
+export type AdminOrder = {
+  id: string;
+  reference: string;
+  name: string;
+  phone: string;
+  city: string | null;
+  notes: string | null;
+  items: OrderItem[];
+  item_count: number;
+  total_pkr: number;
+  status: OrderStatus;
+  created_at: string;
+};
+
+export async function fetchOrders(): Promise<AdminOrder[]> {
+  const { data, error } = await untyped
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw readableError(error, "Could not load orders");
+
+  // items is jsonb; a malformed row must not take the whole screen down.
+  return ((data ?? []) as AdminOrder[]).map((o) => ({
+    ...o,
+    items: Array.isArray(o.items) ? o.items : [],
+  }));
+}
+
+export async function setOrderStatus(id: string, status: OrderStatus): Promise<void> {
+  const { error } = await untyped.from("orders").update({ status }).eq("id", id);
+  if (error) throw readableError(error, "Could not update that order");
+}
