@@ -31,6 +31,9 @@ import {
   type Filters,
   type SortKey,
 } from "@/lib/filters";
+import { SITE, absoluteUrl, productUrl } from "@/lib/site";
+import type { Product } from "@/data/products";
+import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 
 const PAGE_SIZE = 12;
 
@@ -54,7 +57,9 @@ export const Route = createFileRoute("/collections/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: `${SITE.origin}/collections/${params.slug}` },
       ],
+      links: [{ rel: "canonical", href: `${SITE.origin}/collections/${params.slug}` }],
     };
   },
   component: CollectionPage,
@@ -102,6 +107,14 @@ function CollectionPage() {
     <div className="min-h-screen bg-ivory">
       <AnnouncementBar />
       <Header />
+
+      <BreadcrumbSchema
+        trail={[
+          { name: "Collections", path: "/collections" },
+          { name: heading, path: `/collections/${slug}` },
+        ]}
+      />
+      <CollectionItemList heading={heading} products={shown} />
 
       <main>
         {/* Banner */}
@@ -311,5 +324,50 @@ function ErrorState({ message }: { message?: string }) {
         {message ?? "Please refresh the page and try again."}
       </p>
     </div>
+  );
+}
+
+/**
+ * The pieces on this page, as an ordered list.
+ *
+ * Unlike the breadcrumb above it, this depends on data fetched in the browser,
+ * so it appears on the second pass rather than in the server's HTML. That is
+ * worth having anyway — it is what lets a collection appear as a list of named
+ * products rather than one undifferentiated page — but it is why the page's
+ * title, description and canonical are not built this way.
+ */
+function CollectionItemList({ heading, products }: { heading: string; products: Product[] }) {
+  if (products.length === 0) return null;
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: heading,
+    numberOfItems: products.length,
+    itemListElement: products.map((product, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Product",
+        name: product.name,
+        sku: product.sku,
+        url: productUrl(product.slug),
+        image: absoluteUrl(product.images[0]),
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "PKR",
+          price: product.salePricePkr ?? product.pricePkr,
+          availability: "https://schema.org/InStock",
+        },
+      },
+    })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      // Catalogue data, serialised. No user input reaches it.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
   );
 }

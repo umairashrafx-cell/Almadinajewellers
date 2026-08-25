@@ -15,6 +15,9 @@ export const SITE = {
   founder: "Haji Ashraf Siddiqui",
   address: "Sarafa Market, Mandi Bahauddin, Punjab, Pakistan",
   announcement: "Free insured delivery across Pakistan",
+  /** The branded 1200x630 card shown when a link is shared. */
+  shareImage: "/og-image.jpg",
+  founded: "1985",
   instagram: "https://www.instagram.com/almadina.jewellers",
   tiktok: "https://www.tiktok.com/@almadinaj",
   facebook: "https://www.facebook.com/madinajewellerz",
@@ -113,6 +116,38 @@ export function formatGrams(grams: number) {
 /** Builds a wa.me link with a pre-filled message. */
 export function whatsappLink(message: string) {
   return `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(message)}`;
+}
+
+/**
+ * An absolute URL for anything the site serves.
+ *
+ * Share metadata and JSON-LD have to carry absolute URLs — a scraper reading
+ * the markup has no page to resolve "/og-image.jpg" against. Bundled assets
+ * arrive here as hashed root-relative paths and uploaded photographs as full
+ * Supabase URLs, so both shapes are handled.
+ */
+export function absoluteUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${SITE.origin}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+/** The default share card, absolute. */
+export function shareImageUrl(): string {
+  return absoluteUrl(SITE.shareImage);
+}
+
+/**
+ * The best share image for a piece.
+ *
+ * Much of the catalogue still points at bundled placeholders — one stock
+ * photograph standing in for many pieces — and previewing a bridal set with a
+ * picture of earrings is worse than previewing it with the brand card. An
+ * uploaded photograph always resolves to an absolute storage URL, so that is
+ * the test. As real photography lands, product shares start using it on their
+ * own, with no change here.
+ */
+export function productShareImage(imageUrl: string): string {
+  return /^https?:\/\//i.test(imageUrl) ? imageUrl : shareImageUrl();
 }
 
 /** Canonical URL for a product page. */

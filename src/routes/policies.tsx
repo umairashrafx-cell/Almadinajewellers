@@ -22,7 +22,10 @@ export const Route = createFileRoute("/policies")({
         { name: "description", content: description },
         { property: "og:title", content: title },
         { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${SITE.origin}/policies` },
       ],
+      links: [{ rel: "canonical", href: `${SITE.origin}/policies` }],
     };
   },
   component: PoliciesPage,

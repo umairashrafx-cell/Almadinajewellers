@@ -19,7 +19,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ActionLink } from "@/components/ui/ActionButton";
-import { SITE, whatsappLink } from "@/lib/site";
+import { SITE, STORES, shareImageUrl, whatsappLink } from "@/lib/site";
 
 /** Where a lost visitor is most likely to have been heading. */
 const RECOVERY_LINKS = [
@@ -151,7 +151,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "Al-Madina Jewellers" },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: SITE.name },
+      { property: "og:locale", content: "en_PK" },
+      // Set once here so every page has a preview. Pages with a picture of
+      // their own — a product, chiefly — override it. Most links to this shop
+      // are pasted into WhatsApp, where a card with no image is a bare URL.
+      { property: "og:image", content: shareImageUrl() },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: `${SITE.name} — ${SITE.tagline}` },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: shareImageUrl() },
       { name: "theme-color", content: "#0B3D2E" },
     ],
     links: [
@@ -180,6 +190,59 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+/**
+ * Who this is, sitewide.
+ *
+ * The individual branches describe themselves as LocalBusiness on /stores;
+ * this is the organisation behind them, which is what a search engine ties a
+ * knowledge panel and the social profiles to. Rendered in the shell so it is
+ * present on every page, server-side, without each route repeating it.
+ */
+function SiteSchema() {
+  const store = STORES[0];
+
+  const graph = [
+    {
+      "@type": "Organization",
+      "@id": `${SITE.origin}/#organization`,
+      name: SITE.name,
+      url: SITE.origin,
+      logo: { "@type": "ImageObject", url: `${SITE.origin}/icon-512.png`, width: 512, height: 512 },
+      image: shareImageUrl(),
+      slogan: SITE.tagline,
+      foundingDate: SITE.founded,
+      founder: { "@type": "Person", name: SITE.founder },
+      telephone: SITE.phones[0],
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: store?.name ?? "Sarafa Market",
+        addressLocality: "Mandi Bahauddin",
+        addressRegion: "Punjab",
+        addressCountry: "PK",
+      },
+      sameAs: [SITE.instagram, SITE.facebook, SITE.tiktok],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE.origin}/#website`,
+      url: SITE.origin,
+      name: SITE.name,
+      publisher: { "@id": `${SITE.origin}/#organization` },
+      inLanguage: "en-PK",
+    },
+  ];
+
+  return (
+    <script
+      type="application/ld+json"
+      // Our own configuration, serialised. No user input reaches it.
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({ "@context": "https://schema.org", "@graph": graph }),
+      }}
+    />
+  );
+}
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
@@ -194,6 +257,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <noscript>
           <style>{".reveal{opacity:1 !important;transform:none !important}"}</style>
         </noscript>
+        <SiteSchema />
       </head>
       <body>
         {children}

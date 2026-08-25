@@ -9,6 +9,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCategories } from "@/lib/catalogue";
+import { SITE } from "@/lib/site";
 
 const title = "Collections — Al-Madina Jewellers";
 const description =
@@ -22,7 +23,9 @@ export const Route = createFileRoute("/collections/")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: `${SITE.origin}/collections` },
     ],
+    links: [{ rel: "canonical", href: `${SITE.origin}/collections` }],
   }),
   component: CollectionsIndex,
 });
