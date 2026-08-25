@@ -25,6 +25,7 @@ const STATIC_ENTRIES: Entry[] = [
   // The rate is republished most mornings, so this is the one page that is
   // genuinely daily.
   { path: "/gold-rate", changefreq: "daily", priority: "0.8" },
+  { path: "/sell-your-gold", changefreq: "monthly", priority: "0.8" },
   { path: "/our-story", changefreq: "yearly", priority: "0.5" },
   { path: "/our-story/founder", changefreq: "yearly", priority: "0.5" },
   { path: "/stores", changefreq: "monthly", priority: "0.7" },
