@@ -24,7 +24,10 @@ import { fetchProductPage, type ProductDetail } from "@/lib/catalogue";
 import { fetchRateSnapshot, rateFor } from "@/lib/rates";
 import {
   SITE,
+  absoluteUrl,
   formatGrams,
+  productShareImage,
+  shareImageUrl,
   formatPKR,
   productEnquiryLink,
   productUrl,
@@ -33,6 +36,7 @@ import {
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCart } from "@/hooks/use-cart";
 import { productShareMessage, shareOnWhatsApp } from "@/lib/share";
+import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/products/$slug")({
@@ -44,6 +48,13 @@ export const Route = createFileRoute("/products/$slug")({
     if (!product) return { meta: [{ title: `${SITE.name}` }] };
 
     const price = formatPKR(product.salePricePkr ?? product.pricePkr);
+    // May be the brand card rather than the piece, when this one has no
+    // photograph of its own yet — so the alt text has to follow the image.
+    const shareImage = productShareImage(product.images[0]);
+    const shareAlt =
+      shareImage === shareImageUrl()
+        ? `${SITE.name} — ${SITE.tagline}`
+        : `${product.name} — ${product.karat}`;
     const title = `${product.name} — ${product.karat} · ${SITE.name}`;
     const description = `${product.name}: ${formatGrams(product.grossWeightG)} in ${product.karat}, ${product.stones.toLowerCase()}. ${price}. Hallmarked and weighed in front of you. Enquire on WhatsApp.`;
 
@@ -55,6 +66,17 @@ export const Route = createFileRoute("/products/$slug")({
         { property: "og:description", content: description },
         { property: "og:type", content: "product" },
         { property: "og:url", content: productUrl(params.slug) },
+        // The piece itself, not the brand card. A product link pasted into
+        // WhatsApp should preview the jewellery someone is being shown.
+        { property: "og:image", content: shareImage },
+        { property: "og:image:alt", content: shareAlt },
+        { name: "twitter:image", content: shareImage },
+        // Read by Facebook and Pinterest; harmless elsewhere.
+        {
+          property: "product:price:amount",
+          content: String(product.salePricePkr ?? product.pricePkr),
+        },
+        { property: "product:price:currency", content: "PKR" },
       ],
       links: [{ rel: "canonical", href: productUrl(params.slug) }],
     };
@@ -78,6 +100,12 @@ function ProductDetailPage() {
       <Header />
 
       <ProductSchema product={product} url={url} />
+      <BreadcrumbSchema
+        trail={[
+          { name: categoryName, path: `/collections/${product.categorySlug}` },
+          { name: product.name, path: `/products/${product.slug}` },
+        ]}
+      />
 
       <main>
         {/* Breadcrumbs */}
@@ -505,6 +533,8 @@ function ProductSchema({ product, url }: { product: ProductDetail; url: string }
     "@type": "Product",
     name: product.name,
     sku: product.sku,
+    // Google will not show a product rich result without an image.
+    image: product.images.map(absoluteUrl),
     description: describe(product),
     category: product.categorySlug,
     url,
