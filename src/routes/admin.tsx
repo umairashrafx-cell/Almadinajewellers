@@ -3,7 +3,7 @@ import { Outlet, createFileRoute, Link } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Coins, Inbox, Loader2, LogOut, Gem, ExternalLink } from "lucide-react";
+import { Coins, Inbox, Loader2, LogOut, Gem, ExternalLink, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +76,9 @@ function AdminLayout() {
           <nav className="order-3 flex w-full gap-1 text-sm sm:order-none sm:w-auto">
             <NavTab to="/admin" exact icon={Inbox}>
               Enquiries
+            </NavTab>
+            <NavTab to="/admin/orders" icon={Package}>
+              Orders
             </NavTab>
             <NavTab to="/admin/products" icon={Gem}>
               Products

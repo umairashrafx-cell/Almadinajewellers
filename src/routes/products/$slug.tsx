@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Heart, Minus, Plus, ZoomIn } from "lucide-react";
+import { Check, ChevronRight, Heart, Minus, Plus, ShoppingBag, ZoomIn } from "lucide-react";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ProductCard } from "@/components/product/ProductCard";
-import { ActionLink } from "@/components/ui/ActionButton";
+import { ActionButton, ActionLink } from "@/components/ui/ActionButton";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import {
@@ -31,6 +31,7 @@ import {
   whatsappLink,
 } from "@/lib/site";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { useCart } from "@/hooks/use-cart";
 import { productShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +136,7 @@ function ProductDetailPage() {
 
               {/* Actions */}
               <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <AddToOrder sku={product.sku} />
                 <ActionLink
                   href={productEnquiryLink(product.name, product.sku, url)}
                   target="_blank"
@@ -425,6 +427,37 @@ function PriceBreakdownPanel({ product, listed }: { product: ProductDetail; list
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Adds the piece to the order, then shows that it is in and offers the way on.
+ *
+ * The confirmation replaces the button rather than sitting beside it: the most
+ * common next thought after adding something is "where did it go", and a link
+ * to the order answers that without the customer hunting for the header.
+ */
+function AddToOrder({ sku }: { sku: string }) {
+  const { add, has } = useCart();
+  const inOrder = has(sku);
+
+  if (inOrder) {
+    return (
+      <Link
+        to="/cart"
+        className="inline-flex items-center justify-center gap-2 rounded-[2px] border border-gold bg-champagne/40 px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest text-primary transition-colors hover:bg-champagne sm:flex-1"
+      >
+        <Check className="h-4 w-4" strokeWidth={2} />
+        In your order — review
+      </Link>
+    );
+  }
+
+  return (
+    <ActionButton onClick={() => add(sku)} className="sm:flex-1">
+      <ShoppingBag className="h-4 w-4" strokeWidth={1.6} />
+      Add to order
+    </ActionButton>
   );
 }
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Search, Heart, Menu, X, ChevronDown } from "lucide-react";
+import { Search, Heart, Menu, X, ChevronDown, ShoppingBag } from "lucide-react";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE } from "@/lib/site";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { useCart } from "@/hooks/use-cart";
 import { SearchOverlay } from "@/components/layout/SearchOverlay";
 import { categories } from "@/data/products";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { skus } = useWishlist();
+  const { count: cartCount } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -121,6 +123,22 @@ export function Header() {
             {skus.length > 0 && (
               <span className="nums absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-semibold text-primary">
                 {skus.length}
+              </span>
+            )}
+          </Link>
+
+          <Link
+            to="/cart"
+            aria-label={cartCount > 0 ? `Your order, ${cartCount} pieces` : "Your order"}
+            className={cn(
+              "relative transition-colors hover:text-gold",
+              solid ? "text-ink" : "text-ivory",
+            )}
+          >
+            <ShoppingBag className="h-5 w-5" strokeWidth={1.3} />
+            {cartCount > 0 && (
+              <span className="nums absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-semibold text-primary">
+                {cartCount}
               </span>
             )}
           </Link>
