@@ -24,6 +24,7 @@ const COLUMNS = [
       { label: "Our Story", to: "/our-story" },
       { label: "Our Founder", to: "/our-story/founder" },
       { label: "Gold Rate", to: "/gold-rate" },
+      { label: "Sell Your Gold", to: "/sell-your-gold" },
       { label: "Certification & Hallmarking", to: "/our-story#standards" },
       { label: "Buy-Back & Exchange", to: "/policies#exchange" },
       { label: "Delivery & Payment", to: "/policies#delivery" },

@@ -15,6 +15,7 @@ const NAV = [
   { label: "Bridal", to: "/bridal" },
   { label: "New Arrivals", to: "/new-arrivals" },
   { label: "Gold Rate", to: "/gold-rate" },
+  { label: "Sell Gold", to: "/sell-your-gold" },
   { label: "Our Story", to: "/our-story" },
   { label: "Stores", to: "/stores" },
 ];
@@ -65,13 +66,16 @@ export function Header() {
         </Link>
 
         {/* Centre navigation */}
-        <nav className="hidden items-center gap-8 lg:flex">
+        <nav className="hidden items-center gap-5 lg:flex xl:gap-8">
           {NAV.map((item) => (
             <div key={item.label} className="group relative">
               <Link
                 to={item.to}
                 className={cn(
-                  "flex items-center gap-1 py-2 text-[12px] font-medium uppercase tracking-widest transition-colors",
+                  // Tracking tightens below xl. Seven items and the icon cluster
+                  // exactly fill the bar at 1024px, where the desktop nav first
+                  // appears; the wide tracking returns as soon as there is room.
+                  "flex items-center gap-1 py-2 text-[12px] font-medium uppercase tracking-wider transition-colors xl:tracking-widest",
                   solid ? "text-ink hover:text-gold" : "text-ivory hover:text-gold",
                 )}
               >
