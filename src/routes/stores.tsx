@@ -82,7 +82,7 @@ function StoresPage() {
                     <div className="mt-6 aspect-[4/3] w-full border border-gold/30">
                       <iframe
                         title={`Map of ${SITE.name}, ${store.name}`}
-                        src={mapEmbedUrl(store.lat, store.lng)}
+                        src={mapEmbedUrl(store.mapEmbedQuery)}
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                         className="h-full w-full"
