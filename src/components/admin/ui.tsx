@@ -136,15 +136,31 @@ export function FieldError({ message }: { message?: string | undefined }) {
   );
 }
 
-export function Banner({ tone, children }: { tone: "ok" | "error"; children: ReactNode }) {
+const BANNER_TONES = {
+  ok: "border-settled/30 bg-settled-tint text-settled",
+  // Nothing has gone wrong; something needs deciding before saving.
+  caution: "border-caution/35 bg-caution-tint text-caution",
+  info: "border-gold/30 bg-champagne/25 text-ink",
+  error: "border-destructive/30 bg-destructive/5 text-destructive",
+} as const;
+
+export function Banner({
+  tone,
+  className,
+  children,
+}: {
+  tone: keyof typeof BANNER_TONES;
+  className?: string | undefined;
+  children: ReactNode;
+}) {
   return (
     <p
+      // Only an error interrupts; the rest are read when the eye reaches them.
       role={tone === "error" ? "alert" : "status"}
       className={cn(
-        "rounded-lg border px-4 py-3 text-sm font-medium",
-        tone === "error"
-          ? "border-destructive/30 bg-destructive/5 text-destructive"
-          : "border-settled/30 bg-settled-tint text-settled",
+        "rounded-lg border px-4 py-3 text-sm font-medium leading-relaxed",
+        BANNER_TONES[tone],
+        className,
       )}
     >
       {children}
