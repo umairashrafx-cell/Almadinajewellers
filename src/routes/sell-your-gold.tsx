@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Banknote,
   ChevronRight,
+  IdCard,
   Landmark,
   Repeat,
   ReceiptText,
@@ -80,7 +81,7 @@ const STEPS = [
   {
     icon: ReceiptText,
     title: "Bring the piece in",
-    body: "Come to the shop with whatever you would like to sell. If you bought it from us, bring the bill — it entitles you to our lifetime buy-back. Nothing needs an appointment.",
+    body: "Come to the shop with whatever you would like to sell, and bring your CNIC — we cannot complete a purchase without it. If you bought the piece from us, bring the bill too: it entitles you to our lifetime buy-back. Nothing needs an appointment.",
   },
   {
     icon: Search,
@@ -115,7 +116,11 @@ const PAYMENT = [
 const FAQS = [
   {
     q: "Do I need the original bill to sell my gold?",
-    a: "Not to sell it. The bill matters only for pieces bought from Al-Madina, where it entitles you to our lifetime buy-back against the day's rate, less the making charges, which are not returned. Gold bought anywhere else is assessed on its own merits and needs no paperwork.",
+    a: "Not to sell it — but you do need your CNIC, whatever the piece is. The bill matters only for gold bought from Al-Madina, where it entitles you to our lifetime buy-back against the day's rate, less the making charges, which are not returned. Gold bought anywhere else needs no bill.",
+  },
+  {
+    q: "Do I need to bring my CNIC?",
+    a: "Yes. We need your CNIC to buy gold from you, whether the piece came from us or from anywhere else. Please bring it with you — without it we cannot complete the purchase, whatever the piece is worth.",
   },
   {
     q: "What if I bought the jewellery somewhere else?",
@@ -184,6 +189,23 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
               Bring your gold to Sarafa Market and we will test it, weigh it in front of you and
               quote against the day's rate. Take it in cash, by bank transfer, or put it towards
               something new. No appointment, and no obligation to sell.
+            </p>
+
+            {/*
+              High on the page on purpose. Someone can read the opening
+              paragraph, decide to come in, and never reach the FAQ — and
+              arriving without a CNIC means the trip was wasted.
+            */}
+            <p className="mt-6 inline-flex items-start gap-2.5 border border-gold/50 bg-primary-deep/40 px-4 py-3 text-sm text-champagne">
+              <IdCard
+                className="mt-0.5 h-4 w-4 shrink-0 text-gold"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <span>
+                <span className="font-semibold text-ivory">Please bring your CNIC.</span> We cannot
+                buy gold without it.
+              </span>
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -286,8 +308,8 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
                 it, and quote against the day's rate.
               </p>
               <p className="mt-4 text-sm leading-relaxed text-warmgrey">
-                No bill and no paperwork needed. You are free to walk away with the piece if the
-                figure is not for you.
+                No bill needed — bring your CNIC and the piece. You are free to walk away with it if
+                the figure is not for you.
               </p>
             </Reveal>
           </div>
