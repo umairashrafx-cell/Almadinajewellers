@@ -58,6 +58,8 @@
   --color-piece-tint: var(--piece-tint);
   --color-settled: var(--settled);
   --color-settled-tint: var(--settled-tint);
+  --color-caution: var(--caution);
+  --color-caution-tint: var(--caution-tint);
 
   /* Typography */
   --font-display: "Cormorant Garamond", Georgia, serif;
@@ -123,6 +125,10 @@
   --piece-tint: oklch(0.55 0.1 70 / 0.12);
   --settled: oklch(0.5 0.1 160); /* green — dealt with */
   --settled-tint: oklch(0.5 0.1 160 / 0.1);
+
+  /* amber — needs a decision before saving, but nothing has gone wrong */
+  --caution: oklch(0.48 0.11 75);
+  --caution-tint: oklch(0.48 0.11 75 / 0.1);
 }
 
 @layer base {

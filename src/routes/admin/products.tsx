@@ -33,6 +33,7 @@ import {
 import { imageFor } from "@/lib/catalogue";
 import { fetchRateSnapshot, rateFor } from "@/lib/rates";
 import { formatPKR } from "@/lib/site";
+import { tracksMetalRate } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/products")({
@@ -214,6 +215,21 @@ function ProductForm({
 
   const imageKeys = watch("imageKeys") ?? [];
   const making = makingChargesFor(watch());
+
+  /*
+   * Whether this piece will re-price with the gold rate.
+   *
+   * catalogue.ts falls back to the stored price when making_charges_pkr is
+   * null, and making charges are derived from this panel — so leaving it blank
+   * quietly freezes the piece at whatever it was listed at, while the rest of
+   * the catalogue moves every morning. That is not something anyone should
+   * discover from a customer, so the form says it while there is still time to
+   * act on it.
+   */
+  const metal = watch("metal");
+  const tracksRate = tracksMetalRate(metal);
+  const willTrackRate =
+    making !== undefined && Boolean(toNumber(watch("netWeightG") || watch("grossWeightG")));
 
   async function onSubmit(values: ProductFormValues) {
     setFailure(null);
@@ -458,8 +474,8 @@ function ProductForm({
         </Section>
 
         <Section
-          title="Price transparency"
-          hint="Shown on the product page as “How this price is calculated”. Fill all three or leave all three blank."
+          title="Live pricing & price transparency"
+          hint="Fill all three or leave all three blank. This panel does two jobs: it prints “How this price is calculated” on the product page, and it is what lets the price follow the gold rate."
         >
           <Field label="Metal value (PKR)" error={errors.metalValuePkr?.message}>
             <Input type="number" step="1" {...register("metalValuePkr")} className="nums" />
@@ -486,6 +502,24 @@ function ProductForm({
               Calculated, never typed: the listed price less metal and stone value. The database
               refuses a product whose three parts do not add up.
             </p>
+
+            {!tracksRate ? (
+              <Banner tone="info" className="mt-4">
+                Silver is priced as merchandised and does not follow the metal rate, so this piece
+                keeps the price you list whatever the panel says.
+              </Banner>
+            ) : willTrackRate ? (
+              <Banner tone="ok" className="mt-4">
+                This piece will re-price with the gold rate. Metal value is recalculated each day;
+                making charges and stone value stay as listed.
+              </Banner>
+            ) : (
+              <Banner tone="caution" className="mt-4">
+                Leave this blank and the piece keeps a fixed price for good — it will not follow the
+                gold rate, while the rest of the catalogue does. Fill the three fields, or press
+                “Fill from today’s rate”, unless you mean to hold it at this figure.
+              </Banner>
+            )}
             <Button
               type="button"
               variant="outline"
