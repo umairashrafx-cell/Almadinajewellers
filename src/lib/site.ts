@@ -17,7 +17,7 @@ export const SITE = {
   announcement: "Free insured delivery across Pakistan",
   /** The branded 1200x630 card shown when a link is shared. */
   shareImage: "/og-image.jpg",
-  founded: "1985",
+  founded: "1980",
   instagram: "https://www.instagram.com/almadina.jewellers",
   tiktok: "https://www.tiktok.com/@almadinaj",
   facebook: "https://www.facebook.com/madinajewellerz",
