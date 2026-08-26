@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronRight, Heart, Minus, Plus, ShoppingBag, ZoomIn } from "lucide-react";
 
@@ -46,6 +46,10 @@ export const Route = createFileRoute("/products/$slug")({
   // have to be in the server-rendered HTML to be worth anything for SEO.
   loader: async ({ params }) => {
     const page = await fetchProductPage(params.slug);
+    // No such piece. notFound() is what turns this into a 404 response rather
+    // than a 500 — a withdrawn product has to leave the index, and Google keeps
+    // retrying a 500 while dropping a 404.
+    if (!page) throw notFound();
     // Sequential because the SKU is only known once the product is loaded.
     // The reviews query is small and indexed; the alternative is a rating that
     // exists only after hydration, which is the thing this feature is for.
@@ -91,6 +95,9 @@ export const Route = createFileRoute("/products/$slug")({
     };
   },
   component: ProductDetailPage,
+  // A slug that does not exist, and a query that failed, are different things
+  // and get different pages — but both read the same to a visitor.
+  notFoundComponent: ProductMissing,
   errorComponent: ProductError,
 });
 
@@ -575,19 +582,21 @@ function ProductSchema({ product, url }: { product: ProductDetail; url: string }
   );
 }
 
-function ProductError() {
+/**
+ * The shell both dead ends share.
+ *
+ * A visitor should not have to care which of the two happened, so they look
+ * identical; what differs is the copy and, more importantly, the status code
+ * the server already sent.
+ */
+function ProductDeadEnd({ title, body }: { title: string; body: string }) {
   return (
     <div className="min-h-screen bg-ivory">
       <AnnouncementBar />
       <Header />
       <div className="section-y mx-auto max-w-2xl px-4 text-center">
-        <h1 className="font-display text-4xl font-light tracking-wide text-primary">
-          This piece isn't available
-        </h1>
-        <p className="mt-4 text-sm leading-relaxed text-warmgrey">
-          It may have been sold or renamed. Browse the collections, or ask us on WhatsApp and we
-          will find something close to it.
-        </p>
+        <h1 className="font-display text-4xl font-light tracking-wide text-primary">{title}</h1>
+        <p className="mt-4 text-sm leading-relaxed text-warmgrey">{body}</p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
           <ActionLink href="/collections">Browse collections</ActionLink>
           <ActionLink
@@ -603,6 +612,30 @@ function ProductError() {
       <Footer />
       <FloatingWhatsApp />
     </div>
+  );
+}
+
+/** No piece has this slug. Served with a 404, so the URL leaves the index. */
+function ProductMissing() {
+  return (
+    <ProductDeadEnd
+      title="This piece isn't available"
+      body="It may have been sold or renamed. Browse the collections, or ask us on WhatsApp and we will find something close to it."
+    />
+  );
+}
+
+/**
+ * Something failed while loading a piece that may well exist — a database
+ * fault, most likely. Deliberately not a 404: the URL should stay indexed and
+ * be retried, not dropped.
+ */
+function ProductError() {
+  return (
+    <ProductDeadEnd
+      title="We could not load this piece"
+      body="Something went wrong at our end rather than yours. Please try again in a moment, or ask us on WhatsApp and we will send you the details directly."
+    />
   );
 }
 
