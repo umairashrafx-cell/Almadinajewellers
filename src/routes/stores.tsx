@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 
-import storeImage from "@/assets/cat-silver.jpg";
+import storeImage from "@/assets/store-counter.jpg";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -71,10 +71,19 @@ function StoresPage() {
               <Reveal key={store.name}>
                 <article className="grid gap-10 lg:grid-cols-2 lg:gap-16">
                   <div>
+                    {/*
+                      A piece, not the shopfront. The alt used to name the
+                      branch and the city, which reads as a photograph of the
+                      premises — it is not one, and describing it that way
+                      tells a screen reader something the picture does not
+                      show.
+                    */}
                     <img
                       src={storeImage}
-                      alt={`${SITE.name}, ${store.name}, ${store.city}`}
+                      alt="A gold necklace with a violet centre stone, of the kind kept at the counter"
                       loading="lazy"
+                      width={1400}
+                      height={1050}
                       className="aspect-[4/3] w-full object-cover"
                     />
 
