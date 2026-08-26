@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+
+import footerTexture from "@/assets/footer-texture.jpg";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
 
@@ -33,11 +35,44 @@ const COLUMNS = [
   },
 ];
 
-/** Deep forest footer with four columns. */
+/** Deep forest footer with four columns, over a photographic ground. */
 export function Footer() {
   return (
-    <footer className="bg-primary-deep text-champagne">
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+    <footer className="relative isolate overflow-hidden bg-primary-deep text-champagne">
+      {/*
+        The photograph is held back rather than shown at full strength. It is a
+        bright, cream-lit picture and every word here is light on dark, so the
+        two are working against each other.
+
+        26% is measured, not guessed: rasterising the real composite — image,
+        opacity and gradient — and sampling under each piece of text puts the
+        weakest element at 5.7:1 against the brightest pixel behind it. The
+        photograph stays legible as a photograph, and nothing in the footer
+        drops under AA. Raising it costs contrast quickly: 35% leaves only
+        5.1:1, which is too little room for a background.
+      */}
+      <img
+        src={footerTexture}
+        alt=""
+        aria-hidden="true"
+        width={2000}
+        height={1333}
+        className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.26]"
+      />
+      {/*
+        Deepest at the top edge, so the footer still separates cleanly from
+        whatever section ends above it rather than starting mid-photograph.
+      */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "linear-gradient(to bottom, var(--primary-deep) 0%, oklch(0.16 0.035 160 / 0.55) 30%, oklch(0.16 0.035 160 / 0.45) 100%)",
+        }}
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {COLUMNS.map((col) => (
             <div key={col.title}>
