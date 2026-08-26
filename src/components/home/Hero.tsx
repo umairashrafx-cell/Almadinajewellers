@@ -1,4 +1,4 @@
-import heroImage from "@/assets/hero-bridal.jpg";
+import heroImage from "@/assets/hero-bangles.jpg";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { SITE } from "@/lib/site";
 
@@ -8,9 +8,9 @@ export function Hero() {
     <section className="relative -mt-[74px] flex min-h-screen items-end overflow-hidden">
       <img
         src={heroImage}
-        alt="Hand-crafted 22K gold bridal necklace set with rubies and pearls"
-        width={1920}
-        height={1280}
+        alt="A stack of hand-worked 22K gold bangles on a dark reflective surface"
+        width={2560}
+        height={1707}
         className="ken-burns absolute inset-0 h-full w-full object-cover"
       />
       <div
