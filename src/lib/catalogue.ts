@@ -194,6 +194,32 @@ export type CollectionData = {
  * The catalogue is small (48 rows), so filtering and sorting happen in memory —
  * that keeps live filter counts exact and avoids a query per facet change.
  */
+/**
+ * One category, or null when no such collection exists.
+ *
+ * Split out so the route can answer with a 404 before rendering anything. The
+ * page used to title itself from the slug, which turned every mistyped or
+ * invented URL under /collections into a plausible, indexable page with a
+ * made-up name.
+ */
+export async function fetchCategory(slug: string): Promise<Category | null> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("slug, name, image_key, sort_order")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  return {
+    slug: data.slug,
+    name: data.name,
+    image: imageFor(data.image_key),
+    sortOrder: data.sort_order ?? 0,
+  };
+}
+
 export async function fetchCollection(slug: string): Promise<CollectionData> {
   const [snapshot, categoryResult, productsResult] = await Promise.all([
     safeRateSnapshot(),
@@ -406,27 +432,32 @@ const BASE_COLUMNS =
 const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_ct, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
 
 /**
- * Fetches one product, falling back to the base columns if the detail columns
- * are not in the database yet. Postgrest rejects the whole select when a column
- * is unknown, so without this the page would break in the window between a
- * deploy and its migration being applied.
+ * Fetches one product, or null when no piece has that slug.
+ *
+ * Null rather than a thrown error, because "we do not sell this" is an answer,
+ * not a failure — and the two have to reach the browser as different status
+ * codes. A withdrawn piece has to 404 so search engines drop the URL; a
+ * database fault has to stay a 500 so they come back later. Real errors below
+ * still throw.
+ *
+ * Falls back to the base columns if the detail columns are not in the database
+ * yet: Postgrest rejects the whole select when a column is unknown, so without
+ * this the page would break in the window between a deploy and its migration
+ * being applied.
  */
-async function selectProductRow(slug: string): Promise<ProductDetailRow> {
+async function selectProductRow(slug: string): Promise<ProductDetailRow | null> {
   const full = await supabase
     .from("products")
     .select(DETAIL_COLUMNS)
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!full.error) {
-    if (!full.data) throw new Error(`No product found for "${slug}".`);
-    return full.data as ProductDetailRow;
-  }
+  if (!full.error) return (full.data as ProductDetailRow | null) ?? null;
 
   const base = await supabase.from("products").select(BASE_COLUMNS).eq("slug", slug).maybeSingle();
 
   if (base.error) throw new Error(base.error.message);
-  if (!base.data) throw new Error(`No product found for "${slug}".`);
+  if (!base.data) return null;
 
   console.warn(
     "[catalogue] Product detail columns are missing — run the product_detail_and_gold_rates migration.",
@@ -477,8 +508,9 @@ function mapDetail(
  * The category and related queries need the product's category_slug, so this is
  * two waves rather than one.
  */
-export async function fetchProductPage(slug: string): Promise<ProductPage> {
+export async function fetchProductPage(slug: string): Promise<ProductPage | null> {
   const productRow = await selectProductRow(slug);
+  if (!productRow) return null;
 
   const [snapshot, categoryResult, relatedResult] = await Promise.all([
     safeRateSnapshot(),

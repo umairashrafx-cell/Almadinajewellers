@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
 
@@ -9,7 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FilterPanel } from "@/components/collection/FilterPanel";
-import { ActionButton } from "@/components/ui/ActionButton";
+import { ActionButton, ActionLink } from "@/components/ui/ActionButton";
 import { Reveal } from "@/components/ui/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,7 +21,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 
-import { CATEGORY_BLURBS, fetchCollection } from "@/lib/catalogue";
+import { CATEGORY_BLURBS, fetchCategory, fetchCollection } from "@/lib/catalogue";
 import {
   boundsOf,
   emptyFilters,
@@ -46,8 +46,31 @@ function titleFromSlug(slug: string) {
 }
 
 export const Route = createFileRoute("/collections/$slug")({
-  head: ({ params }) => {
-    const name = titleFromSlug(params.slug);
+  /*
+   * Only the category, not the products.
+   *
+   * Enough to answer "does this collection exist?" before anything renders,
+   * which is what lets an invented URL 404 instead of returning 200 with a
+   * title invented from the slug. The pieces themselves stay in a client query,
+   * because filtering and sorting happen there anyway.
+   */
+  loader: async ({ params }) => {
+    const category = await fetchCategory(params.slug);
+    if (!category) throw notFound();
+    return { category };
+  },
+  head: ({ loaderData, params }) => {
+    /*
+     * No loaderData means the loader threw notFound(), so there is no such
+     * collection. Titling the page from the slug would name a collection that
+     * does not exist — which is how "Not A Real Collection — Al-Madina
+     * Jewellers" ended up in the markup of a 404.
+     */
+    if (!loaderData) {
+      return { meta: [{ title: `No such collection — ${SITE.name}` }] };
+    }
+
+    const name = loaderData.category.name;
     const title = `${name} — Al-Madina Jewellers`;
     const description = `Browse ${name.toLowerCase()} at Al-Madina Jewellers. Hallmarked gold, certified diamond and 925 silver with weight and stone detail on every piece. Enquire on WhatsApp.`;
     return {
@@ -63,6 +86,7 @@ export const Route = createFileRoute("/collections/$slug")({
     };
   },
   component: CollectionPage,
+  notFoundComponent: CollectionMissing,
 });
 
 function CollectionPage() {
@@ -97,8 +121,11 @@ function CollectionPage() {
   }, [filters, sort]);
 
   const shown = results.slice(0, visible);
-  const category = data?.category;
-  const heading = category?.name ?? titleFromSlug(slug);
+  // The loader proved this collection exists and gave us its real name, so the
+  // heading no longer has to be guessed from the slug while the list loads.
+  const { category: loaded } = Route.useLoaderData();
+  const category = data?.category ?? loaded;
+  const heading = category.name;
   const blurb = CATEGORY_BLURBS[slug];
 
   const clear = () => setFilters(emptyFilters(bounds));
@@ -369,5 +396,28 @@ function CollectionItemList({ heading, products }: { heading: string; products: 
       // Catalogue data, serialised. No user input reaches it.
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
     />
+  );
+}
+
+/** No collection has this slug. Served with a 404 so the URL leaves the index. */
+function CollectionMissing() {
+  return (
+    <div className="min-h-screen bg-ivory">
+      <AnnouncementBar />
+      <Header />
+      <div className="section-y mx-auto max-w-2xl px-4 text-center">
+        <h1 className="font-display text-4xl font-light tracking-wide text-primary">
+          No such collection
+        </h1>
+        <p className="mt-4 text-sm leading-relaxed text-warmgrey">
+          That link does not match anything we sell. The collections below are the current ones.
+        </p>
+        <div className="mt-10 flex justify-center">
+          <ActionLink href="/collections">Browse collections</ActionLink>
+        </div>
+      </div>
+      <Footer />
+      <FloatingWhatsApp />
+    </div>
   );
 }
