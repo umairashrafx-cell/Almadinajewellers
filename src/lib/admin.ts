@@ -635,3 +635,84 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
   const { error } = await untyped.from("orders").update({ status }).eq("id", id);
   if (error) throw readableError(error, "Could not update that order");
 }
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+export type ReviewStatus = "pending" | "approved" | "rejected";
+
+/** Everything on a review, including what the public never sees. */
+export type AdminReview = {
+  id: string;
+  product_sku: string;
+  name: string;
+  city: string | null;
+  rating: number;
+  body: string;
+  order_reference: string | null;
+  verified_purchase: boolean;
+  status: ReviewStatus;
+  created_at: string;
+};
+
+export async function fetchAllReviews(): Promise<AdminReview[]> {
+  const { data, error } = await untyped
+    .from("reviews")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw readableError(error, "Could not load reviews");
+  return (data ?? []) as AdminReview[];
+}
+
+/**
+ * Publishes, hides or re-files a review.
+ *
+ * verified_purchase travels with the decision because it is the shop's
+ * judgement, not the reviewer's claim: the submitter can supply an order
+ * reference but cannot mark themselves verified.
+ */
+export async function moderateReview(
+  id: string,
+  status: ReviewStatus,
+  verifiedPurchase?: boolean,
+): Promise<void> {
+  const patch: Record<string, unknown> = { status };
+  if (verifiedPurchase !== undefined) patch["verified_purchase"] = verifiedPurchase;
+
+  const { error } = await untyped.from("reviews").update(patch).eq("id", id);
+  if (error) throw readableError(error, "Could not update that review");
+}
+
+/** Removes a review outright, for spam that should not sit in a rejected pile. */
+export async function deleteReview(id: string): Promise<void> {
+  const { error } = await untyped.from("reviews").delete().eq("id", id);
+  if (error) throw readableError(error, "Could not delete that review");
+}
+
+/**
+ * Does this order reference exist, and does it contain this piece?
+ *
+ * Answers the only question that matters when deciding whether a review is a
+ * verified purchase, without the moderator having to open the orders screen and
+ * read a JSON blob.
+ */
+export async function checkOrderReference(
+  reference: string,
+  sku: string,
+): Promise<"match" | "order-only" | "none"> {
+  const { data, error } = await untyped
+    .from("orders")
+    .select("items")
+    .eq("reference", reference.trim())
+    .maybeSingle();
+
+  if (error || !data) return "none";
+
+  const items = (data as { items: { sku?: string }[] }).items;
+  if (!Array.isArray(items)) return "order-only";
+
+  return items.some((i) => i?.sku === sku) ? "match" : "order-only";
+}

@@ -37,12 +37,21 @@ import { useWishlist } from "@/hooks/use-wishlist";
 import { useCart } from "@/hooks/use-cart";
 import { productShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
+import { Reviews } from "@/components/product/Reviews";
+import { safeFetchReviews } from "@/lib/reviews";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/products/$slug")({
   // A loader rather than useQuery: the title, description and Product schema
   // have to be in the server-rendered HTML to be worth anything for SEO.
-  loader: ({ params }) => fetchProductPage(params.slug),
+  loader: async ({ params }) => {
+    const page = await fetchProductPage(params.slug);
+    // Sequential because the SKU is only known once the product is loaded.
+    // The reviews query is small and indexed; the alternative is a rating that
+    // exists only after hydration, which is the thing this feature is for.
+    const reviews = await safeFetchReviews(page.product.sku);
+    return { ...page, reviews };
+  },
   head: ({ loaderData, params }) => {
     const product = loaderData?.product;
     if (!product) return { meta: [{ title: `${SITE.name}` }] };
@@ -86,7 +95,7 @@ export const Route = createFileRoute("/products/$slug")({
 });
 
 function ProductDetailPage() {
-  const { product, categoryName, related } = Route.useLoaderData();
+  const { product, categoryName, related, reviews } = Route.useLoaderData();
   const { has, toggle } = useWishlist();
 
   const url = productUrl(product.slug);
@@ -224,6 +233,10 @@ function ProductDetailPage() {
               <Details product={product} />
             </div>
           </div>
+        </div>
+
+        <div className="border-t border-gold/20">
+          <Reviews sku={product.sku} productName={product.name} initial={reviews} />
         </div>
 
         {related.length > 0 && (
