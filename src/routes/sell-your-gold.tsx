@@ -390,7 +390,7 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
             <SectionHeading
               eyebrow="Why sell to us"
               title="The scale is on your side of the counter"
-              description="Al-Madina has bought and sold gold in Sarafa Market since 1985. The people who weigh your piece are the family whose name is above the door."
+              description="Al-Madina has bought and sold gold in Sarafa Market since 1980. The people who weigh your piece are the family whose name is above the door."
             />
 
             <div className="mt-14 grid gap-10 md:grid-cols-3">
@@ -404,7 +404,7 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
                   body: "We quote against the rate published on this website, which the shop updates itself. You can check it before you arrive.",
                 },
                 {
-                  title: "Since 1985",
+                  title: "Since 1980",
                   body: `${SITE.founder} opened this shop after years of hard struggle, and it has stayed in the family and in the same market ever since.`,
                 },
               ].map((item, i) => (

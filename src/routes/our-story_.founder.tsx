@@ -13,7 +13,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 import { SITE } from "@/lib/site";
 
-const FOUNDED = 1985;
+const FOUNDED = 1980;
 
 export const Route = createFileRoute("/our-story_/founder")({
   head: () => {
@@ -46,7 +46,7 @@ const PRINCIPLES = [
   },
   {
     title: "Stand behind it for life",
-    body: "A piece bought here can be brought back here. The lifetime buy-back is not a marketing line the shop added later — it is the same undertaking he gave across the counter in 1985.",
+    body: "A piece bought here can be brought back here. The lifetime buy-back is not a marketing line the shop added later — it is the same undertaking he gave across the counter in 1980.",
   },
 ];
 
@@ -105,9 +105,9 @@ function FounderPage() {
                 were leading anywhere.
               </p>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-champagne/70">
-                Four decades later the shop is run by the third generation of his family, from the
-                same market. What he built was not a shopfront. It was a way of dealing with people
-                that his sons and grandsons have not found a reason to change.
+                Four and a half decades later the shop is run by the third generation of his family,
+                from the same market. What he built was not a shopfront. It was a way of dealing
+                with people that his sons and grandsons have not found a reason to change.
               </p>
             </div>
 
