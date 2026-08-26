@@ -20,8 +20,20 @@ const NAV = [
   { label: "Stores", to: "/stores" },
 ];
 
-/** Sticky header: transparent over the hero, solid ivory once scrolled. */
-export function Header() {
+/**
+ * Sticky header: transparent over a hero, solid ivory everywhere else.
+ *
+ * `overHero` is the whole point. Three pages pull a full-bleed dark image up
+ * under the header with a negative margin, and there the wordmark and links
+ * have to be ivory to read against it. Every other page starts on the ivory
+ * ground — where ivory text is invisible, which is exactly what it was doing:
+ * the header only turned solid after forty pixels of scrolling, so the logo and
+ * navigation were missing until the visitor happened to scroll.
+ *
+ * Defaulting to solid means a page has to opt into the transparent treatment,
+ * rather than every new page silently inheriting a bug.
+ */
+export function Header({ overHero = false }: { overHero?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -35,7 +47,7 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const solid = scrolled || menuOpen;
+  const solid = !overHero || scrolled || menuOpen;
 
   return (
     <header
@@ -58,7 +70,11 @@ export function Header() {
           <span
             className={cn(
               "block text-[9px] font-medium uppercase tracking-[0.55em] transition-colors",
-              solid ? "text-warmgrey" : "text-champagne",
+              // primary/80 rather than warmgrey: at 9px with this much tracking
+              // warmgrey lands at 3.68:1 on ivory, under AA, and the half of the
+              // wordmark that names the trade should not be the hard half to
+              // read. Tying it to the brand green also holds the lockup together.
+              solid ? "text-primary/80" : "text-champagne",
             )}
           >
             Jewellers

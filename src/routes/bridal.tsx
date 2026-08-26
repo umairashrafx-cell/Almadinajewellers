@@ -62,7 +62,7 @@ function BridalPage() {
   return (
     <div className="min-h-screen bg-ivory">
       <AnnouncementBar />
-      <Header />
+      <Header overHero />
 
       <main>
         {/* Cinematic hero */}
