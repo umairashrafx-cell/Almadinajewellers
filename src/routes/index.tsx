@@ -40,7 +40,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-ivory">
       <AnnouncementBar />
-      <Header />
+      <Header overHero />
       <main>
         <Hero />
         <TrustStrip />
