@@ -92,6 +92,12 @@ function readableError(error: { code?: string; message: string }, context: strin
     );
   }
 
+  if (error.code === "23503") {
+    return new Error(
+      "Something still points at this. A category cannot be removed while pieces are filed in it.",
+    );
+  }
+
   if (error.code === "23505") {
     const field = /slug/i.test(error.message) ? "web address" : "SKU";
     return new Error(`Another product already uses that ${field}.`);
@@ -473,6 +479,15 @@ export async function prepareProductImage(file: File): Promise<PreparedImage> {
  * that a cached page is still pointing at.
  */
 export async function uploadProductImage(file: File, sku: string): Promise<string> {
+  return uploadImage(file, slugify(sku) || "unfiled");
+}
+
+/** Category artwork, in its own folder so it is obvious what a file is for. */
+export async function uploadCategoryImage(file: File, slug: string): Promise<string> {
+  return uploadImage(file, `categories/${slugify(slug) || "unfiled"}`);
+}
+
+async function uploadImage(file: File, folder: string): Promise<string> {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     throw new Error("Images must be JPEG, PNG, WebP or AVIF.");
   }
@@ -482,7 +497,6 @@ export async function uploadProductImage(file: File, sku: string): Promise<strin
   }
 
   const { blob, extension, contentType } = await prepareProductImage(file);
-  const folder = slugify(sku) || "unfiled";
   const path = `${folder}/${crypto.randomUUID()}.${extension}`;
 
   const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).upload(path, blob, {
@@ -719,4 +733,98 @@ export async function checkOrderReference(
   if (!Array.isArray(items)) return "order-only";
 
   return items.some((i) => i?.sku === sku) ? "match" : "order-only";
+}
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+export const categoryFormSchema = z.object({
+  name: text.min(2, "Please enter a name.").max(60, "That name is too long."),
+  slug: text
+    .min(2, "Please enter a web address.")
+    .max(60, "That web address is too long.")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, numbers and hyphens only."),
+  /** "" means top level. */
+  parentSlug: z.string().max(60),
+  sortOrder: text
+    .refine((v) => v === "" || Number.isFinite(Number(v)), "Enter a number.")
+    .refine((v) => v === "" || Number(v) >= 0, "That cannot be negative."),
+  imageKey: text.min(1, "Choose an image."),
+});
+
+export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
+
+export function categoryToForm(row: AdminCategory): CategoryFormValues {
+  return {
+    name: row.name,
+    slug: row.slug,
+    parentSlug: row.parent_slug ?? "",
+    sortOrder: String(row.sort_order ?? 0),
+    imageKey: row.image_key,
+  };
+}
+
+export function blankCategoryForm(): CategoryFormValues {
+  return { name: "", slug: "", parentSlug: "", sortOrder: "", imageKey: "bridal" };
+}
+
+/**
+ * Creates or updates a category.
+ *
+ * The slug is only writable on creation. It is the primary key, products point
+ * at it with no ON UPDATE rule, and renaming one would strand every piece filed
+ * against it — so the form locks it afterwards and this refuses to change it
+ * even if something else tried.
+ */
+export async function saveCategory(
+  values: CategoryFormValues,
+  originalSlug?: string,
+): Promise<void> {
+  const row = {
+    name: values.name.trim(),
+    image_key: values.imageKey.trim(),
+    sort_order: toNumber(values.sortOrder) ?? 0,
+    parent_slug: values.parentSlug ? values.parentSlug : null,
+  };
+
+  if (originalSlug) {
+    const { error } = await untyped.from("categories").update(row).eq("slug", originalSlug);
+    if (error) throw readableError(error, "Could not save that category");
+    return;
+  }
+
+  const { error } = await untyped.from("categories").insert({ ...row, slug: values.slug.trim() });
+
+  if (error) throw readableError(error, "Could not create that category");
+}
+
+/**
+ * How many pieces sit in each category.
+ *
+ * Read before offering to delete one: the foreign key would refuse it anyway,
+ * but a screen that says "12 pieces are filed here" is more use than one that
+ * offers a button and then reports a constraint violation.
+ */
+export async function countProductsByCategory(): Promise<Record<string, number>> {
+  const { data, error } = await untyped.from("products").select("category_slug");
+  if (error) throw readableError(error, "Could not count products");
+
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as { category_slug: string }[]) {
+    counts[row.category_slug] = (counts[row.category_slug] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/**
+ * Removes a category.
+ *
+ * Sub-categories are not deleted with it — the foreign key sets their parent to
+ * null, so they become top-level rather than disappearing along with everything
+ * filed in them. The screen says so before asking.
+ */
+export async function deleteCategory(slug: string): Promise<void> {
+  const { error } = await untyped.from("categories").delete().eq("slug", slug);
+  if (error) throw readableError(error, "Could not delete that category");
 }

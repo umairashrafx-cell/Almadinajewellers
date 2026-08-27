@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Plus, Upload, X } from "lucide-react";
 
-import { Banner, Card, Chip, FieldError, PageHeading } from "@/components/admin/ui";
+import { Banner, Card, Chip, FieldError, PageHeading, Select } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -714,13 +714,3 @@ function Field({
     </label>
   );
 }
-
-const Select = ({ className, ...props }: ComponentProps<"select">) => (
-  <select
-    {...props}
-    className={cn(
-      "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-      className,
-    )}
-  />
-);
