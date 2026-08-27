@@ -6,7 +6,10 @@ import { SITE } from "@/lib/site";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCart } from "@/hooks/use-cart";
 import { SearchOverlay } from "@/components/layout/SearchOverlay";
-import { categories } from "@/data/products";
+import { useQuery } from "@tanstack/react-query";
+
+import { categoryTree, fetchCategories } from "@/lib/catalogue";
+import { categories as fallbackCategories } from "@/data/products";
 import { cn } from "@/lib/utils";
 
 // Items still pointing at "/" are placeholders until those pages are built.
@@ -39,6 +42,23 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const { skus } = useWishlist();
   const { count: cartCount } = useCart();
+
+  /*
+   * The mega menu used a hardcoded list that happened to match the database.
+   * It stopped matching the moment a category was added — the new one appeared
+   * on /collections and nowhere anyone would look for it. It reads the live
+   * categories now, falling back to the bundled list only if the query has not
+   * answered yet, so the menu is never empty on first paint.
+   */
+  const { data: liveCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const tree = categoryTree(
+    liveCategories ?? fallbackCategories.map((c, i) => ({ ...c, sortOrder: i, parentSlug: null })),
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -102,16 +122,32 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
               {item.mega && (
                 <div className="invisible absolute left-1/2 top-full w-[560px] -translate-x-1/2 border border-gold/30 bg-ivory p-8 opacity-0 shadow-[var(--shadow-soft)] transition-opacity duration-300 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                   <p className="text-[11px] uppercase tracking-[0.3em] text-gold">Collections</p>
-                  <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-3">
-                    {categories.map((c) => (
-                      <Link
-                        key={c.slug}
-                        to="/collections/$slug"
-                        params={{ slug: c.slug }}
-                        className="font-display text-lg text-primary transition-colors hover:text-gold"
-                      >
-                        {c.name}
-                      </Link>
+                  <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
+                    {tree.map((c) => (
+                      <div key={c.slug}>
+                        <Link
+                          to="/collections/$slug"
+                          params={{ slug: c.slug }}
+                          className="font-display text-lg text-primary transition-colors hover:text-gold"
+                        >
+                          {c.name}
+                        </Link>
+                        {c.children.length > 0 ? (
+                          <ul className="mt-1.5 space-y-1">
+                            {c.children.map((child) => (
+                              <li key={child.slug}>
+                                <Link
+                                  to="/collections/$slug"
+                                  params={{ slug: child.slug }}
+                                  className="text-sm text-warmgrey transition-colors hover:text-gold"
+                                >
+                                  {child.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                 </div>

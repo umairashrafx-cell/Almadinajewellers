@@ -21,7 +21,7 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 
-import { CATEGORY_BLURBS, fetchCategory, fetchCollection } from "@/lib/catalogue";
+import { CATEGORY_BLURBS, fetchCategoryWithChildren, fetchCollection } from "@/lib/catalogue";
 import {
   boundsOf,
   emptyFilters,
@@ -55,9 +55,9 @@ export const Route = createFileRoute("/collections/$slug")({
    * because filtering and sorting happen there anyway.
    */
   loader: async ({ params }) => {
-    const category = await fetchCategory(params.slug);
-    if (!category) throw notFound();
-    return { category };
+    const found = await fetchCategoryWithChildren(params.slug);
+    if (!found) throw notFound();
+    return found;
   },
   head: ({ loaderData, params }) => {
     /*
@@ -123,10 +123,12 @@ function CollectionPage() {
   const shown = results.slice(0, visible);
   // The loader proved this collection exists and gave us its real name, so the
   // heading no longer has to be guessed from the slug while the list loads.
-  const { category: loaded } = Route.useLoaderData();
+  const { category: loaded, children: loadedChildren, parent } = Route.useLoaderData();
   const category = data?.category ?? loaded;
   const heading = category.name;
   const blurb = CATEGORY_BLURBS[slug];
+  // From the loader, so the links are in the server HTML from the first byte.
+  const children = data?.children ?? loadedChildren;
 
   const clear = () => setFilters(emptyFilters(bounds));
 
@@ -138,6 +140,8 @@ function CollectionPage() {
       <BreadcrumbSchema
         trail={[
           { name: "Collections", path: "/collections" },
+          // A sub-category sits under its parent, in the markup as on the page.
+          ...(parent ? [{ name: parent.name, path: `/collections/${parent.slug}` }] : []),
           { name: heading, path: `/collections/${slug}` },
         ]}
       />
@@ -161,6 +165,20 @@ function CollectionPage() {
                   </Link>
                 </li>
                 <ChevronRight className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                {parent ? (
+                  <>
+                    <li>
+                      <Link
+                        to="/collections/$slug"
+                        params={{ slug: parent.slug }}
+                        className="transition-colors hover:text-gold"
+                      >
+                        {parent.name}
+                      </Link>
+                    </li>
+                    <ChevronRight className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                  </>
+                ) : null}
                 <li aria-current="page" className="text-gold">
                   {heading}
                 </li>
@@ -173,6 +191,30 @@ function CollectionPage() {
             {blurb && (
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-champagne/80">{blurb}</p>
             )}
+
+            {/*
+              The kinds within this collection, where there are any. Shown as
+              links rather than filters because they are how customers name what
+              they want at the counter — someone asking for a mala set is not
+              narrowing a list of necklaces, they are asking for a mala set.
+            */}
+            {children.length > 0 ? (
+              <nav aria-label={`Kinds of ${heading}`} className="mt-8">
+                <ul className="flex flex-wrap gap-2">
+                  {children.map((child) => (
+                    <li key={child.slug}>
+                      <Link
+                        to="/collections/$slug"
+                        params={{ slug: child.slug }}
+                        className="inline-block rounded-full border border-gold/50 px-4 py-2 text-[12px] font-medium uppercase tracking-widest text-champagne transition-colors hover:bg-gold hover:text-primary"
+                      >
+                        {child.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ) : null}
           </div>
         </section>
 

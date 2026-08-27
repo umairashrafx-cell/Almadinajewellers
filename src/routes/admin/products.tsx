@@ -370,13 +370,36 @@ function ProductForm({
             <Input {...register("sku")} className="uppercase" />
           </Field>
 
-          <Field label="Category" error={errors.categorySlug?.message}>
+          <Field
+            label="Category"
+            error={errors.categorySlug?.message}
+            hint="File a piece under the most specific one. A necklace set belongs in its kind — Chokar, Mala, Short or Ghani — and shows on the Necklace Set page as well."
+          >
             <Select {...register("categorySlug")}>
-              {categories.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
+              {/*
+                Grouped by parent so the four kinds of necklace set read as
+                belonging to it, rather than as four more categories sitting
+                alongside Rings.
+              */}
+              {categories
+                .filter((c) => !c.parent_slug)
+                .map((parent) => {
+                  const children = categories.filter((c) => c.parent_slug === parent.slug);
+                  return children.length === 0 ? (
+                    <option key={parent.slug} value={parent.slug}>
+                      {parent.name}
+                    </option>
+                  ) : (
+                    <optgroup key={parent.slug} label={parent.name}>
+                      <option value={parent.slug}>{parent.name} — unsorted</option>
+                      {children.map((child) => (
+                        <option key={child.slug} value={child.slug}>
+                          {child.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
             </Select>
           </Field>
         </Section>
