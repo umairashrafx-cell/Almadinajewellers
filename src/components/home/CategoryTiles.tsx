@@ -1,17 +1,37 @@
 import { Link } from "@tanstack/react-router";
-import { categories } from "@/data/products";
+import { useQuery } from "@tanstack/react-query";
+
+import { categoryTree, fetchCategories } from "@/lib/catalogue";
+import { categories as fallbackCategories } from "@/data/products";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 
-/** Six tall image tiles with the category name overlaid. */
+/**
+ * Tall image tiles, one per top-level category.
+ *
+ * Reads the live categories rather than the bundled list, so a category added
+ * to the catalogue appears here too. Sub-categories are deliberately left out:
+ * this is the front door, and the four kinds of necklace set are a decision to
+ * make on the Necklace Set page rather than on the way to it.
+ */
 export function CategoryTiles() {
+  const { data } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const tiles = categoryTree(
+    data ?? fallbackCategories.map((c, i) => ({ ...c, sortOrder: i, parentSlug: null })),
+  );
+
   return (
     <section id="categories" className="section-y scroll-mt-24 bg-ivory">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading eyebrow="The House" title="Shop by Category" />
 
         <div className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6">
-          {categories.map((cat, i) => (
+          {tiles.map((cat, i) => (
             <Reveal key={cat.slug} delay={(i % 3) * 80}>
               <Link
                 to="/collections/$slug"

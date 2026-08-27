@@ -7,7 +7,16 @@ import silver from "@/assets/cat-silver.jpg";
 import heroBridal from "@/assets/hero-bridal.jpg";
 
 import type { Product } from "@/data/products";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * categories.parent_slug is newer than the generated Database type, which the
+ * platform regenerates and must not be hand-edited. Only the category queries
+ * go through this; everything else here stays fully typed.
+ */
+const untypedDb = supabase as unknown as SupabaseClient;
 import { fetchRateSnapshot, type RateSnapshot } from "@/lib/rates";
 import { livePriceFor, liveSalePrice } from "@/lib/pricing";
 
@@ -55,7 +64,12 @@ export type Category = {
   name: string;
   image: string;
   sortOrder: number;
+  /** null for a top-level category; the parent's slug for a sub-category. */
+  parentSlug: string | null;
 };
+
+/** A top-level category with whatever sits under it. */
+export type CategoryTree = Category & { children: Category[] };
 
 type ProductRow = {
   net_weight_g?: number | null;
@@ -169,23 +183,55 @@ async function safeRateSnapshot(): Promise<RateSnapshot | undefined> {
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const { data, error } = await supabase
+  const { data, error } = await untypedDb
     .from("categories")
-    .select("slug, name, image_key, sort_order")
+    .select("slug, name, image_key, sort_order, parent_slug")
     .order("sort_order");
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((c) => ({
+  return ((data ?? []) as CategoryRow[]).map(toCategory);
+}
+
+type CategoryRow = {
+  slug: string;
+  name: string;
+  image_key: string;
+  sort_order: number;
+  parent_slug?: string | null;
+};
+
+function toCategory(c: CategoryRow): Category {
+  return {
     slug: c.slug,
     name: c.name,
     image: imageFor(c.image_key),
     sortOrder: c.sort_order,
+    parentSlug: c.parent_slug ?? null,
+  };
+}
+
+/**
+ * The categories arranged as one level of nesting.
+ *
+ * Everything that renders navigation wants this shape rather than the flat
+ * list, and building it in one place keeps the header, the home tiles and the
+ * collections index from each inventing their own version.
+ */
+export function categoryTree(all: Category[]): CategoryTree[] {
+  const tops = all.filter((c) => !c.parentSlug).sort((a, b) => a.sortOrder - b.sortOrder);
+  return tops.map((top) => ({
+    ...top,
+    children: all
+      .filter((c) => c.parentSlug === top.slug)
+      .sort((a, b) => a.sortOrder - b.sortOrder),
   }));
 }
 
 export type CollectionData = {
   category: Category;
+  /** Sub-categories of this one, empty for a leaf or a childless category. */
+  children: Category[];
   products: Product[];
 };
 
@@ -203,54 +249,114 @@ export type CollectionData = {
  * made-up name.
  */
 export async function fetchCategory(slug: string): Promise<Category | null> {
-  const { data, error } = await supabase
+  const { data, error } = await untypedDb
     .from("categories")
-    .select("slug, name, image_key, sort_order")
+    .select("slug, name, image_key, sort_order, parent_slug")
     .eq("slug", slug)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) return null;
 
+  return toCategory(data as CategoryRow);
+}
+
+/**
+ * A category and whatever sits under it, without the products.
+ *
+ * The collection route's loader uses this: it needs the real name before
+ * rendering, and the sub-category links belong in the server's HTML so they
+ * are followable rather than appearing only once the client query lands.
+ */
+export async function fetchCategoryWithChildren(
+  slug: string,
+): Promise<{ category: Category; children: Category[]; parent: Category | null } | null> {
+  const [categoryResult, childrenResult] = await Promise.all([
+    untypedDb
+      .from("categories")
+      .select("slug, name, image_key, sort_order, parent_slug")
+      .eq("slug", slug)
+      .maybeSingle(),
+    untypedDb
+      .from("categories")
+      .select("slug, name, image_key, sort_order, parent_slug")
+      .eq("parent_slug", slug)
+      .order("sort_order"),
+  ]);
+
+  if (categoryResult.error) throw new Error(categoryResult.error.message);
+  if (!categoryResult.data) return null;
+
+  const category = toCategory(categoryResult.data as CategoryRow);
+
+  // A sub-category's breadcrumb should pass through its parent rather than
+  // jumping from Collections straight to Chokar Set.
+  let parent: Category | null = null;
+  if (category.parentSlug) {
+    const { data } = await untypedDb
+      .from("categories")
+      .select("slug, name, image_key, sort_order, parent_slug")
+      .eq("slug", category.parentSlug)
+      .maybeSingle();
+    if (data) parent = toCategory(data as CategoryRow);
+  }
+
   return {
-    slug: data.slug,
-    name: data.name,
-    image: imageFor(data.image_key),
-    sortOrder: data.sort_order ?? 0,
+    category,
+    children: ((childrenResult.data ?? []) as CategoryRow[]).map(toCategory),
+    parent,
   };
 }
 
 export async function fetchCollection(slug: string): Promise<CollectionData> {
-  const [snapshot, categoryResult, productsResult] = await Promise.all([
+  const [snapshot, categoryResult, childrenResult] = await Promise.all([
     safeRateSnapshot(),
-    supabase
+    untypedDb
       .from("categories")
-      .select("slug, name, image_key, sort_order")
+      .select("slug, name, image_key, sort_order, parent_slug")
       .eq("slug", slug)
       .maybeSingle(),
-    supabase
-      .from("products")
-      .select(BASE_COLUMNS)
-      .eq("category_slug", slug)
-      .order("created_at", { ascending: false }),
+    untypedDb
+      .from("categories")
+      .select("slug, name, image_key, sort_order, parent_slug")
+      .eq("parent_slug", slug)
+      .order("sort_order"),
   ]);
 
   if (categoryResult.error) throw new Error(categoryResult.error.message);
-  if (productsResult.error) throw new Error(productsResult.error.message);
   if (!categoryResult.data) throw new Error(`No collection found for "${slug}".`);
 
-  const category: Category = {
-    slug: categoryResult.data.slug,
-    name: categoryResult.data.name,
-    image: imageFor(categoryResult.data.image_key),
-    sortOrder: categoryResult.data.sort_order,
-  };
+  const category = toCategory(categoryResult.data as CategoryRow);
+  const children = ((childrenResult.data ?? []) as CategoryRow[]).map(toCategory);
+
+  /*
+   * A parent shows everything underneath it.
+   *
+   * Products are filed against one category, and for Necklace Set that will
+   * always be one of the four kinds — nothing is filed against the parent
+   * itself. Asking only for category_slug = 'necklace-set' would return an
+   * empty collection while four full ones sat inside it.
+   */
+  const slugs = [slug, ...children.map((c) => c.slug)];
+
+  const productsResult = await supabase
+    .from("products")
+    .select(BASE_COLUMNS)
+    .in("category_slug", slugs)
+    .order("created_at", { ascending: false });
+
+  if (productsResult.error) throw new Error(productsResult.error.message);
+
+  // A piece filed under Chokar Set should say so, not say "Necklace Set".
+  const names = new Map([category, ...children].map((c) => [c.slug, c.name]));
 
   return {
     category,
-    products: (productsResult.data ?? []).map((row) =>
-      mapProduct(row as ProductRow, category.name, snapshot),
-    ),
+    children,
+    products: (productsResult.data ?? []).map((row) => {
+      const r = row as ProductRow;
+      return mapProduct(r, names.get(r.category_slug) ?? category.name, snapshot);
+    }),
   };
 }
 

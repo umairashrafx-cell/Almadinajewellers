@@ -111,7 +111,11 @@ function readableError(error: { code?: string; message: string }, context: strin
 // ---------------------------------------------------------------------------
 
 export type AdminProduct = Tables<"products">;
-export type AdminCategory = Tables<"categories">;
+/**
+ * parent_slug is newer than the generated Database type, so it is declared
+ * alongside rather than waiting for a regeneration.
+ */
+export type AdminCategory = Tables<"categories"> & { parent_slug?: string | null };
 
 export const METALS = ["gold", "silver", "diamond"] as const;
 export const KARATS = ["24K", "22K", "21K", "18K", "925"] as const;
@@ -352,10 +356,10 @@ export async function fetchAdminProducts(): Promise<AdminProduct[]> {
 }
 
 export async function fetchAdminCategories(): Promise<AdminCategory[]> {
-  const { data, error } = await supabase.from("categories").select("*").order("sort_order");
+  const { data, error } = await untyped.from("categories").select("*").order("sort_order");
 
   if (error) throw readableError(error, "Could not load categories");
-  return data ?? [];
+  return (data ?? []) as AdminCategory[];
 }
 
 /** Inserts when `id` is absent, updates that row when it is present. */
