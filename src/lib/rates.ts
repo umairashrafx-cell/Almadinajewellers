@@ -24,6 +24,18 @@ type RateRow = {
 export const TOLA_IN_GRAMS = 11.6638;
 
 /**
+ * Rates are quoted to the hundred rupee, rounded down.
+ *
+ * A derived rate lands on figures like 472,015 and 439,083, which is not how a
+ * rate is spoken or written on a board. Down rather than to the nearest,
+ * because the rounding should never quote a customer more than the arithmetic
+ * gives — 439,083 becomes 439,000, not 439,100.
+ */
+export function roundRateToHundred(perTola: number): number {
+  return Math.floor(perTola / 100) * 100;
+}
+
+/**
  * The gold the shop trades, in the order the board shows it.
  *
  * 21K and 18K are gone. They were never rates the shop quoted — they were

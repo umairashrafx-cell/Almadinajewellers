@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { perGramFromTola, publishRates } from "@/lib/admin";
-import { RATE_BOARD, fetchRateSnapshot, formatRateDate } from "@/lib/rates";
+import { RATE_BOARD, fetchRateSnapshot, formatRateDate, roundRateToHundred } from "@/lib/rates";
 import { formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +69,9 @@ function RatesScreen() {
    * Most days the shop is told one number and the rest follow from it. Silver
    * is not touched: it is a different metal with its own market, not a fraction
    * of the gold rate.
+   *
+   * Both land on the hundred, rounded down, because a rate reads as a rate
+   * rather than as the output of a division.
    */
   function deriveFrom24k() {
     const anchor = Number(tola["24K"]);
@@ -79,8 +82,8 @@ function RatesScreen() {
 
     setTola((current) => ({
       ...current,
-      "23.65K": String(Math.round((anchor * 23.65) / 24)),
-      "22K": String(Math.round((anchor * 22) / 24)),
+      "23.65K": String(roundRateToHundred((anchor * 23.65) / 24)),
+      "22K": String(roundRateToHundred((anchor * 22) / 24)),
     }));
     setStatus(null);
   }
