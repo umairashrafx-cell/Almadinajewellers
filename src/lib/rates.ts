@@ -23,8 +23,28 @@ type RateRow = {
 /** 1 tola = 11.6638 g. Older buyers still price in tola. */
 export const TOLA_IN_GRAMS = 11.6638;
 
-/** Karats shown on the public rate table, in display order. */
-export const GOLD_KARATS = ["24K", "22K", "21K", "18K"] as const;
+/**
+ * The gold the shop trades, in the order the board shows it.
+ *
+ * 21K and 18K are gone. They were never rates the shop quoted — they were
+ * derived from 24K to fill a table — and the board a customer reads should be
+ * the one behind the counter.
+ */
+export const GOLD_KARATS = ["24K", "23.65K", "22K"] as const;
+
+/**
+ * The rate board, as the shop names it.
+ *
+ * Customers here ask for a piece, for pathor, for jewellery — not for a karat.
+ * The purity is what settles an argument, so it is printed small beside the
+ * name rather than instead of it.
+ */
+export const RATE_BOARD = [
+  { karat: "24K", name: "Piece", mark: "24k" },
+  { karat: "23.65K", name: "Pathor", mark: "23.65k" },
+  { karat: "22K", name: "Jewellery", mark: "22k" },
+  { karat: "999", name: "Silver", mark: "999.0" },
+] as const;
 
 export type MetalRate = {
   /** "22K" for gold, "925" for sterling silver. */
@@ -54,11 +74,13 @@ export type RateSnapshot = {
  */
 export const FALLBACK_SNAPSHOT: RateSnapshot = {
   date: "",
+  // The board's three gold rows. 21K and 18K are gone from here too: a
+  // fallback that quotes rates the shop no longer publishes would put figures
+  // on the page that nobody stands behind.
   rates: [
     { karat: "24K", perGram: 38581, perTola: 450000 },
+    { karat: "23.65K", perGram: 38018, perTola: 443437 },
     { karat: "22K", perGram: 35366, perTola: 412500 },
-    { karat: "21K", perGram: 33758, perTola: 393750 },
-    { karat: "18K", perGram: 28936, perTola: 337500 },
   ],
 };
 
@@ -171,6 +193,24 @@ export function goldOnly(snapshot: RateSnapshot): MetalRate[] {
   return GOLD_KARATS.map((k) => snapshot.rates.find((r) => r.karat === k)).filter(
     (r): r is MetalRate => Boolean(r),
   );
+}
+
+/**
+ * The board's rows, each with whatever rate has been published for it.
+ *
+ * A row with no rate yet keeps its place and reports undefined, so silver
+ * shows an em dash on the board rather than vanishing from it — an absent row
+ * reads as "we do not deal in this", which is the wrong message.
+ */
+export function rateBoard(
+  snapshot: RateSnapshot | undefined,
+): { name: string; mark: string; karat: string; rate: MetalRate | undefined }[] {
+  return RATE_BOARD.map((row) => ({
+    name: row.name,
+    mark: row.mark,
+    karat: row.karat,
+    rate: snapshot?.rates.find((r) => r.karat === row.karat),
+  }));
 }
 
 export function rateFor(snapshot: RateSnapshot | undefined, karat: string): MetalRate | undefined {

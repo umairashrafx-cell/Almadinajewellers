@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { perGramFromTola, publishRates } from "@/lib/admin";
-import { GOLD_KARATS, fetchRateSnapshot, formatRateDate } from "@/lib/rates";
+import { RATE_BOARD, fetchRateSnapshot, formatRateDate } from "@/lib/rates";
 import { formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +19,11 @@ export const Route = createFileRoute("/admin/rates")({
 
 /** Every metal the catalogue prices against, in the order they are shown. */
 const KARAT_ROWS: { karat: string; label: string }[] = [
-  ...GOLD_KARATS.map((k) => ({ karat: k, label: `${k} gold` })),
-  { karat: "925", label: "925 silver" },
+  ...RATE_BOARD.map((r) => ({ karat: r.karat, label: `${r.name} — ${r.mark}` })),
+  // Sterling is what the silver pieces are stamped, and it is kept separate
+  // from the 999 the board quotes. It is not priced against the rate, but the
+  // shop still records it.
+  { karat: "925", label: "925 sterling silver" },
 ];
 
 /** Local calendar date as YYYY-MM-DD. Not UTC — the shop publishes its own day. */
@@ -61,22 +64,23 @@ function RatesScreen() {
   }
 
   /**
-   * Fills 22K, 21K and 18K from the 24K figure by purity ratio. Most days the
-   * shop is told one number; the rest follow from it arithmetically, and doing
-   * it here keeps the four rows internally consistent.
+   * Fills Pathor and Jewellery from the Piece figure by purity ratio.
+   *
+   * Most days the shop is told one number and the rest follow from it. Silver
+   * is not touched: it is a different metal with its own market, not a fraction
+   * of the gold rate.
    */
   function deriveFrom24k() {
     const anchor = Number(tola["24K"]);
     if (!anchor || anchor <= 0) {
-      setStatus({ tone: "error", text: "Enter the 24K per-tola rate first." });
+      setStatus({ tone: "error", text: "Enter the Piece (24k) per-tola rate first." });
       return;
     }
 
     setTola((current) => ({
       ...current,
+      "23.65K": String(Math.round((anchor * 23.65) / 24)),
       "22K": String(Math.round((anchor * 22) / 24)),
-      "21K": String(Math.round((anchor * 21) / 24)),
-      "18K": String(Math.round((anchor * 18) / 24)),
     }));
     setStatus(null);
   }
@@ -190,7 +194,7 @@ function RatesScreen() {
               Publish rates
             </Button>
             <Button variant="outline" onClick={deriveFrom24k}>
-              Fill 22K / 21K / 18K from 24K
+              Fill Pathor & Jewellery from Piece
             </Button>
             <Button variant="outline" onClick={copyPublished} disabled={!published}>
               Start from published
