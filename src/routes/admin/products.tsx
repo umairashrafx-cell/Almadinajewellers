@@ -34,7 +34,7 @@ import {
 import { imageFor } from "@/lib/catalogue";
 import { fetchRateSnapshot, rateFor } from "@/lib/rates";
 import { formatPKR } from "@/lib/site";
-import { tracksMetalRate } from "@/lib/pricing";
+import { pricedWeightFor, tracksMetalRate } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/products")({
@@ -217,6 +217,10 @@ function ProductForm({
   const imageKeys = watch("imageKeys") ?? [];
   const making = makingChargesFor(watch());
   const grossWeight = grossWeightFor(watch());
+  const pricedWeight = (() => {
+    const net = toNumber(watch("netWeightG"));
+    return net === undefined ? undefined : pricedWeightFor(net, toNumber(watch("polishGPerTola")));
+  })();
   const discount = toNumber(watch("discountPkr"));
   const listedPrice = toNumber(watch("pricePkr"));
 
@@ -311,11 +315,13 @@ function ProductForm({
       return;
     }
 
-    const weight = toNumber(values.netWeightG);
-    if (!weight) {
-      setFailure("Enter a weight first.");
+    // Metal plus polish — the same weight the storefront charges the rate on.
+    const net = toNumber(values.netWeightG);
+    if (!net) {
+      setFailure("Enter a net metal weight first.");
       return;
     }
+    const weight = pricedWeightFor(net, toNumber(values.polishGPerTola));
 
     setFailure(null);
     setValue("rateBasisPkrPerG", String(rate.perGram), { shouldValidate: true });
@@ -455,6 +461,15 @@ function ProductForm({
               Calculated, never typed: net metal, plus the stones, plus the polish on each tola of
               net. This is the figure that goes on the bill and on the page.
             </p>
+            {pricedWeight !== undefined && pricedWeight > 0 ? (
+              <p className="mt-2 text-sm">
+                <span className="text-muted-foreground">Charged at the gold rate: </span>
+                <span className="nums font-medium text-primary">{pricedWeight.toFixed(3)} g</span>
+                <span className="ml-2 text-xs text-muted-foreground">
+                  metal plus polish — stones are not priced as gold
+                </span>
+              </p>
+            ) : null}
           </div>
 
           <Field

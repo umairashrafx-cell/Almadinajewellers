@@ -25,13 +25,34 @@ export type PriceParts = {
   metal: string;
   karat: string;
   netWeightG: number;
+  /** Grams of polish per tola of net metal. Priced at the gold rate. */
+  polishGPerTola?: number | null | undefined;
   makingChargesPkr: number;
   stoneValuePkr: number;
 };
 
+/** Grams to the tola, the same constant the admin form calculates with. */
+const TOLA_G = 11.6638;
+
+/**
+ * The weight the gold rate is charged on: metal plus polish.
+ *
+ * Polish is gold laid on the piece in finishing, so it is weighed and paid for
+ * at the rate like the rest of the gold. Stones are not — they are the other
+ * part of the gross weight and carry their own value.
+ *
+ *     priced = net + (net / tola) x polish        = gross - stones
+ */
+export function pricedWeightFor(netWeightG: number, polishGPerTola?: number | null): number {
+  const polish = (netWeightG / TOLA_G) * (polishGPerTola ?? 0);
+  return Math.round((netWeightG + polish) * 1000) / 1000;
+}
+
 export type LivePrice = {
   pricePkr: number;
   metalValuePkr: number;
+  /** Net metal plus polish — the grams the rate was applied to. */
+  pricedWeightG: number;
   /** The per-gram rate this price was built from — today's, by definition. */
   ratePerGram: number;
 };
@@ -64,10 +85,12 @@ export function livePriceFor(
   const rate = rateFor(snapshot, parts.karat);
   if (!rate?.perGram) return undefined;
 
-  const metalValuePkr = Math.round(parts.netWeightG * rate.perGram);
+  const pricedWeightG = pricedWeightFor(parts.netWeightG, parts.polishGPerTola);
+  const metalValuePkr = Math.round(pricedWeightG * rate.perGram);
 
   return {
     metalValuePkr,
+    pricedWeightG,
     pricePkr: metalValuePkr + parts.makingChargesPkr + parts.stoneValuePkr,
     ratePerGram: rate.perGram,
   };
