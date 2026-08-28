@@ -19,6 +19,9 @@ export function EverydayGold() {
   // The eyebrow quotes the real entry price rather than a fixed claim.
   const from = products.length > 0 ? products[0]! : undefined;
 
+  // Nothing to show means no section, rather than a heading over a blank grid.
+  if (!isPending && products.length === 0) return null;
+
   return (
     <section className="section-y bg-ivory">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

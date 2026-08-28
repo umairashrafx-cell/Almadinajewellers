@@ -304,7 +304,11 @@ function CollectionPage() {
               ) : isPending ? (
                 <GridSkeleton />
               ) : results.length === 0 ? (
-                <EmptyState onClear={clear} />
+                products.length === 0 ? (
+                  <NoPieces />
+                ) : (
+                  <EmptyState onClear={clear} />
+                )
               ) : (
                 <>
                   <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:gap-x-6 xl:grid-cols-4">
@@ -367,6 +371,32 @@ function FilterSkeleton() {
           <Skeleton className="mt-2 h-4 w-4/6" />
         </div>
       ))}
+    </div>
+  );
+}
+
+/*
+ * The collection itself is empty — no filter is hiding anything. Offering to
+ * clear filters here sends people to a button that cannot change the answer,
+ * so this says the piece simply is not on the site yet and points at the
+ * things that will help: the rest of the catalogue, or asking us directly.
+ */
+function NoPieces() {
+  return (
+    <div className="py-24 text-center">
+      <h2 className="font-display text-2xl font-light text-primary">
+        Nothing in this collection yet
+      </h2>
+      <p className="mx-auto mt-3 max-w-md text-sm text-warmgrey">
+        We are photographing new pieces for it. In the meantime we almost certainly have something
+        in the shop — tell us what you are looking for and we will send pictures.
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <ActionLink variant="outline" href="/collections">
+          Browse all collections
+        </ActionLink>
+        <ActionLink href="/custom-order">Have a piece made</ActionLink>
+      </div>
     </div>
   );
 }
