@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PRODUCT_IMAGE_BUCKET } from "@/lib/catalogue";
-import { TOLA_IN_GRAMS } from "@/lib/rates";
+import { TOLA_IN_GRAMS, roundRateToHundred } from "@/lib/rates";
 import type { Tables } from "@/integrations/supabase/types";
 
 /**
@@ -579,12 +579,21 @@ export function perGramFromTola(perTola: number): number {
 export async function publishRates(rateDate: string, drafts: RateDraft[]): Promise<void> {
   const rows = drafts
     .filter((d) => d.perTola > 0)
-    .map((d) => ({
-      rate_date: rateDate,
-      karat: d.karat,
-      rate_per_tola_pkr: Math.round(d.perTola),
-      rate_per_gram_pkr: perGramFromTola(d.perTola),
-    }));
+    .map((d) => {
+      /*
+       * Rounded here rather than only in the form, so the rule holds however a
+       * rate arrives — derived, typed, or corrected later in the day. Per gram
+       * follows from the rounded tola, so the two figures on the board are
+       * always the same number expressed two ways.
+       */
+      const perTola = roundRateToHundred(d.perTola);
+      return {
+        rate_date: rateDate,
+        karat: d.karat,
+        rate_per_tola_pkr: perTola,
+        rate_per_gram_pkr: perGramFromTola(perTola),
+      };
+    });
 
   if (rows.length === 0) throw new Error("Enter at least one rate.");
 
