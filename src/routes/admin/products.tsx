@@ -18,6 +18,7 @@ import {
   deleteProduct,
   fetchAdminCategories,
   fetchAdminProducts,
+  grossWeightFor,
   makingChargesFor,
   productFormSchema,
   productToForm,
@@ -215,6 +216,9 @@ function ProductForm({
 
   const imageKeys = watch("imageKeys") ?? [];
   const making = makingChargesFor(watch());
+  const grossWeight = grossWeightFor(watch());
+  const discount = toNumber(watch("discountPkr"));
+  const listedPrice = toNumber(watch("pricePkr"));
 
   /*
    * Whether this piece will re-price with the gold rate.
@@ -228,8 +232,7 @@ function ProductForm({
    */
   const metal = watch("metal");
   const tracksRate = tracksMetalRate(metal);
-  const willTrackRate =
-    making !== undefined && Boolean(toNumber(watch("netWeightG") || watch("grossWeightG")));
+  const willTrackRate = making !== undefined && Boolean(toNumber(watch("netWeightG")));
 
   async function onSubmit(values: ProductFormValues) {
     setFailure(null);
@@ -308,7 +311,7 @@ function ProductForm({
       return;
     }
 
-    const weight = toNumber(values.netWeightG) ?? toNumber(values.grossWeightG);
+    const weight = toNumber(values.netWeightG);
     if (!weight) {
       setFailure("Enter a weight first.");
       return;
@@ -425,17 +428,34 @@ function ProductForm({
             </Select>
           </Field>
 
-          <Field label="Gross weight (g)" error={errors.grossWeightG?.message}>
-            <Input type="number" step="0.001" {...register("grossWeightG")} className="nums" />
-          </Field>
-
           <Field
-            label="Net weight (g)"
+            label="Net metal weight (g)"
             error={errors.netWeightG?.message}
-            hint="Metal only. Defaults to gross."
+            hint="What the metal is priced on, and what the piece weighs before polish and stones."
           >
             <Input type="number" step="0.001" {...register("netWeightG")} className="nums" />
           </Field>
+
+          <Field
+            label="Polish (g per tola)"
+            error={errors.polishGPerTola?.message}
+            hint="As it is quoted at the counter. Leave blank for none."
+          >
+            <Input type="number" step="0.01" {...register("polishGPerTola")} className="nums" />
+          </Field>
+
+          <div className="sm:col-span-2">
+            <p className="text-sm">
+              <span className="text-muted-foreground">Gross weight: </span>
+              <span className="nums font-medium text-primary">
+                {grossWeight === undefined ? "—" : `${grossWeight.toFixed(3)} g`}
+              </span>
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Calculated, never typed: net metal, plus the stones, plus the polish on each tola of
+              net. This is the figure that goes on the bill and on the page.
+            </p>
+          </div>
 
           <Field
             label="Stones"
@@ -472,18 +492,39 @@ function ProductForm({
           </Field>
         </Section>
 
-        <Section title="Pricing">
+        {/*
+          One panel, not two. Price, discount and the breakdown were split
+          across a "Pricing" section and this one, which meant setting a price
+          and explaining it were separate jobs on the same screen. They are the
+          same job.
+        */}
+        <Section
+          title="Price"
+          hint="Fill metal, stone and rate basis together, or leave all three blank. They print “How this price is calculated” on the product page, and they are what lets the price follow the gold rate."
+        >
           <Field label="Price (PKR)" error={errors.pricePkr?.message}>
             <Input type="number" step="1" {...register("pricePkr")} className="nums" />
           </Field>
 
           <Field
-            label="Sale price (PKR)"
-            error={errors.salePricePkr?.message}
-            hint="Leave blank for no sale."
+            label="Discount (PKR)"
+            error={errors.discountPkr?.message}
+            hint="Rupees off, not a percentage. Leave blank for no discount."
           >
-            <Input type="number" step="1" {...register("salePricePkr")} className="nums" />
+            <Input type="number" step="1" {...register("discountPkr")} className="nums" />
           </Field>
+
+          {discount !== undefined && listedPrice !== undefined ? (
+            <p className="text-sm sm:col-span-2">
+              <span className="text-muted-foreground">After discount: </span>
+              <span className="nums font-medium text-primary">
+                {formatPKR(Math.max(0, listedPrice - discount))}
+              </span>
+              <span className="ml-2 text-xs text-muted-foreground">
+                Moves with the rate — the discount stays {formatPKR(discount)}.
+              </span>
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-2 sm:col-span-2">
             <input
@@ -494,12 +535,7 @@ function ProductForm({
             />
             <Label htmlFor="is-new">Show in New Arrivals</Label>
           </div>
-        </Section>
 
-        <Section
-          title="Live pricing & price transparency"
-          hint="Fill all three or leave all three blank. This panel does two jobs: it prints “How this price is calculated” on the product page, and it is what lets the price follow the gold rate."
-        >
           <Field label="Metal value (PKR)" error={errors.metalValuePkr?.message}>
             <Input type="number" step="1" {...register("metalValuePkr")} className="nums" />
           </Field>

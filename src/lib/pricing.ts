@@ -74,18 +74,31 @@ export function livePriceFor(
 }
 
 /**
- * Carries a sale through to the new price by preserving its discount, so a
- * piece marked down 8% stays 8% off once the rate moves. Holding the discount
- * in rupees instead would let it drift into meaninglessness — or, if gold fell
- * far enough, past the price itself.
+ * A discount is a number of rupees off, and stays that number.
+ *
+ * It used to be carried through as a percentage of the stored price, so a
+ * "50,000 off" quietly became 55,000 off as gold rose. The shop sets discounts
+ * in rupees — "ten thousand off this one" — and this keeps it at ten thousand
+ * whatever the metal does.
+ *
+ * Returns undefined when there is no discount, and never returns a price below
+ * zero: a discount larger than the live price would otherwise invert it.
  */
 export function liveSalePrice(
   storedPricePkr: number,
   storedSalePkr: number | null | undefined,
   livePricePkr: number,
+  discountPkr?: number | null,
 ): number | undefined {
-  if (storedSalePkr == null || storedPricePkr <= 0) return undefined;
-  if (storedSalePkr >= storedPricePkr) return undefined;
+  const discount =
+    discountPkr ??
+    // Rows saved before the discount column existed only have the sale price.
+    (storedSalePkr != null && storedSalePkr < storedPricePkr
+      ? storedPricePkr - storedSalePkr
+      : undefined);
 
-  return Math.round(livePricePkr * (storedSalePkr / storedPricePkr));
+  if (discount === undefined || discount <= 0) return undefined;
+  if (discount >= livePricePkr) return undefined;
+
+  return Math.round(livePricePkr - discount);
 }

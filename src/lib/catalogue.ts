@@ -75,6 +75,7 @@ type ProductRow = {
   net_weight_g?: number | null;
   making_charges_pkr?: number | null;
   stone_value_pkr?: number | null;
+  discount_pkr?: number | null;
   id: string;
   sku: string;
   name: string;
@@ -105,6 +106,7 @@ type ProductDetailRow = ProductRow & {
   metal_value_pkr?: number | null;
   making_charges_pkr?: number | null;
   stone_value_pkr?: number | null;
+  discount_pkr?: number | null;
   rate_basis_pkr_per_g?: number | null;
 };
 
@@ -135,7 +137,7 @@ function priceOf(row: ProductRow, snapshot: RateSnapshot | undefined) {
 
   return {
     pricePkr: live.pricePkr,
-    salePricePkr: liveSalePrice(row.price_pkr, row.sale_price_pkr, live.pricePkr),
+    salePricePkr: liveSalePrice(row.price_pkr, row.sale_price_pkr, live.pricePkr, row.discount_pkr),
     live,
   };
 }
@@ -339,7 +341,7 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
    */
   const slugs = [slug, ...children.map((c) => c.slug)];
 
-  const productsResult = await supabase
+  const productsResult = await untypedDb
     .from("products")
     .select(BASE_COLUMNS)
     .in("category_slug", slugs)
@@ -372,13 +374,13 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
 export async function fetchHomeRails(): Promise<{ bridal: Product[]; everyday: Product[] }> {
   const [snapshot, bridalResult, everydayResult] = await Promise.all([
     safeRateSnapshot(),
-    supabase
+    untypedDb
       .from("products")
       .select(BASE_COLUMNS)
       .eq("category_slug", "bridal-sets")
       .order("price_pkr", { ascending: false })
       .limit(6),
-    supabase
+    untypedDb
       .from("products")
       .select(BASE_COLUMNS)
       .neq("category_slug", "bridal-sets")
@@ -419,7 +421,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
   const [snapshot, names, productsResult] = await Promise.all([
     safeRateSnapshot(),
     categoryNames(),
-    supabase.from("products").select(BASE_COLUMNS).order("created_at", { ascending: false }),
+    untypedDb.from("products").select(BASE_COLUMNS).order("created_at", { ascending: false }),
   ]);
 
   if (productsResult.error) throw new Error(productsResult.error.message);
@@ -435,7 +437,7 @@ export async function fetchNewArrivals(): Promise<Product[]> {
   const [snapshot, names, productsResult] = await Promise.all([
     safeRateSnapshot(),
     categoryNames(),
-    supabase
+    untypedDb
       .from("products")
       .select(BASE_COLUMNS)
       .eq("is_new", true)
@@ -457,7 +459,7 @@ export async function fetchProductsBySkus(skus: string[]): Promise<Product[]> {
   const [snapshot, names, productsResult] = await Promise.all([
     safeRateSnapshot(),
     categoryNames(),
-    supabase.from("products").select(BASE_COLUMNS).in("sku", skus),
+    untypedDb.from("products").select(BASE_COLUMNS).in("sku", skus),
   ]);
 
   if (productsResult.error) throw new Error(productsResult.error.message);
@@ -533,7 +535,7 @@ export type ProductPage = {
  * a product card could only show the price the piece was last saved at.
  */
 const BASE_COLUMNS =
-  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, making_charges_pkr, stone_value_pkr, image_keys, is_new, created_at";
+  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, discount_pkr, making_charges_pkr, stone_value_pkr, image_keys, is_new, created_at";
 
 const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_ct, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
 
@@ -560,7 +562,7 @@ async function selectProductRow(slug: string): Promise<ProductDetailRow | null> 
 
   if (!full.error) return (full.data as ProductDetailRow | null) ?? null;
 
-  const base = await supabase.from("products").select(BASE_COLUMNS).eq("slug", slug).maybeSingle();
+  const base = await untypedDb.from("products").select(BASE_COLUMNS).eq("slug", slug).maybeSingle();
 
   if (base.error) throw new Error(base.error.message);
   if (!base.data) return null;
@@ -621,7 +623,7 @@ export async function fetchProductPage(slug: string): Promise<ProductPage | null
   const [snapshot, categoryResult, relatedResult] = await Promise.all([
     safeRateSnapshot(),
     supabase.from("categories").select("name").eq("slug", productRow.category_slug).maybeSingle(),
-    supabase
+    untypedDb
       .from("products")
       .select(BASE_COLUMNS)
       .eq("category_slug", productRow.category_slug)
