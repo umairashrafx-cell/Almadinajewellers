@@ -15,7 +15,7 @@ export const Route = createFileRoute("/policies")({
   head: () => {
     const title = `Delivery, Exchange & Buy-Back — ${SITE.name}`;
     const description =
-      "How Al-Madina Jewellers delivers, how payment works, and how exchange and lifetime buy-back are handled. Free insured delivery across Pakistan; pieces bought back against the gold rate on the day you return.";
+      "How Al-Madina Jewellers delivers, how payment works, and how exchange and lifetime buy-back are handled. Free insured delivery across Pakistan; pieces bought back at the 20k rate on the day you return.";
     return {
       meta: [
         { title },
@@ -79,8 +79,8 @@ const POLICIES: Policy[] = [
     summary:
       "We buy back what we sell, for as long as we are trading. Bring the piece and its bill.",
     points: [
-      "Pieces are bought back against the gold rate on the day you return them — not the day you bought them. If the rate has risen, that gain is yours.",
-      "Making charges are not returned. That is standard across the trade, and we would rather say so here than at the counter.",
+      "Pieces are bought back at the 20k rate on the day you return them — not the day you bought them. If the rate has risen, that gain is yours. Today's figure is published on the Sell Your Gold page.",
+      "That rate sits below what the same gold sells at, and the gap is the making charge, which cannot come back with the metal. We quote it as one rate rather than a higher one with a subtraction after it.",
       "Exchange works the same way: the piece is valued at the day's rate and set against whatever you are moving to.",
       "Keep the bill. It is how we confirm the weight, the karat and the making charge the piece was sold at.",
     ],

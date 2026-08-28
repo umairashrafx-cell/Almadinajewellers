@@ -22,6 +22,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 
 import {
+  BUY_KARAT,
   fetchRateSnapshot,
   formatRateStamp,
   goldOnly,
@@ -38,13 +39,13 @@ import { SITE, STORES, directionsUrl, whatsappLink } from "@/lib/site";
  * often as to buy, and until now the site said nothing about it beyond one line
  * on the policies page.
  *
- * Deliberately quotes **no** price for what the shop pays. Every piece is
- * tested and weighed first, and publishing a formula — "the rate minus five
- * percent" — would commit the shop at the counter to a number it has not
- * agreed to. What it does publish is the day's open gold rate, which is public
- * and already on this site, so a seller can arrive knowing what gold is worth
- * before anyone quotes them anything. That is the honest version of what this
- * kind of page usually promises.
+ * Publishes the buying rate, which most pages of this kind will not. The shop
+ * buys at the 20k rate, so a seller can work out what their piece is worth
+ * before they leave the house rather than after they have made the trip.
+ *
+ * The gap between that and the selling rate is stated rather than left to be
+ * noticed: it is the melting and the making, and a customer who understands
+ * why is not a customer who feels caught out.
  */
 
 const WHATSAPP_MESSAGE =
@@ -91,7 +92,7 @@ const STEPS = [
   {
     icon: Wallet,
     title: "We quote, you decide",
-    body: "We quote against the day's gold rate and explain how we got there. Take it or leave it — there is no obligation, and nothing is kept back if you would rather not sell.",
+    body: "The 20k rate against the weight on the scale, worked out in front of you. Take it or leave it — there is no obligation, and nothing is kept back if you would rather not sell.",
   },
 ];
 
@@ -116,7 +117,7 @@ const PAYMENT = [
 const FAQS = [
   {
     q: "Do I need the original bill to sell my gold?",
-    a: "Not to sell it — but you do need your CNIC, whatever the piece is. The bill matters only for gold bought from Al-Madina, where it entitles you to our lifetime buy-back against the day's rate, less the making charges, which are not returned. Gold bought anywhere else needs no bill.",
+    a: "Not to sell it — but you do need your CNIC, whatever the piece is. The bill only saves time: it already carries the weight and the karat, so there is nothing to establish. The rate is the same 20k either way, whether the piece came from us or from anywhere else.",
   },
   {
     q: "Do I need to bring my CNIC?",
@@ -128,7 +129,7 @@ const FAQS = [
   },
   {
     q: "How much will you pay for my gold?",
-    a: "We do not publish a fixed figure, because it depends on the purity and weight of the specific piece, both of which are established in front of you first. What we can tell you in advance is the open gold rate for the day, which is published on this website and updated by the shop.",
+    a: "We buy jewellery at the 20k rate, which is published on this page and moves with the market each day. What you are paid is that rate against the weight of your piece, weighed in front of you. The rate is below what we sell at, and the difference is the melting and the making that has to be done again before the gold can be sold as jewellery.",
   },
   {
     q: "Do you buy broken or old jewellery?",
@@ -152,6 +153,9 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
 
   const gold = goldOnly(snapshot);
   const headline = rateFor(snapshot, "22K") ?? gold[0];
+  // What the shop pays. Falls back to nothing rather than to a selling rate:
+  // showing the wrong number here would misquote a customer.
+  const buyRate = rateFor(snapshot, BUY_KARAT);
 
   const store = STORES[0];
   const phone = SITE.phones[0];
@@ -226,37 +230,62 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
           </div>
         </section>
 
-        {/* Today's rate — the one number this page will commit to */}
+        {/* What the shop pays, and what gold is worth, side by side */}
         <section className="border-b border-gold/25 bg-champagne/25 px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="mx-auto flex max-w-7xl flex-col gap-8 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-warmgrey">
-                Today's gold rate
+                We buy at
               </p>
-              {headline ? (
-                <p className="nums mt-2 font-display text-3xl font-light text-primary sm:text-4xl">
-                  {headline.karat} · Rs. {headline.perTola.toLocaleString("en-US")}
-                  <span className="ml-2 text-base text-warmgrey">per tola</span>
+              {buyRate ? (
+                <>
+                  <p className="nums mt-2 font-display text-3xl font-light text-primary sm:text-4xl">
+                    Rs. {buyRate.perTola.toLocaleString("en-US")}
+                    <span className="ml-2 text-base text-warmgrey">per tola</span>
+                  </p>
+                  <p className="nums mt-1 text-sm text-warmgrey">
+                    Rs. {buyRate.perGram.toLocaleString("en-US")} per gram · the 20k rate
+                  </p>
+                </>
+              ) : (
+                <p className="mt-2 font-display text-2xl font-light text-primary">
+                  Ask us for today's figure
                 </p>
-              ) : null}
+              )}
               <p className="nums mt-2 text-xs text-warmgrey">
                 {snapshot.date ? `Updated ${formatRateStamp(snapshot)}` : "Indicative rate"}
               </p>
             </div>
 
-            <div className="max-w-md">
+            {headline ? (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-warmgrey">
+                  Today's jewellery rate
+                </p>
+                <p className="nums mt-2 font-display text-2xl font-light text-ink">
+                  Rs. {headline.perTola.toLocaleString("en-US")}
+                  <span className="ml-2 text-sm text-warmgrey">per tola</span>
+                </p>
+                <Link
+                  to="/gold-rate"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-primary underline-offset-4 transition-colors hover:text-gold hover:underline"
+                >
+                  See the full board
+                  <ChevronRight className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                </Link>
+              </div>
+            ) : null}
+
+            <div className="max-w-sm">
               <p className="text-sm leading-relaxed text-ink">
-                This is what gold trades at today — the same rate we sell against. What we pay for
-                your piece depends on its purity and weight, which we establish with you at the
-                counter before quoting.
+                We buy jewellery at the 20k rate. It is below the rate we sell at, and the gap is
+                the melting and the making that has to be done again — the same for everyone, and
+                published here so nobody has to ask.
               </p>
-              <Link
-                to="/gold-rate"
-                className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-primary underline-offset-4 transition-colors hover:text-gold hover:underline"
-              >
-                See all karats and the calculator
-                <ChevronRight className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
-              </Link>
+              <p className="mt-3 text-sm leading-relaxed text-warmgrey">
+                What you are paid is that rate against the weight of your piece, established on the
+                counter scale in front of you.
+              </p>
             </div>
           </div>
         </section>
@@ -266,7 +295,7 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
           <SectionHeading
             eyebrow="Two ways this works"
             title="Ours, or anyone's"
-            description="How we handle a piece depends on where it came from. Both are welcome; only one of them comes with a promise we made you at the time of sale."
+            description="The rate is the same either way. What differs is how much has to be established at the counter — a piece with our bill on it arrives already weighed."
           />
 
           <div className="mt-14 grid gap-6 md:grid-cols-2">
@@ -278,13 +307,16 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
                 Lifetime buy-back
               </h3>
               <p className="mt-4 text-sm leading-relaxed text-ink">
-                Every piece we sell carries a lifetime buy-back against the gold rate on the day you
-                return it. Bring the piece and the bill to {SITE.address} — the weight is already on
-                the bill, so there is little to establish.
+                Every piece we sell carries a lifetime buy-back, at the same 20k rate and on the
+                rate of the day you return it rather than the day you bought it. Bring the piece and
+                the bill to {SITE.address} — the weight is already on the bill, so there is nothing
+                to establish and nothing to argue about.
               </p>
               <p className="mt-4 text-sm leading-relaxed text-warmgrey">
-                Making charges are not returned — that is standard across the trade, and we would
-                rather say it here than at the counter. The full terms are on our{" "}
+                The 20k rate is how the making charges come off: it sits below what the same gold
+                sells at, and the gap is that labour, which cannot come back with the metal. Saying
+                it as one rate is plainer than quoting a higher one and then subtracting. The full
+                terms are on our{" "}
                 <Link
                   to="/policies"
                   className="text-primary underline-offset-4 transition-colors hover:text-gold hover:underline"

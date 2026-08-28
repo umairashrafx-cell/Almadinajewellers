@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { perGramFromTola, publishRates } from "@/lib/admin";
-import { RATE_BOARD, fetchRateSnapshot, formatRateDate, roundRateToHundred } from "@/lib/rates";
+import {
+  BUY_KARAT,
+  RATE_BOARD,
+  fetchRateSnapshot,
+  formatRateDate,
+  roundRateToHundred,
+} from "@/lib/rates";
 import { formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +26,9 @@ export const Route = createFileRoute("/admin/rates")({
 /** Every metal the catalogue prices against, in the order they are shown. */
 const KARAT_ROWS: { karat: string; label: string }[] = [
   ...RATE_BOARD.map((r) => ({ karat: r.karat, label: `${r.name} — ${r.mark}` })),
+  // What the shop pays for jewellery brought in. Published with the rest so it
+  // moves with them, but kept off the public board — see BUY_KARAT.
+  { karat: BUY_KARAT, label: "We buy at — 20k" },
   // Sterling is what the silver pieces are stamped, and it is kept separate
   // from the 999 the board quotes. It is not priced against the rate, but the
   // shop still records it.
@@ -70,7 +79,9 @@ function RatesScreen() {
    * is not touched: it is a different metal with its own market, not a fraction
    * of the gold rate.
    *
-   * Both land on the hundred, rounded down, because a rate reads as a rate
+   * The buying rate follows the same way, at twenty parts of twenty-four.
+   *
+   * All land on the hundred, rounded down, because a rate reads as a rate
    * rather than as the output of a division.
    */
   function deriveFrom24k() {
@@ -84,6 +95,7 @@ function RatesScreen() {
       ...current,
       "23.65K": String(roundRateToHundred((anchor * 23.65) / 24)),
       "22K": String(roundRateToHundred((anchor * 22) / 24)),
+      [BUY_KARAT]: String(roundRateToHundred((anchor * 20) / 24)),
     }));
     setStatus(null);
   }
@@ -197,7 +209,7 @@ function RatesScreen() {
               Publish rates
             </Button>
             <Button variant="outline" onClick={deriveFrom24k}>
-              Fill Pathor & Jewellery from Piece
+              Fill the rest from Piece
             </Button>
             <Button variant="outline" onClick={copyPublished} disabled={!published}>
               Start from published
