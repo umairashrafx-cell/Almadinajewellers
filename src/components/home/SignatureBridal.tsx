@@ -17,6 +17,13 @@ export function SignatureBridal() {
 
   const sets = data?.bridal ?? [];
 
+  /*
+   * A heading promising our heaviest sets, over an empty strip, reads as a
+   * fault. While the category has nothing in it the section stands down
+   * entirely rather than announcing an absence.
+   */
+  if (!isPending && sets.length === 0) return null;
+
   return (
     <section className="section-y bg-primary">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
