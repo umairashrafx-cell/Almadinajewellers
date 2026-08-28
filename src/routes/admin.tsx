@@ -3,7 +3,17 @@ import { Outlet, createFileRoute, Link } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Coins, Inbox, Loader2, LogOut, Gem, ExternalLink, Package, Star } from "lucide-react";
+import {
+  Coins,
+  Inbox,
+  Loader2,
+  LogOut,
+  Gem,
+  ExternalLink,
+  Package,
+  Star,
+  FolderTree,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +95,9 @@ function AdminLayout() {
             </NavTab>
             <NavTab to="/admin/reviews" icon={Star}>
               Reviews
+            </NavTab>
+            <NavTab to="/admin/categories" icon={FolderTree}>
+              Categories
             </NavTab>
             <NavTab to="/admin/rates" icon={Coins}>
               Gold rate

@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentProps, ComponentType, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -189,3 +189,14 @@ export function PageHeading({
     </div>
   );
 }
+
+/** The native select, styled to match Input. Shared by the admin forms. */
+export const Select = ({ className, ...props }: ComponentProps<"select">) => (
+  <select
+    {...props}
+    className={cn(
+      "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+      className,
+    )}
+  />
+);
