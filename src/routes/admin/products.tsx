@@ -466,8 +466,12 @@ function ProductForm({
             <Input {...register("stones")} />
           </Field>
 
-          <Field label="Stone weight (ct)" error={errors.stoneWeightCt?.message}>
-            <Input type="number" step="0.01" {...register("stoneWeightCt")} className="nums" />
+          <Field
+            label="Stone weight (g)"
+            error={errors.stoneWeightG?.message}
+            hint="Grams, like every other weight here. Counts towards gross, never towards the price."
+          >
+            <Input type="number" step="0.001" {...register("stoneWeightG")} className="nums" />
           </Field>
 
           <Field label="Dimensions" error={errors.dimensions?.message}>
