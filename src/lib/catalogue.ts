@@ -73,6 +73,7 @@ export type CategoryTree = Category & { children: Category[] };
 
 type ProductRow = {
   net_weight_g?: number | null;
+  polish_g_per_tola?: number | null;
   making_charges_pkr?: number | null;
   stone_value_pkr?: number | null;
   discount_pkr?: number | null;
@@ -101,6 +102,7 @@ type ProductDetailRow = ProductRow & {
   description?: string | null;
   net_weight_g?: number | null;
   stone_weight_g?: number | null;
+  polish_g_per_tola?: number | null;
   dimensions?: string | null;
   sizes?: string[] | null;
   metal_value_pkr?: number | null;
@@ -123,6 +125,7 @@ function priceOf(row: ProductRow, snapshot: RateSnapshot | undefined) {
       metal: row.metal,
       karat: row.karat,
       netWeightG: Number(row.net_weight_g ?? row.gross_weight_g),
+      polishGPerTola: row.polish_g_per_tola ?? 0,
       makingChargesPkr: row.making_charges_pkr ?? 0,
       stoneValuePkr: row.stone_value_pkr ?? 0,
     },
@@ -517,6 +520,8 @@ export type ProductDetail = Product & {
   description: string;
   netWeightG: number;
   stoneWeightG?: number;
+  /** Grams of polish per tola of net metal, priced at the gold rate. */
+  polishGPerTola?: number;
   dimensions?: string;
   sizes: string[];
   /** Absent when the piece has no stored decomposition. */
@@ -535,7 +540,7 @@ export type ProductPage = {
  * a product card could only show the price the piece was last saved at.
  */
 const BASE_COLUMNS =
-  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, discount_pkr, making_charges_pkr, stone_value_pkr, image_keys, is_new, created_at";
+  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, discount_pkr, making_charges_pkr, stone_value_pkr, polish_g_per_tola, image_keys, is_new, created_at";
 
 const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_g, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
 
@@ -594,6 +599,7 @@ function mapDetail(
     sizes: row.sizes ?? [],
     // exactOptionalPropertyTypes: omit rather than set undefined.
     ...(row.stone_weight_g != null ? { stoneWeightG: Number(row.stone_weight_g) } : {}),
+    ...(row.polish_g_per_tola != null ? { polishGPerTola: Number(row.polish_g_per_tola) } : {}),
     ...(row.dimensions ? { dimensions: row.dimensions } : {}),
     // The metal value and the rate it was struck at come from today's rate when
     // one is published, so the panel's arithmetic matches the price above it.

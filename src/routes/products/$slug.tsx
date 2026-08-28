@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/
 
 import { fetchProductPage, type ProductDetail } from "@/lib/catalogue";
 import { fetchRateSnapshot, rateFor } from "@/lib/rates";
+import { pricedWeightFor } from "@/lib/pricing";
 import {
   SITE,
   absoluteUrl,
@@ -356,9 +357,15 @@ function SpecTable({ product }: { product: ProductDetail }) {
     ],
     ["Purity", product.karat === "925" ? "925 sterling silver" : `${product.karat} hallmarked`],
     ["Gross weight", `${formatGrams(product.grossWeightG)} — the whole piece`],
-    ["Net metal weight", `${formatGrams(product.netWeightG)} — what you pay the gold rate on`],
+    ["Net metal weight", formatGrams(product.netWeightG)],
     ["Stones", product.stones],
   ];
+
+  // Metal and polish together, which is the figure the gold rate is charged on.
+  const priced = pricedWeightFor(product.netWeightG, product.polishGPerTola);
+  if (priced > product.netWeightG) {
+    rows.splice(5, 0, ["Gold charged at rate", `${formatGrams(priced)} — metal plus polish`]);
+  }
 
   if (product.stoneWeightG) {
     // Spelled out beside the number, because a weight listed without a note is
@@ -410,10 +417,15 @@ function PriceBreakdownPanel({ product, listed }: { product: ProductDetail; list
   // The stored parts sum to the full price; a discount is applied on top.
   const discount = product.pricePkr - listed;
 
+  const pricedWeight = pricedWeightFor(product.netWeightG, product.polishGPerTola);
+
   const lines: Array<[string, string, number]> = [
     [
       "Gold value",
-      `${formatGrams(product.netWeightG)} net × Rs. ${breakdown.rateBasisPkrPerG.toLocaleString("en-US")}/g (${product.karat})`,
+      // The rate is charged on metal plus polish, so the line has to name that
+      // weight rather than the net alone — otherwise the arithmetic on the
+      // panel does not check out for anyone who tries it.
+      `${formatGrams(pricedWeight)} of gold × Rs. ${breakdown.rateBasisPkrPerG.toLocaleString("en-US")}/g (${product.karat})`,
       breakdown.metalValuePkr,
     ],
     ["Making charges", "Workshop labour and finishing", breakdown.makingChargesPkr],
@@ -478,8 +490,8 @@ function PriceBreakdownPanel({ product, listed }: { product: ProductDetail; list
                 `Today's ${product.karat} rate is Rs. ${today.perGram.toLocaleString("en-US")}/g. This price was last set against Rs. ${breakdown.rateBasisPkrPerG.toLocaleString("en-US")}/g and is confirmed against the rate on the day you buy.`
               : `The gold value above is calculated against today's ${product.karat} rate, so this price moves with the market. Making charges are fixed and do not rise with the rate.`}{" "}
             {product.stoneWeightG
-              ? `You pay the gold rate on the ${formatGrams(product.netWeightG ?? 0)} of gold in this piece and nothing else — the ${formatGrams(product.stoneWeightG)} of stones is part of the gross weight, not part of the metal you are charged for. `
-              : ""}
+              ? `The gold rate is charged on ${formatGrams(pricedWeight)} — the metal and its polish. The ${formatGrams(product.stoneWeightG)} of stones is part of the gross weight, not part of the gold you are charged for. `
+              : `The gold rate is charged on ${formatGrams(pricedWeight)} — the metal and its polish. `}
             We weigh every piece in front of you before it is billed.
           </p>
         </div>
