@@ -5,7 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SITE, whatsappLink } from "@/lib/site";
 import {
   FALLBACK_SNAPSHOT,
-  GOLD_KARATS,
+  RATE_BOARD,
+  rateBoard,
   fetchRateSnapshot,
   formatRateStamp,
   goldOnly,
@@ -34,7 +35,7 @@ export function GoldRateStrip() {
   });
 
   const snapshot = data ?? FALLBACK_SNAPSHOT;
-  const rates: MetalRate[] = goldOnly(snapshot);
+  const board = rateBoard(snapshot);
   const stamp = snapshot.date ? `Updated ${formatRateStamp(snapshot)}` : "Indicative rates";
 
   return (
@@ -57,7 +58,7 @@ export function GoldRateStrip() {
             <thead>
               <tr className="border-b border-gold/40 text-[11px] uppercase tracking-[0.2em] text-champagne/70">
                 <th scope="col" className="py-3 font-medium">
-                  Purity
+                  Rate
                 </th>
                 <th scope="col" className="py-3 text-right font-medium">
                   Per Gram
@@ -69,10 +70,10 @@ export function GoldRateStrip() {
             </thead>
             <tbody>
               {isPending
-                ? GOLD_KARATS.map((karat) => (
-                    <tr key={karat} className="border-b border-gold/15">
+                ? RATE_BOARD.map((row) => (
+                    <tr key={row.karat} className="border-b border-gold/15">
                       <th scope="row" className="py-4 font-display text-xl font-normal text-ivory">
-                        {karat}
+                        {row.name}
                       </th>
                       <td className="py-4">
                         <Skeleton className="ml-auto h-4 w-20 bg-champagne/20" />
@@ -82,16 +83,21 @@ export function GoldRateStrip() {
                       </td>
                     </tr>
                   ))
-                : rates.map((rate) => (
-                    <tr key={rate.karat} className="border-b border-gold/15">
+                : board.map((row) => (
+                    <tr key={row.karat} className="border-b border-gold/15">
                       <th scope="row" className="py-4 font-display text-xl font-normal text-ivory">
-                        {rate.karat}
+                        {row.name}
+                        {/* Same lockup as the full board: the trade name reads
+                            first, the purity settles it. */}
+                        <span className="nums ml-1.5 align-middle text-[10px] lowercase tracking-widest text-champagne/70">
+                          {row.mark}
+                        </span>
                       </th>
                       <td className="nums py-4 text-right text-sm text-champagne">
-                        {rate.perGram.toLocaleString("en-US")}
+                        {row.rate ? row.rate.perGram.toLocaleString("en-US") : "—"}
                       </td>
                       <td className="nums py-4 text-right text-sm text-champagne">
-                        {rate.perTola.toLocaleString("en-US")}
+                        {row.rate ? row.rate.perTola.toLocaleString("en-US") : "—"}
                       </td>
                     </tr>
                   ))}

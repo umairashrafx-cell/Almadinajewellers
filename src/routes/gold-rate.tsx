@@ -15,6 +15,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import {
   FALLBACK_SNAPSHOT,
   GOLD_KARATS,
+  rateBoard,
   TOLA_IN_GRAMS,
   fetchRateHistory,
   fetchRateSnapshot,
@@ -37,10 +38,10 @@ export const Route = createFileRoute("/gold-rate")({
     const k22 = gold.find((r) => r.karat === "22K");
     const stamp = loaderData?.date ? formatRateDate(loaderData.date) : "today";
 
-    const title = `Today's Gold Rate in Pakistan — 22K, 21K & 24K per Tola and Gram · ${SITE.name}`;
+    const title = `Today's Gold Rate in Pakistan — Piece, Pathor, Jewellery & Silver · ${SITE.name}`;
     const description = k22
-      ? `Gold rate ${stamp}: 22K Rs. ${k22.perTola.toLocaleString("en-US")} per tola, Rs. ${k22.perGram.toLocaleString("en-US")} per gram. Full 24K, 22K, 21K and 18K table plus a gram-to-rupee calculator.`
-      : "Today's 24K, 22K, 21K and 18K gold rates per tola and per gram in PKR, with a gold value calculator.";
+      ? `Gold rate ${stamp}: jewellery gold (22k) Rs. ${k22.perTola.toLocaleString("en-US")} per tola, Rs. ${k22.perGram.toLocaleString("en-US")} per gram. Piece, pathor, jewellery and silver rates, with a gram-to-rupee calculator.`
+      : "Today's piece, pathor, jewellery and silver rates per tola and per gram in PKR, with a gold value calculator.";
 
     return {
       meta: [
@@ -61,6 +62,7 @@ export const Route = createFileRoute("/gold-rate")({
 function GoldRatePage() {
   const snapshot = Route.useLoaderData();
   const gold = goldOnly(snapshot);
+  const board = rateBoard(snapshot);
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -89,7 +91,7 @@ function GoldRatePage() {
               Today's Gold Rate
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-champagne/80">
-              Rates for 24K, 22K, 21K and 18K gold in Pakistani rupees, per gram and per tola. We
+              Piece, pathor, jewellery and silver, in Pakistani rupees per gram and per tola. We
               price every piece against the rate on the day you buy.
             </p>
 
@@ -110,7 +112,7 @@ function GoldRatePage() {
               <thead>
                 <tr className="border-b border-gold text-[11px] uppercase tracking-[0.2em] text-warmgrey">
                   <th scope="col" className="py-4 font-medium">
-                    Purity
+                    Rate
                   </th>
                   <th scope="col" className="py-4 text-right font-medium">
                     Per Gram
@@ -121,19 +123,23 @@ function GoldRatePage() {
                 </tr>
               </thead>
               <tbody>
-                {gold.map((rate) => (
-                  <tr key={rate.karat} className="border-b border-gold/20">
-                    <th
-                      scope="row"
-                      className="py-5 font-display text-2xl font-light tracking-wide text-primary"
-                    >
-                      {rate.karat}
+                {board.map((row) => (
+                  <tr key={row.karat} className="border-b border-gold/20">
+                    <th scope="row" className="py-5 text-left">
+                      <span className="font-display text-2xl font-light tracking-wide text-primary">
+                        {row.name}
+                      </span>{" "}
+                      {/* The purity, small: it settles the question without
+                          being the thing anyone reads first. */}
+                      <span className="nums ml-1 align-middle text-[11px] font-medium lowercase tracking-widest text-warmgrey">
+                        {row.mark}
+                      </span>
                     </th>
                     <td className="nums py-5 text-right text-base text-ink">
-                      Rs. {rate.perGram.toLocaleString("en-US")}
+                      {row.rate ? `Rs. ${row.rate.perGram.toLocaleString("en-US")}` : "—"}
                     </td>
                     <td className="nums py-5 text-right text-base font-semibold text-ink">
-                      Rs. {rate.perTola.toLocaleString("en-US")}
+                      {row.rate ? `Rs. ${row.rate.perTola.toLocaleString("en-US")}` : "—"}
                     </td>
                   </tr>
                 ))}
