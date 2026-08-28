@@ -51,6 +51,15 @@ export const GOLD_KARATS = ["24K", "23.65K", "22K"] as const;
  * The purity is what settles an argument, so it is printed small beside the
  * name rather than instead of it.
  */
+/**
+ * What the shop pays when it buys jewellery back.
+ *
+ * Deliberately not on the board: that board is what the shop sells at, and a
+ * buying rate sitting in the same table would read as a fifth thing on offer.
+ * It belongs on the page about selling to us, which is where it is shown.
+ */
+export const BUY_KARAT = "20K";
+
 export const RATE_BOARD = [
   { karat: "24K", name: "Piece", mark: "24k" },
   { karat: "23.65K", name: "Pathor", mark: "23.65k" },
