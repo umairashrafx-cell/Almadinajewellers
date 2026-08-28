@@ -100,7 +100,7 @@ type ProductRow = {
 type ProductDetailRow = ProductRow & {
   description?: string | null;
   net_weight_g?: number | null;
-  stone_weight_ct?: number | null;
+  stone_weight_g?: number | null;
   dimensions?: string | null;
   sizes?: string[] | null;
   metal_value_pkr?: number | null;
@@ -516,7 +516,7 @@ export type ProductDetail = Product & {
   categorySlug: string;
   description: string;
   netWeightG: number;
-  stoneWeightCt?: number;
+  stoneWeightG?: number;
   dimensions?: string;
   sizes: string[];
   /** Absent when the piece has no stored decomposition. */
@@ -537,7 +537,7 @@ export type ProductPage = {
 const BASE_COLUMNS =
   "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, discount_pkr, making_charges_pkr, stone_value_pkr, image_keys, is_new, created_at";
 
-const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_ct, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
+const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_g, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
 
 /**
  * Fetches one product, or null when no piece has that slug.
@@ -593,7 +593,7 @@ function mapDetail(
     netWeightG: Number(row.net_weight_g ?? row.gross_weight_g),
     sizes: row.sizes ?? [],
     // exactOptionalPropertyTypes: omit rather than set undefined.
-    ...(row.stone_weight_ct != null ? { stoneWeightCt: Number(row.stone_weight_ct) } : {}),
+    ...(row.stone_weight_g != null ? { stoneWeightG: Number(row.stone_weight_g) } : {}),
     ...(row.dimensions ? { dimensions: row.dimensions } : {}),
     // The metal value and the rate it was struck at come from today's rate when
     // one is published, so the panel's arithmetic matches the price above it.

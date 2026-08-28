@@ -355,12 +355,19 @@ function SpecTable({ product }: { product: ProductDetail }) {
       product.metal === "diamond" ? "Gold with certified diamond" : titleCase(product.metal),
     ],
     ["Purity", product.karat === "925" ? "925 sterling silver" : `${product.karat} hallmarked`],
-    ["Gross weight", formatGrams(product.grossWeightG)],
-    ["Net metal weight", formatGrams(product.netWeightG)],
+    ["Gross weight", `${formatGrams(product.grossWeightG)} — the whole piece`],
+    ["Net metal weight", `${formatGrams(product.netWeightG)} — what you pay the gold rate on`],
     ["Stones", product.stones],
   ];
 
-  if (product.stoneWeightCt) rows.push(["Stone weight", `${product.stoneWeightCt.toFixed(2)} ct`]);
+  if (product.stoneWeightG) {
+    // Spelled out beside the number, because a weight listed without a note is
+    // reasonably read as something you are being charged for.
+    rows.push([
+      "Stone weight",
+      `${product.stoneWeightG.toFixed(3)} g — not charged at the gold rate`,
+    ]);
+  }
   if (product.dimensions) rows.push(["Dimensions", product.dimensions]);
   if (product.sizes.length > 0) rows.push(["Available sizes", product.sizes.join(" · ")]);
 
@@ -470,6 +477,9 @@ function PriceBreakdownPanel({ product, listed }: { product: ProductDetail; list
                 // plainly rather than implying it is today's.
                 `Today's ${product.karat} rate is Rs. ${today.perGram.toLocaleString("en-US")}/g. This price was last set against Rs. ${breakdown.rateBasisPkrPerG.toLocaleString("en-US")}/g and is confirmed against the rate on the day you buy.`
               : `The gold value above is calculated against today's ${product.karat} rate, so this price moves with the market. Making charges are fixed and do not rise with the rate.`}{" "}
+            {product.stoneWeightG
+              ? `You pay the gold rate on the ${formatGrams(product.netWeightG ?? 0)} of gold in this piece and nothing else — the ${formatGrams(product.stoneWeightG)} of stones is part of the gross weight, not part of the metal you are charged for. `
+              : ""}
             We weigh every piece in front of you before it is billed.
           </p>
         </div>

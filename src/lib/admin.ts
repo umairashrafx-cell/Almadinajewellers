@@ -123,6 +123,7 @@ function readableError(error: { code?: string; message: string }, context: strin
 export type AdminProduct = Tables<"products"> & {
   polish_g_per_tola?: number | null;
   discount_pkr?: number | null;
+  stone_weight_g?: number | null;
 };
 /**
  * parent_slug is newer than the generated Database type, so it is declared
@@ -173,13 +174,13 @@ const TOLA_G = 11.6638;
  */
 export function grossWeightFor(values: {
   netWeightG?: unknown;
-  stoneWeightCt?: unknown;
+  stoneWeightG?: unknown;
   polishGPerTola?: unknown;
 }): number | undefined {
   const net = toNumber(values.netWeightG);
   if (net === undefined) return undefined;
 
-  const stones = (toNumber(values.stoneWeightCt) ?? 0) * 0.2;
+  const stones = toNumber(values.stoneWeightG) ?? 0;
   const polish = (net / TOLA_G) * (toNumber(values.polishGPerTola) ?? 0);
 
   // Three decimals, the precision the site shows weights at.
@@ -205,7 +206,7 @@ export const productFormSchema = z
     netWeightG: requiredAmount("Net metal weight", 5000),
     polishGPerTola: optionalAmount,
     stones: text.max(120, "That stone description is too long."),
-    stoneWeightCt: optionalAmount,
+    stoneWeightG: optionalAmount,
     dimensions: text.max(160, "That is too long.").optional(),
     /** Comma-separated in the form, stored as an array. */
     sizes: text.max(200, "That is too long.").optional(),
@@ -297,7 +298,7 @@ export function blankProductForm(categorySlug: string): ProductForm {
     netWeightG: "",
     polishGPerTola: "",
     stones: "",
-    stoneWeightCt: "",
+    stoneWeightG: "",
     dimensions: "",
     sizes: "",
     description: "",
@@ -327,7 +328,7 @@ export function productToForm(row: AdminProduct): ProductForm {
     netWeightG: asText(row.net_weight_g),
     polishGPerTola: asText(row.polish_g_per_tola),
     stones: row.stones,
-    stoneWeightCt: asText(row.stone_weight_ct),
+    stoneWeightG: asText(row.stone_weight_g),
     dimensions: row.dimensions ?? "",
     sizes: (row.sizes ?? []).join(", "),
     description: row.description ?? "",
@@ -362,7 +363,7 @@ function formToRow(values: ProductForm) {
     net_weight_g: net,
     polish_g_per_tola: toNumber(values.polishGPerTola) ?? null,
     stones: values.stones.trim(),
-    stone_weight_ct: toNumber(values.stoneWeightCt) ?? null,
+    stone_weight_g: toNumber(values.stoneWeightG) ?? null,
     dimensions: values.dimensions?.trim() || null,
     sizes: (values.sizes ?? "")
       .split(",")
