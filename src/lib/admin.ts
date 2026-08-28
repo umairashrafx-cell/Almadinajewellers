@@ -871,3 +871,56 @@ export async function deleteCategory(slug: string): Promise<void> {
   const { error } = await untyped.from("categories").delete().eq("slug", slug);
   if (error) throw readableError(error, "Could not delete that category");
 }
+
+// ---------------------------------------------------------------------------
+// Custom orders
+// ---------------------------------------------------------------------------
+
+export type CustomOrderStatus = "new" | "discussed" | "quoted" | "closed";
+
+export type AdminCustomOrder = {
+  id: string;
+  reference: string;
+  name: string;
+  phone: string;
+  city: string | null;
+  category_slug: string | null;
+  size: string | null;
+  description: string | null;
+  image_path: string | null;
+  voice_path: string | null;
+  status: CustomOrderStatus;
+  created_at: string;
+};
+
+export async function fetchCustomOrders(): Promise<AdminCustomOrder[]> {
+  const { data, error } = await untyped
+    .from("custom_orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw readableError(error, "Could not load custom orders");
+  return (data ?? []) as AdminCustomOrder[];
+}
+
+export async function setCustomOrderStatus(id: string, status: CustomOrderStatus): Promise<void> {
+  const { error } = await untyped.from("custom_orders").update({ status }).eq("id", id);
+  if (error) throw readableError(error, "Could not update that enquiry");
+}
+
+/**
+ * A temporary link to one attachment.
+ *
+ * The bucket is private — these are a stranger's photographs and their recorded
+ * voice — so the shop reads them through a link that expires rather than a
+ * public URL that would work forever for anyone who ever saw it.
+ */
+export async function signAttachment(path: string, seconds = 60 * 60): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from("custom-orders")
+    .createSignedUrl(path, seconds);
+
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}

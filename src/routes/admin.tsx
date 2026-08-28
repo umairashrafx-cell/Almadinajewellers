@@ -13,6 +13,7 @@ import {
   Package,
   Star,
   FolderTree,
+  Sparkles,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,9 @@ function AdminLayout() {
             </NavTab>
             <NavTab to="/admin/orders" icon={Package}>
               Orders
+            </NavTab>
+            <NavTab to="/admin/custom-orders" icon={Sparkles}>
+              Custom
             </NavTab>
             <NavTab to="/admin/products" icon={Gem}>
               Products
