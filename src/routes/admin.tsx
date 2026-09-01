@@ -84,7 +84,16 @@ function AdminLayout() {
             </span>
           </div>
 
-          <nav className="order-3 flex w-full gap-1 text-sm sm:order-none sm:w-auto">
+          {/*
+            Seven tabs need about 744px laid out in a row, and a phone offers
+            343. They used to be given `flex-1` and no way to wrap, so each one
+            was squeezed to a seventh of the width and the labels were
+            unreadable. On a phone they become a four-up grid of stacked
+            icon-and-label tiles — every tab visible without scrolling or
+            hiding, and a target big enough for a thumb. From sm up there is
+            room for the original single row.
+          */}
+          <nav className="order-3 grid w-full grid-cols-4 gap-1 sm:order-none sm:flex sm:w-auto">
             <NavTab to="/admin" exact icon={Inbox}>
               Enquiries
             </NavTab>
@@ -109,18 +118,26 @@ function AdminLayout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-4 text-xs">
+            {/*
+              The site link used to disappear below sm, which is the one place
+              someone is most likely to want it — checking on a phone whether
+              an edit came out right. It keeps its label where there is room
+              and falls back to the icon alone, still a full-sized target.
+            */}
             <a
               href="/"
-              className="hidden items-center gap-1.5 text-champagne/70 transition-colors hover:text-gold sm:inline-flex"
+              title="View site"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-champagne/70 transition-colors hover:text-gold sm:min-h-0 sm:px-0"
             >
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-              View site
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">View site</span>
+              <span className="sr-only sm:hidden">View site</span>
             </a>
             <span className="hidden text-champagne/60 md:inline">{email}</span>
             <button
               type="button"
               onClick={() => void signOut()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gold/40 px-3 py-1.5 font-medium text-champagne transition-colors hover:bg-gold hover:text-primary"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gold/40 px-3 font-medium text-champagne transition-colors hover:bg-gold hover:text-primary sm:min-h-0 sm:py-1.5"
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               Sign out
@@ -130,7 +147,7 @@ function AdminLayout() {
         <div className="h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
         <Outlet />
       </main>
     </div>
@@ -152,10 +169,10 @@ function NavTab({
     <Link
       to={to}
       activeOptions={{ exact: exact ?? false }}
-      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 font-medium text-champagne/70 transition-colors hover:bg-ivory/10 hover:text-ivory sm:flex-none"
+      className="inline-flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-2.5 text-[11px] font-medium leading-tight text-champagne/70 transition-colors hover:bg-ivory/10 hover:text-ivory sm:flex-row sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
       activeProps={{ className: "bg-gold text-primary hover:bg-gold hover:text-primary" }}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-4 w-4 shrink-0" />
       {children}
     </Link>
   );
