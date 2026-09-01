@@ -18,7 +18,7 @@ export const Route = createFileRoute("/new-arrivals")({
   head: () => {
     const title = `New Arrivals — ${SITE.name}`;
     const description =
-      "The latest pieces to reach the counter: hallmarked 21K and 22K gold, certified diamond and 925 silver, with weight and stone detail on every piece.";
+      "The latest pieces to reach the counter: hallmarked 22K gold, certified diamond and 925 silver, with weight and stone detail on every piece.";
     return {
       meta: [
         { title },

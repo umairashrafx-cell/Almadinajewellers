@@ -34,7 +34,7 @@ export const Route = createFileRoute("/bridal")({
   head: () => {
     const title = `Bridal Jewellery & Consultations — ${SITE.name}`;
     const description =
-      "Hallmarked 21K and 22K bridal sets, made to order in six to ten weeks. Book a private consultation at Al-Madina Jewellers, Sarafa Market, Mandi Bahauddin.";
+      "Hallmarked 22K bridal sets, made to order in six to ten weeks. Book a private consultation at Al-Madina Jewellers, Sarafa Market, Mandi Bahauddin.";
     return {
       meta: [
         { title },
@@ -157,7 +157,7 @@ function BridalPage() {
             <SectionHeading
               eyebrow="The Collection"
               title="Bridal Sets"
-              description="Complete suites in 21K and 22K gold. Weight, purity and stone detail on every piece."
+              description="Complete suites in 22K gold. Weight, purity and stone detail on every piece."
             />
 
             <div className="mt-14 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:gap-x-6 xl:grid-cols-4">

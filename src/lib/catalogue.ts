@@ -654,7 +654,7 @@ export async function fetchProductPage(slug: string): Promise<ProductPage | null
 /** Short editorial line under the category banner. */
 export const CATEGORY_BLURBS: Record<string, string> = {
   "bridal-sets":
-    "Complete bridal suites in 21K and 22K gold. Every set is hallmarked, weighed in front of you, and priced against the day's rate.",
+    "Complete bridal suites in 22K gold. Every set is hallmarked, weighed in front of you, and priced against the day's rate.",
   "gold-bangles":
     "Karay and cuffs for daily wear and for keeping. Hand-finished in the workshop, from slim pairs to wide engraved bands.",
   rings:

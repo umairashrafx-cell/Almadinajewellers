@@ -17,7 +17,7 @@ import { SITE } from "@/lib/site";
 export const Route = createFileRoute("/our-story")({
   head: () => {
     const title = `Our Story — Three Generations · ${SITE.name}`;
-    const description = `Founded by ${SITE.founder} in Sarafa Market, Mandi Bahauddin. Three generations of goldsmiths, hallmarked 21K and 22K gold, and a weight checked in front of every customer.`;
+    const description = `Founded by ${SITE.founder} in Sarafa Market, Mandi Bahauddin. Three generations of goldsmiths, hallmarked 22K gold, and a weight checked in front of every customer.`;
     return {
       meta: [
         { title },
@@ -59,7 +59,7 @@ const GENERATIONS = [
 const STANDARDS = [
   {
     title: "Hallmarked purity",
-    body: "Gold is stamped 21K or 22K, and 18K for diamond settings. Silver is stamped 925. The stamp is on the piece, not just the bill.",
+    body: "Gold is stamped 22K, and 18K for diamond settings. Silver is stamped 925. The stamp is on the piece, not just the bill.",
   },
   {
     title: "Weighed in front of you",
