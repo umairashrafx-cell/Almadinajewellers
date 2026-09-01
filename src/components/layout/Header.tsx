@@ -156,13 +156,27 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
           ))}
         </nav>
 
-        {/* Right icons */}
-        <div className="flex items-center gap-4">
+        {/*
+          Right icons.
+
+          Each of these was a bare 20px icon with no padding, so the tap target
+          was the glyph itself — a quarter of the area a fingertip covers, on
+          the controls a phone visitor reaches for most. They now sit in 40px
+          boxes below lg, which is as large as fits beside the wordmark, and
+          keep their natural size at lg where there is a mouse.
+
+          The gap shrinks to match: the padding inside each box now provides
+          the visual separation that gap-4 used to.
+        */}
+        <div className="flex items-center gap-0.5 lg:gap-4">
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
-            className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
+            className={cn(
+              "inline-flex h-10 w-10 items-center justify-center lg:h-auto lg:w-auto transition-colors hover:text-gold",
+              solid ? "text-ink" : "text-ivory",
+            )}
           >
             <Search className="h-5 w-5" strokeWidth={1.3} />
           </button>
@@ -171,7 +185,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
             to="/wishlist"
             aria-label={skus.length > 0 ? `Wishlist, ${skus.length} saved` : "Wishlist"}
             className={cn(
-              "relative transition-colors hover:text-gold",
+              "inline-flex h-10 w-10 items-center justify-center lg:h-auto lg:w-auto relative transition-colors hover:text-gold",
               solid ? "text-ink" : "text-ivory",
             )}
           >
@@ -187,7 +201,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
             to="/cart"
             aria-label={cartCount > 0 ? `Your order, ${cartCount} pieces` : "Your order"}
             className={cn(
-              "relative transition-colors hover:text-gold",
+              "inline-flex h-10 w-10 items-center justify-center lg:h-auto lg:w-auto relative transition-colors hover:text-gold",
               solid ? "text-ink" : "text-ivory",
             )}
           >
@@ -203,7 +217,12 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Chat on WhatsApp"
-            className={cn("transition-colors hover:text-gold", solid ? "text-ink" : "text-ivory")}
+            /* Hidden below lg: the floating WhatsApp button is already on screen
+               there, and the room it frees is what lets the rest be thumb-sized. */
+            className={cn(
+              "hidden transition-colors hover:text-gold lg:inline-flex",
+              solid ? "text-ink" : "text-ivory",
+            )}
           >
             <WhatsAppIcon className="h-5 w-5" />
           </a>
@@ -212,7 +231,10 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
-            className={cn("lg:hidden", solid ? "text-ink" : "text-ivory")}
+            className={cn(
+              "inline-flex h-10 w-10 items-center justify-center lg:h-auto lg:w-auto lg:hidden",
+              solid ? "text-ink" : "text-ivory",
+            )}
           >
             {menuOpen ? (
               <X className="h-6 w-6" strokeWidth={1.3} />
