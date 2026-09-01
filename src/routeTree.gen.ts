@@ -16,6 +16,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomOrderRouteImport } from './routes/custom-order'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
+import { Route as GoldRateInMandiBahauddinTodayRouteImport } from './routes/gold-rate-in-mandi-bahauddin-today'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
 import { Route as PoliciesRouteImport } from './routes/policies'
@@ -70,6 +71,12 @@ const GoldRateRoute = GoldRateRouteImport.update({
   path: '/gold-rate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoldRateInMandiBahauddinTodayRoute =
+  GoldRateInMandiBahauddinTodayRouteImport.update({
+    id: '/gold-rate-in-mandi-bahauddin-today',
+    path: '/gold-rate-in-mandi-bahauddin-today',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const NewArrivalsRoute = NewArrivalsRouteImport.update({
   id: '/new-arrivals',
   path: '/new-arrivals',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
   '/gold-rate': typeof GoldRateRoute
+  '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
@@ -195,6 +203,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
   '/gold-rate': typeof GoldRateRoute
+  '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
@@ -223,6 +232,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
   '/gold-rate': typeof GoldRateRoute
+  '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-order'
     | '/gold-rate'
+    | '/gold-rate-in-mandi-bahauddin-today'
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-order'
     | '/gold-rate'
+    | '/gold-rate-in-mandi-bahauddin-today'
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
@@ -305,6 +317,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-order'
     | '/gold-rate'
+    | '/gold-rate-in-mandi-bahauddin-today'
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
@@ -333,6 +346,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CustomOrderRoute: typeof CustomOrderRoute
   GoldRateRoute: typeof GoldRateRoute
+  GoldRateInMandiBahauddinTodayRoute: typeof GoldRateInMandiBahauddinTodayRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
   PoliciesRoute: typeof PoliciesRoute
@@ -395,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/gold-rate'
       fullPath: '/gold-rate'
       preLoaderRoute: typeof GoldRateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gold-rate-in-mandi-bahauddin-today': {
+      id: '/gold-rate-in-mandi-bahauddin-today'
+      path: '/gold-rate-in-mandi-bahauddin-today'
+      fullPath: '/gold-rate-in-mandi-bahauddin-today'
+      preLoaderRoute: typeof GoldRateInMandiBahauddinTodayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new-arrivals': {
@@ -556,6 +577,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CustomOrderRoute: CustomOrderRoute,
   GoldRateRoute: GoldRateRoute,
+  GoldRateInMandiBahauddinTodayRoute: GoldRateInMandiBahauddinTodayRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
   PoliciesRoute: PoliciesRoute,

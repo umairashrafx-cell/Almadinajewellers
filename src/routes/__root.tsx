@@ -26,7 +26,7 @@ const RECOVERY_LINKS = [
   { to: "/collections", label: "All collections" },
   { to: "/bridal", label: "Bridal" },
   { to: "/new-arrivals", label: "New arrivals" },
-  { to: "/gold-rate", label: "Today's gold rate" },
+  { to: "/gold-rate-in-mandi-bahauddin-today", label: "Today's gold rate" },
   { to: "/stores", label: "Visit the shop" },
   { to: "/contact", label: "Contact" },
 ];

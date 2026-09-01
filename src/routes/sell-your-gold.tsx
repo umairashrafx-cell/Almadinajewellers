@@ -267,7 +267,7 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
                   <span className="ml-2 text-sm text-warmgrey">per tola</span>
                 </p>
                 <Link
-                  to="/gold-rate"
+                  to="/gold-rate-in-mandi-bahauddin-today"
                   className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest text-primary underline-offset-4 transition-colors hover:text-gold hover:underline"
                 >
                   See the full board

@@ -25,7 +25,7 @@ const COLUMNS = [
     links: [
       { label: "Our Story", to: "/our-story" },
       { label: "Our Founder", to: "/our-story/founder" },
-      { label: "Gold Rate", to: "/gold-rate" },
+      { label: "Gold Rate", to: "/gold-rate-in-mandi-bahauddin-today" },
       { label: "Sell Your Gold", to: "/sell-your-gold" },
       { label: "Custom Order", to: "/custom-order" },
       { label: "Certification & Hallmarking", to: "/our-story#standards" },
