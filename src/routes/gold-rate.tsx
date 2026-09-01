@@ -38,7 +38,7 @@ export const Route = createFileRoute("/gold-rate")({
     const k22 = gold.find((r) => r.karat === "22K");
     const stamp = loaderData?.date ? formatRateDate(loaderData.date) : "today";
 
-    const title = `Today's Gold Rate in Pakistan — Piece, Pathor, Jewellery & Silver · ${SITE.name}`;
+    const title = `Gold Rate in Mandi Bahauddin — Piece, Pathor, Jewellery & Silver · ${SITE.name}`;
     const description = k22
       ? `Gold rate ${stamp}: jewellery gold (22k) Rs. ${k22.perTola.toLocaleString("en-US")} per tola, Rs. ${k22.perGram.toLocaleString("en-US")} per gram. Piece, pathor, jewellery and silver rates, with a gram-to-rupee calculator.`
       : "Today's piece, pathor, jewellery and silver rates per tola and per gram in PKR, with a gold value calculator.";
@@ -88,7 +88,7 @@ function GoldRatePage() {
             </nav>
 
             <h1 className="mt-6 font-display text-4xl font-light tracking-wide text-ivory sm:text-5xl">
-              Today's Gold Rate
+              Today's Gold Rate in Mandi Bahauddin
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-champagne/80">
               Piece, pathor, jewellery and silver, in Pakistani rupees per gram and per tola. We
