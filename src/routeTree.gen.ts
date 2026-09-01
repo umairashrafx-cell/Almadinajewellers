@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BridalRouteImport } from './routes/bridal'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CustomOrderRouteImport } from './routes/custom-order'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
@@ -24,6 +25,7 @@ import { Route as StoresRouteImport } from './routes/stores'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminCustomOrdersRouteImport } from './routes/admin/custom-orders'
 import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminRatesRouteImport } from './routes/admin/rates'
@@ -56,6 +58,11 @@ const CartRoute = CartRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomOrderRoute = CustomOrderRouteImport.update({
+  id: '/custom-order',
+  path: '/custom-order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoldRateRoute = GoldRateRouteImport.update({
@@ -108,6 +115,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCustomOrdersRoute = AdminCustomOrdersRouteImport.update({
+  id: '/custom-orders',
+  path: '/custom-orders',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -155,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/bridal': typeof BridalRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
+  '/custom-order': typeof CustomOrderRoute
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
@@ -164,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/custom-orders': typeof AdminCustomOrdersRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
@@ -179,6 +193,7 @@ export interface FileRoutesByTo {
   '/bridal': typeof BridalRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
+  '/custom-order': typeof CustomOrderRoute
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
@@ -188,6 +203,7 @@ export interface FileRoutesByTo {
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/custom-orders': typeof AdminCustomOrdersRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
@@ -205,6 +221,7 @@ export interface FileRoutesById {
   '/bridal': typeof BridalRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
+  '/custom-order': typeof CustomOrderRoute
   '/gold-rate': typeof GoldRateRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
@@ -214,6 +231,7 @@ export interface FileRoutesById {
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/custom-orders': typeof AdminCustomOrdersRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
@@ -232,6 +250,7 @@ export interface FileRouteTypes {
     | '/bridal'
     | '/cart'
     | '/contact'
+    | '/custom-order'
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
@@ -241,6 +260,7 @@ export interface FileRouteTypes {
     | '/stores'
     | '/wishlist'
     | '/admin/categories'
+    | '/admin/custom-orders'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/rates'
@@ -256,6 +276,7 @@ export interface FileRouteTypes {
     | '/bridal'
     | '/cart'
     | '/contact'
+    | '/custom-order'
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
@@ -265,6 +286,7 @@ export interface FileRouteTypes {
     | '/stores'
     | '/wishlist'
     | '/admin/categories'
+    | '/admin/custom-orders'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/rates'
@@ -281,6 +303,7 @@ export interface FileRouteTypes {
     | '/bridal'
     | '/cart'
     | '/contact'
+    | '/custom-order'
     | '/gold-rate'
     | '/new-arrivals'
     | '/our-story'
@@ -290,6 +313,7 @@ export interface FileRouteTypes {
     | '/stores'
     | '/wishlist'
     | '/admin/categories'
+    | '/admin/custom-orders'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/rates'
@@ -307,6 +331,7 @@ export interface RootRouteChildren {
   BridalRoute: typeof BridalRoute
   CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
+  CustomOrderRoute: typeof CustomOrderRoute
   GoldRateRoute: typeof GoldRateRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
@@ -356,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/custom-order': {
+      id: '/custom-order'
+      path: '/custom-order'
+      fullPath: '/custom-order'
+      preLoaderRoute: typeof CustomOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gold-rate': {
@@ -428,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/custom-orders': {
+      id: '/admin/custom-orders'
+      path: '/custom-orders'
+      fullPath: '/admin/custom-orders'
+      preLoaderRoute: typeof AdminCustomOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -489,6 +528,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminCustomOrdersRoute: typeof AdminCustomOrdersRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminRatesRoute: typeof AdminRatesRoute
@@ -498,6 +538,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminCustomOrdersRoute: AdminCustomOrdersRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminRatesRoute: AdminRatesRoute,
@@ -513,6 +554,7 @@ const rootRouteChildren: RootRouteChildren = {
   BridalRoute: BridalRoute,
   CartRoute: CartRoute,
   ContactRoute: ContactRoute,
+  CustomOrderRoute: CustomOrderRoute,
   GoldRateRoute: GoldRateRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
