@@ -17,7 +17,7 @@ const NAV = [
   { label: "Collections", to: "/collections", mega: true },
   { label: "Bridal", to: "/bridal" },
   { label: "New Arrivals", to: "/new-arrivals" },
-  { label: "Gold Rate", to: "/gold-rate" },
+  { label: "Gold Rate", to: "/gold-rate-in-mandi-bahauddin-today" },
   { label: "Sell Gold", to: "/sell-your-gold" },
   { label: "Our Story", to: "/our-story" },
   { label: "Stores", to: "/stores" },

@@ -111,6 +111,6 @@ export function rateShareMessage(snapshot: RateSnapshot): string {
     "",
     "_Rates are indicative. Your price is confirmed against the rate on the day you buy, and every piece is weighed in front of you._",
     "",
-    `${SITE.origin}/gold-rate`,
+    `${SITE.origin}/gold-rate-in-mandi-bahauddin-today`,
   ].join("\n");
 }

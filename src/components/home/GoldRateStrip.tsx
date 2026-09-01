@@ -113,7 +113,7 @@ export function GoldRateStrip() {
 
         <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
           <Link
-            to="/gold-rate"
+            to="/gold-rate-in-mandi-bahauddin-today"
             className="border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
           >
             Full rate table &amp; calculator

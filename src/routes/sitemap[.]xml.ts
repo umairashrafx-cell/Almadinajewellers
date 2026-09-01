@@ -35,7 +35,7 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/new-arrivals", changefreq: "weekly", priority: "0.8" },
   // The rate is republished most mornings, so this is the one page that is
   // genuinely daily.
-  { path: "/gold-rate", changefreq: "daily", priority: "0.8" },
+  { path: "/gold-rate-in-mandi-bahauddin-today", changefreq: "daily", priority: "0.8" },
   { path: "/sell-your-gold", changefreq: "monthly", priority: "0.8" },
   { path: "/custom-order", changefreq: "monthly", priority: "0.8" },
   { path: "/our-story", changefreq: "yearly", priority: "0.5" },
@@ -120,7 +120,9 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         const entries = [
           ...STATIC_ENTRIES.map((entry) =>
-            entry.path === "/gold-rate" && rateDate ? { ...entry, lastmod: rateDate } : entry,
+            entry.path === "/gold-rate-in-mandi-bahauddin-today" && rateDate
+              ? { ...entry, lastmod: rateDate }
+              : entry,
           ),
           ...catalogue,
         ];
