@@ -147,7 +147,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Al-Madina Jewellers" },
       {
         name: "description",
-        content: "Heirlooms in the Making — fine gold, diamond and silver jewellery.",
+        content: "Weighed Honestly, Made Beautifully — fine gold, diamond and silver jewellery.",
       },
       { name: "author", content: "Al-Madina Jewellers" },
       { property: "og:type", content: "website" },

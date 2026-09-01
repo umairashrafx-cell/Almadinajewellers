@@ -29,8 +29,7 @@ export function Hero() {
           {SITE.tagline}
         </h1>
         <p className="mt-6 max-w-xl text-sm leading-relaxed text-champagne/85 sm:text-base">
-          Hallmarked 21K and 22K gold, certified diamonds and 925 silver — made by three generations
-          of one family.
+          The rate is posted daily. The weight is shown openly. The making charge is told upfront.
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <ActionLink href="#categories">Explore Collections</ActionLink>

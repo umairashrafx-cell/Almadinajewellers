@@ -16,7 +16,7 @@ import { GoldRateStrip } from "@/components/home/GoldRateStrip";
 import { Testimonials } from "@/components/home/Testimonials";
 import { NewsletterCta } from "@/components/home/NewsletterCta";
 
-const title = "Al-Madina Jewellers — Heirlooms in the Making";
+const title = "Al-Madina Jewellers — Weighed Honestly, Made Beautifully";
 const description =
   "Hallmarked 21K & 22K gold, certified diamond and 925 silver jewellery from Sarafa Market, Mandi Bahauddin. Bridal sets, bangles, rings. Enquire on WhatsApp.";
 

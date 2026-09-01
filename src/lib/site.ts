@@ -5,7 +5,7 @@
 
 export const SITE = {
   name: "Al-Madina Jewellers",
-  tagline: "Heirlooms in the Making",
+  tagline: "Weighed Honestly, Made Beautifully",
   /** Canonical origin. Used for share URLs and WhatsApp prefills, which must be
    * identical on the server and the client, so window.location is never read. */
   origin: "https://www.almadinajeweller.com",
