@@ -73,16 +73,20 @@ function RatesScreen() {
   }
 
   /**
-   * Fills Pathor and Jewellery from the Piece figure by purity ratio.
+   * Fills Pathor and Jewellery from the Piece figure.
    *
    * Most days the shop is told one number and the rest follow from it. Silver
    * is not touched: it is a different metal with its own market, not a fraction
    * of the gold rate.
    *
-   * The buying rate follows the same way, at twenty parts of twenty-four.
+   * Pathor and the buying rate come off Piece by purity, at 23.65 and 20 parts
+   * of twenty-four. Jewellery does not: it is eleven twelfths of the Pathor
+   * rate, which is the shop's own rule and not a purity fraction of Piece.
    *
-   * All land on the hundred, rounded down, because a rate reads as a rate
-   * rather than as the output of a division.
+   * Each figure is rounded down to the hundred before the next one is taken
+   * from it, so Jewellery divides the Pathor rate that is actually on the
+   * board. Anyone can check the board with a calculator and get the same
+   * answer, which they could not if the arithmetic ran on hidden decimals.
    */
   function deriveFrom24k() {
     const anchor = Number(tola["24K"]);
@@ -91,10 +95,12 @@ function RatesScreen() {
       return;
     }
 
+    const pathor = roundRateToHundred((anchor * 23.65) / 24);
+
     setTola((current) => ({
       ...current,
-      "23.65K": String(roundRateToHundred((anchor * 23.65) / 24)),
-      "22K": String(roundRateToHundred((anchor * 22) / 24)),
+      "23.65K": String(pathor),
+      "22K": String(roundRateToHundred((pathor / 12) * 11)),
       [BUY_KARAT]: String(roundRateToHundred((anchor * 20) / 24)),
     }));
     setStatus(null);
