@@ -24,15 +24,18 @@ type RateRow = {
 export const TOLA_IN_GRAMS = 11.6638;
 
 /**
- * Rates are quoted to the hundred rupee, rounded down.
+ * Rates are quoted to the nearest hundred rupee.
  *
- * A derived rate lands on figures like 472,015 and 439,083, which is not how a
- * rate is spoken or written on a board. Down rather than to the nearest,
- * because the rounding should never quote a customer more than the arithmetic
- * gives — 439,083 becomes 439,000, not 439,100.
+ * A derived rate lands on figures like 442,354 and 411,492, which is not how a
+ * rate is spoken or written on a board. To the nearest rather than down, which
+ * is how the shop writes the board by hand: 442,354 becomes 442,400, not
+ * 442,300.
+ *
+ * It applies to every rate the shop publishes, derived or typed, so the board
+ * and the arithmetic behind it can never disagree.
  */
 export function roundRateToHundred(perTola: number): number {
-  return Math.floor(perTola / 100) * 100;
+  return Math.round(perTola / 100) * 100;
 }
 
 /**
