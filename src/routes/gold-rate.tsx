@@ -40,8 +40,8 @@ export const Route = createFileRoute("/gold-rate")({
 
     const title = `Gold Rate in Mandi Bahauddin — Piece, Pathor, Jewellery & Silver · ${SITE.name}`;
     const description = k22
-      ? `Gold rate ${stamp}: jewellery gold (22k) Rs. ${k22.perTola.toLocaleString("en-US")} per tola, Rs. ${k22.perGram.toLocaleString("en-US")} per gram. Piece, pathor, jewellery and silver rates, with a gram-to-rupee calculator.`
-      : "Today's piece, pathor, jewellery and silver rates per tola and per gram in PKR, with a gold value calculator.";
+      ? `Gold rate in Mandi Bahauddin ${stamp}: jewellery gold (22k) Rs. ${k22.perTola.toLocaleString("en-US")} per tola, Rs. ${k22.perGram.toLocaleString("en-US")} per gram. Piece, pathor, jewellery and silver rates, with a gram-to-rupee calculator.`
+      : "Today's piece, pathor, jewellery and silver rates in Mandi Bahauddin, per tola and per gram in PKR, with a gold value calculator.";
 
     return {
       meta: [
