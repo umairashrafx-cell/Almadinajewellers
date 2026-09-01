@@ -26,7 +26,14 @@ const untyped = supabase as unknown as SupabaseClient;
 
 type Entry = { path: string; changefreq: string; priority: string; lastmod?: string };
 
-type ProductRow = { slug: string; created_at: string; updated_at: string | null };
+type ProductRow = {
+  slug: string;
+  category_slug: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type CategoryRow = { slug: string; parent_slug: string | null };
 
 const STATIC_ENTRIES: Entry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
@@ -73,10 +80,10 @@ async function lastRateDate(): Promise<string | undefined> {
 
 async function catalogueEntries(): Promise<Entry[]> {
   const [categories, products] = await Promise.all([
-    supabase.from("categories").select("slug").order("sort_order"),
+    untyped.from("categories").select("slug, parent_slug").order("sort_order"),
     untyped
       .from("products")
-      .select("slug, created_at, updated_at")
+      .select("slug, category_slug, created_at, updated_at")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -87,13 +94,36 @@ async function catalogueEntries(): Promise<Entry[]> {
     return [];
   }
 
+  const cats = (categories.data ?? []) as CategoryRow[];
+  const prods = (products.data ?? []) as ProductRow[];
+
+  /*
+   * A collection is listed only once there is something in it.
+   *
+   * An empty collection page says so honestly and is a perfectly good page to
+   * arrive at from the site, but asking a search engine to index one is asking
+   * it to judge a page with no content on it — which is how the placeholder
+   * catalogue earned forty-odd "discovered, currently not indexed" verdicts.
+   * Nothing here needs maintaining: a collection rejoins the sitemap the
+   * morning a piece is filed under it.
+   *
+   * A parent counts its children's stock, because that is what the collection
+   * page shows — /collections/necklace-set lists everything in Chokar, Mala,
+   * Short and Ghani, so it is not empty when they are not.
+   */
+  const stocked = new Set(prods.map((p) => p.category_slug));
+  const hasStock = (slug: string) =>
+    stocked.has(slug) || cats.some((c) => c.parent_slug === slug && stocked.has(c.slug));
+
   return [
-    ...(categories.data ?? []).map((c) => ({
-      path: `/collections/${c.slug}`,
-      changefreq: "weekly",
-      priority: "0.8",
-    })),
-    ...((products.data ?? []) as ProductRow[]).map((p) => ({
+    ...cats
+      .filter((c) => hasStock(c.slug))
+      .map((c) => ({
+        path: `/collections/${c.slug}`,
+        changefreq: "weekly",
+        priority: "0.8",
+      })),
+    ...prods.map((p) => ({
       path: `/products/${p.slug}`,
       changefreq: "monthly",
       priority: "0.7",
