@@ -19,6 +19,7 @@ const NAV = [
   { label: "New Arrivals", to: "/new-arrivals" },
   { label: "Gold Rate", to: "/gold-rate-in-mandi-bahauddin-today" },
   { label: "Sell Gold", to: "/sell-your-gold" },
+  { label: "Custom Order", to: "/custom-order" },
   { label: "Our Story", to: "/our-story" },
   { label: "Stores", to: "/stores" },
 ];
