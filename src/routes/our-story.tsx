@@ -84,10 +84,17 @@ function OurStoryPage() {
       <main>
         {/* Hero */}
         <section className="relative -mt-[74px] flex min-h-[70vh] items-end overflow-hidden">
+          {/*
+            The crop is pulled up from centre. This is a landscape frame in a
+            hero that is wider than it is tall, so object-cover takes the
+            middle band and a centred crop cuts the goldsmith's cap off at the
+            top. Biasing to 22% keeps his head and hands whole and spends the
+            loss on the bench, which the gradient covers anyway.
+          */}
           <img
             src={workshopImage}
             alt="Goldsmith working at the bench in the Al-Madina workshop"
-            className="ken-burns absolute inset-0 h-full w-full object-cover"
+            className="ken-burns absolute inset-0 h-full w-full object-cover object-[50%_22%]"
           />
           <div
             className="absolute inset-0"
