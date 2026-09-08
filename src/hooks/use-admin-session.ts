@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,14 @@ export function useAdminSession(): AdminSession {
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
 
+  /*
+   * Whether the panel has ever finished deciding who this is.
+   *
+   * Only the first answer is allowed to show the loading screen. Every later
+   * re-check runs quietly — see the auth subscription below for why.
+   */
+  const resolvedOnce = useRef(false);
+
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
 
   useEffect(() => {
@@ -43,6 +51,7 @@ export function useAdminSession(): AdminSession {
         setEmail(null);
         setError(null);
         setStatus("signed-out");
+        resolvedOnce.current = true;
         return;
       }
 
@@ -58,14 +67,27 @@ export function useAdminSession(): AdminSession {
         setError(e instanceof Error ? e.message : "Could not check this account.");
         setStatus("not-admin");
       }
+
+      resolvedOnce.current = true;
     }
 
     supabase.auth.getSession().then(({ data }) => resolve(data.session));
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Re-checking on every auth event keeps a revoked administrator from
-      // keeping the panel open until they happen to reload.
-      setStatus("loading");
+      /*
+       * Re-check on every auth event, which keeps a revoked administrator from
+       * holding the panel open until they happen to reload.
+       *
+       * Quietly, though, after the first time. Supabase refreshes the token
+       * when a tab is brought back to the front, and that arrives here as an
+       * auth event. Dropping to "loading" swaps the whole panel for the
+       * checking screen, which unmounts whatever is on it — so switching to
+       * another tab and coming back threw away a half-filled product form and
+       * returned to the list. The re-check still runs and still signs out
+       * anyone who has lost access; it just no longer tears the page down to
+       * ask the question.
+       */
+      if (!resolvedOnce.current) setStatus("loading");
       void resolve(session);
     });
 
