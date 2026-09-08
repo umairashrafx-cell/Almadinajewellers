@@ -200,6 +200,25 @@ export function Footer() {
             >
               Automa8
             </a>
+            {" · "}
+            {/*
+              The way in for the shop, so nobody has to remember the address.
+
+              rel="nofollow" because this is the one link on the site pointing
+              somewhere no search engine should go. robots.txt already refuses
+              the crawl and the page carries noindex, but a followed link is
+              still an invitation to record the URL, and there is nothing to
+              gain by extending it. It hides nothing: the panel is guarded by
+              the sign-in and by row-level security underneath it, not by the
+              address being hard to guess.
+            */}
+            <Link
+              to="/admin"
+              rel="nofollow"
+              className="border-b border-champagne/30 pb-0.5 transition-colors hover:border-gold hover:text-gold"
+            >
+              Admin
+            </Link>
           </p>
         </div>
       </div>
