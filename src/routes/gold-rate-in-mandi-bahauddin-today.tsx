@@ -177,10 +177,15 @@ function GoldRatePage() {
                 The same board as a picture, for a status or a broadcast list
                 where nobody reads a table.
               */}
+              {/*
+                The caption is the address and nothing else. Every figure is
+                already in the picture, and a message that repeats them arrives
+                as a wall of text under an image that had already said it.
+              */}
               <ShareCardButton
                 render={() => renderRateCard(snapshot)}
                 title="Today's Gold Rate"
-                text={rateShareMessage(snapshot)}
+                text={`${SITE.origin}/gold-rate-in-mandi-bahauddin-today`}
                 filename={`al-madina-gold-rate-${snapshot.date}.jpg`}
                 className="border border-gold bg-transparent text-ink hover:bg-champagne/50"
               />
