@@ -463,7 +463,9 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
    * there. This is the line somebody has to be able to type back in.
    */
   ctx.font = `600 26px ${SANS}`;
-  const urlText = "almadinajeweller.com";
+  // Taken from the canonical origin rather than typed again, so the card cannot
+  // drift from the address the rest of the site declares.
+  const urlText = SITE.origin.replace(/^https?:\/\//, "");
   const urlW = ctx.measureText(urlText).width + 96;
   const urlY = badgeY + 46;
 
