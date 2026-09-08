@@ -258,6 +258,49 @@
 }
 
 /* Hide scrollbar on horizontal carousels */
+/*
+ * The house button surface.
+ *
+ * The shape stays as it was — two-pixel corners, uppercase, wide tracking —
+ * because that is what the rest of the site is built around. What is added is
+ * the craft: a gradient rather than a flat fill, a hairline of light along the
+ * top edge the way a bevelled metal edge catches it, a shadow that grows as the
+ * button lifts, and a press that actually presses.
+ *
+ * The sheen is a band of light that crosses the face on hover, which is what
+ * gold does when you turn it under a lamp. It is drawn on a pseudo-element and
+ * clipped, so it costs one composited layer and never touches layout.
+ */
+@utility btn-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.12s ease;
+}
+
+@utility btn-sheen {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: -60%;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.5), transparent);
+    transform: skewX(-18deg);
+    transition: left 0.65s cubic-bezier(0.25, 0.8, 0.3, 1);
+    pointer-events: none;
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    left: 120%;
+  }
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {
@@ -317,5 +360,25 @@
   .ken-burns,
   .pulse-gold {
     animation: none;
+  }
+
+  /*
+   * The button keeps its colour and shadow changes, which carry meaning, and
+   * loses the two things that move: the sweep of light and the lift.
+   */
+  .btn-sheen::after {
+    display: none;
+  }
+
+  .btn-surface {
+    transition:
+      background 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  .btn-surface:hover,
+  .btn-surface:active {
+    transform: none;
   }
 }
