@@ -77,7 +77,7 @@ export function InternationalGold() {
 
         {data ? (
           <p className="nums mt-8 text-[11px] uppercase tracking-widest text-champagne/45">
-            COMEX gold · {formatRateTimestamp(data.quotedAt)}
+            Tether Gold (XAUT) · {formatRateTimestamp(data.quotedAt)}
           </p>
         ) : null}
       </div>

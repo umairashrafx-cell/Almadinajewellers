@@ -10,20 +10,27 @@ import { TOLA_IN_GRAMS } from "@/lib/rates";
  * visitor would be both rude and slow, where one request per few minutes
  * serves everybody.
  *
- * The figure is COMEX gold futures — the contract, not spot metal. The two
- * differ by a few dollars and the page says "international gold" rather than
- * "spot" because of it. Nothing on this site should print a number under a
- * name that is not quite its own.
+ * The figure is Tether Gold, a token each of which is backed by one troy ounce
+ * of London Good Delivery gold. It is quoted here in preference to the COMEX
+ * contract for two reasons: it trades around the clock, so the panel is minutes
+ * old rather than an hour on a quiet evening, and a dated future carries the
+ * cost of holding metal until delivery — the December contract was running
+ * about forty dollars above this.
+ *
+ * It is still a market price for a token rather than the metal itself, and it
+ * can sit slightly either side of London. The page says "international gold"
+ * rather than "spot", and names the instrument underneath. Nothing here should
+ * print a number under a name that is not quite its own.
  */
 
 const GRAMS_PER_TROY_OUNCE = 31.1034768;
 
-/** COMEX gold, and the rupee, from the same source so they share a timestamp. */
-const GOLD = "https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=1d";
+/** Tether Gold, and the rupee, from the same source so they share a timestamp. */
+const GOLD = "https://query1.finance.yahoo.com/v8/finance/chart/XAUT0-USD?interval=1d&range=1d";
 const USD_PKR = "https://query1.finance.yahoo.com/v8/finance/chart/USDPKR=X?interval=1d&range=1d";
 
 export type InternationalGold = {
-  /** USD per troy ounce, as quoted. */
+  /** USD per troy ounce — one XAUT is backed by one ounce. */
   usdPerOunce: number;
   usdPerGram: number;
   /** What an ounce of pure gold is worth in rupees at the day's exchange rate. */
