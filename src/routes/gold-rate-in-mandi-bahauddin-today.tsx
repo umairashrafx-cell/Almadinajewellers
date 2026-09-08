@@ -27,6 +27,8 @@ import {
 } from "@/lib/rates";
 import { SITE, formatPKR, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
+import { renderRateCard } from "@/lib/share-card";
+import { ShareCardButton } from "@/components/ui/ShareCardButton";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
@@ -163,6 +165,17 @@ function GoldRatePage() {
                 <WhatsAppIcon className="h-4 w-4" />
                 Share today's rate
               </ActionLink>
+              {/*
+                The same board as a picture, for a status or a broadcast list
+                where nobody reads a table.
+              */}
+              <ShareCardButton
+                render={() => renderRateCard(snapshot)}
+                title="Today's Gold Rate"
+                text={rateShareMessage(snapshot)}
+                filename={`al-madina-gold-rate-${snapshot.date}.jpg`}
+                className="border border-gold bg-transparent text-ink hover:bg-champagne/50"
+              />
               <ActionLink
                 variant="outline"
                 href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}

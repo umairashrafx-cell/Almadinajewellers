@@ -37,6 +37,8 @@ import {
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCart } from "@/hooks/use-cart";
 import { productShareMessage, shareOnWhatsApp } from "@/lib/share";
+import { renderProductCard } from "@/lib/share-card";
+import { ShareCardButton } from "@/components/ui/ShareCardButton";
 import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 import { Reviews } from "@/components/product/Reviews";
 import { safeFetchReviews } from "@/lib/reviews";
@@ -225,6 +227,17 @@ function ProductDetailPage() {
                   <WhatsAppIcon className="h-4 w-4 text-primary" />
                   Share this piece
                 </a>
+
+                {/* The piece as a picture, photograph and price together. */}
+                <ShareCardButton
+                  render={() => renderProductCard(product, listed)}
+                  title={product.name}
+                  text={productShareMessage(product, listed)}
+                  filename={`${product.slug}.jpg`}
+                  className="px-0 py-0 text-[11px] tracking-widest text-ink hover:text-gold"
+                >
+                  Share as picture
+                </ShareCardButton>
 
                 <a
                   href={whatsappLink(
