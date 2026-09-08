@@ -31,6 +31,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminRatesRouteImport } from './routes/admin/rates'
 import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
+import { Route as ApiInternationalGoldRouteImport } from './routes/api/international-gold'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as OurStoryFounderRouteImport } from './routes/our-story_.founder'
@@ -147,6 +148,11 @@ const AdminReviewsRoute = AdminReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiInternationalGoldRoute = ApiInternationalGoldRouteImport.update({
+  id: '/api/international-gold',
+  path: '/api/international-gold',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/rates': typeof AdminRatesRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story_/founder': typeof OurStoryFounderRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/rates'
     | '/admin/reviews'
+    | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
     | '/products/$slug'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/rates'
     | '/admin/reviews'
+    | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
     | '/products/$slug'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/rates'
     | '/admin/reviews'
+    | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story_/founder'
     | '/products/$slug'
@@ -354,6 +366,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
+  ApiInternationalGoldRoute: typeof ApiInternationalGoldRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   OurStoryFounderRoute: typeof OurStoryFounderRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
@@ -516,6 +529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReviewsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/international-gold': {
+      id: '/api/international-gold'
+      path: '/api/international-gold'
+      fullPath: '/api/international-gold'
+      preLoaderRoute: typeof ApiInternationalGoldRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/collections/': {
       id: '/collections/'
       path: '/collections'
@@ -585,6 +605,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
+  ApiInternationalGoldRoute: ApiInternationalGoldRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   OurStoryFounderRoute: OurStoryFounderRoute,
   ProductsSlugRoute: ProductsSlugRoute,

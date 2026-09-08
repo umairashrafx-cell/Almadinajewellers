@@ -11,6 +11,7 @@ import { ActionLink } from "@/components/ui/ActionButton";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { InternationalGold } from "@/components/rate/InternationalGold";
 
 import {
   FALLBACK_SNAPSHOT,
@@ -103,6 +104,13 @@ function GoldRatePage() {
             </p>
           </div>
         </section>
+
+        {/*
+          The world price, directly under the shop's own. Placed here rather
+          than lower down because the comparison is the argument: the board
+          above is not a number the shop invented.
+        */}
+        <InternationalGold />
 
         {/* Rate table */}
         <section className="section-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
