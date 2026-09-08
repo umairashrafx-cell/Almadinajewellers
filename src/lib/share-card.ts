@@ -34,6 +34,18 @@ const SANS = '"Inter", ui-sans-serif, system-ui, sans-serif';
 export const CARD_W = 1080;
 export const CARD_H = 1350;
 
+/*
+ * Drawn at twice the nominal size and left to be shrunk.
+ *
+ * Everything below works in 1080x1350 coordinates; the canvas is 2160x2700 and
+ * scaled once, so no measurement has to change. It matters because the picture
+ * is almost never seen at its own size: WhatsApp re-encodes what it is given,
+ * and a phone displays it on a screen with two or three device pixels to each
+ * of ours. Handing that pipeline a 1x image is what makes the small type go
+ * soft — the loss happens before the picture ever reaches the recipient.
+ */
+const SCALE = 2;
+
 /**
  * Canvas falls back to a default face for a font the document has not finished
  * loading, which is how a card ends up set in Times. Asking for each face by
@@ -98,7 +110,16 @@ function drawCover(
   ctx.restore();
 }
 
-/** Letter-spaced capitals, which the wordmark and the small labels use. */
+/**
+ * Letter-spaced capitals, which the wordmark and the small labels use.
+ *
+ * Native letterSpacing where the browser has it, which is everywhere current.
+ * The hand-rolled version underneath places one glyph at a time, and that
+ * throws away the font's own kerning and its idea of how wide a space is: the
+ * subtitle came out as "MANDIBAHAUDD IN" — the word gap crushed and a false one
+ * opened mid-word. The browser knows how to space a string; it only needed
+ * telling by how much.
+ */
 function tracked(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -107,6 +128,29 @@ function tracked(
   spacing: number,
   align: "left" | "center" = "left",
 ): void {
+  /*
+   * Asked without narrowing: the DOM types already declare letterSpacing, so
+   * `"letterSpacing" in ctx` convinces the compiler the fallback below is
+   * unreachable — while older Safari, which is the reason it exists, does not
+   * implement it.
+   */
+  const spacedByBrowser = typeof (ctx as { letterSpacing?: unknown }).letterSpacing === "string";
+
+  if (spacedByBrowser) {
+    const previousSpacing = ctx.letterSpacing;
+    const previousAlign = ctx.textAlign;
+
+    ctx.letterSpacing = `${spacing}px`;
+    ctx.textAlign = align === "center" ? "center" : "left";
+    // Canvas trails the gap after the final letter too, so a centred string
+    // sits half a gap to the right of where it belongs.
+    ctx.fillText(text, align === "center" ? x - spacing / 2 : x, y);
+
+    ctx.letterSpacing = previousSpacing;
+    ctx.textAlign = previousAlign;
+    return;
+  }
+
   const chars = [...text];
   const width =
     chars.reduce((sum, c) => sum + ctx.measureText(c).width, 0) + spacing * (chars.length - 1);
@@ -141,11 +185,14 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number): string[
 
 function newCanvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
   const canvas = document.createElement("canvas");
-  canvas.width = CARD_W;
-  canvas.height = CARD_H;
+  canvas.width = CARD_W * SCALE;
+  canvas.height = CARD_H * SCALE;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("This browser cannot draw the picture.");
+
+  ctx.scale(SCALE, SCALE);
+  ctx.textRendering = "geometricPrecision";
 
   return { canvas, ctx };
 }
@@ -239,8 +286,8 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
   const side = ctx.createLinearGradient(0, 0, CARD_W, 0);
-  side.addColorStop(0, "rgba(4,24,15,0.82)");
-  side.addColorStop(0.58, "rgba(4,24,15,0.42)");
+  side.addColorStop(0, "rgba(4,24,15,0.80)");
+  side.addColorStop(0.6, "rgba(4,24,15,0.36)");
   side.addColorStop(1, "rgba(4,24,15,0)");
   ctx.fillStyle = side;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
@@ -253,8 +300,8 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.fillStyle = top;
   ctx.fillRect(0, 0, CARD_W, 300);
 
-  const PANEL_X = 52;
-  const PANEL_W = 700;
+  const PANEL_X = 46;
+  const PANEL_W = 748;
 
   // Masthead, centred over the panel column rather than the whole card.
   const mid = PANEL_X + PANEL_W / 2;
@@ -263,8 +310,8 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
 
   ctx.textAlign = "left";
   ctx.fillStyle = COLOUR.gold;
-  ctx.font = `300 66px ${DISPLAY}`;
-  tracked(ctx, "AL-MADINA", mid, 168, 6, "center");
+  ctx.font = `300 70px ${DISPLAY}`;
+  tracked(ctx, "AL-MADINA", mid, 170, 7, "center");
 
   ctx.fillStyle = COLOUR.champagne;
   ctx.font = `500 22px ${SANS}`;
@@ -282,8 +329,13 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   tracked(ctx, "TRUST · PURITY · TIMELESS BEAUTY", mid, 268, 4, "center");
 
   // The panel.
-  const panelY = 310;
-  const panelH = CARD_H - panelY - 52;
+  /*
+   * Panel geometry is budgeted rather than guessed. Everything below stacks
+   * from the top of the rows, and the address pill has to land inside the
+   * panel: at these sizes there are 22 pixels to spare beneath it.
+   */
+  const panelY = 300;
+  const panelH = CARD_H - panelY - 36;
 
   ctx.fillStyle = "rgba(4,24,15,0.84)";
   roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 28);
@@ -297,12 +349,12 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.textAlign = "center";
 
   ctx.fillStyle = COLOUR.ivory;
-  ctx.font = `300 70px ${DISPLAY}`;
-  ctx.fillText("Today's Gold Rate", mid, panelY + 96);
+  ctx.font = `300 76px ${DISPLAY}`;
+  ctx.fillText("Today's Gold Rate", mid, panelY + 100);
 
   ctx.fillStyle = COLOUR.gold;
-  ctx.font = `500 24px ${SANS}`;
-  tracked(ctx, "MANDI BAHAUDDIN", mid, panelY + 140, 6, "center");
+  ctx.font = `500 25px ${SANS}`;
+  tracked(ctx, "MANDI BAHAUDDIN", mid, panelY + 146, 5, "center");
 
   /*
    * The stamp without its timezone.
@@ -330,9 +382,9 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   });
 
   const rowH = 124;
-  const rowW = PANEL_W - 72;
-  const rowX = PANEL_X + 36;
-  let y = panelY + 250;
+  const rowW = PANEL_W - 76;
+  const rowX = PANEL_X + 38;
+  let y = panelY + 240;
 
   rows.forEach((row) => {
     ctx.fillStyle = "rgba(232,217,181,0.06)";
@@ -346,22 +398,22 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
 
     ctx.textAlign = "left";
     ctx.fillStyle = COLOUR.ivory;
-    ctx.font = `400 44px ${DISPLAY}`;
-    ctx.fillText(row.name, rowX + 28, y + 62);
+    ctx.font = `400 46px ${DISPLAY}`;
+    ctx.fillText(row.name, rowX + 30, y + 62);
 
     const nameW = ctx.measureText(row.name).width;
     ctx.fillStyle = COLOUR.gold;
     ctx.font = `500 22px ${SANS}`;
-    ctx.fillText(`(${row.mark})`, rowX + 28 + nameW + 12, y + 62);
+    ctx.fillText(`(${row.mark})`, rowX + 30 + nameW + 13, y + 62);
 
     ctx.textAlign = "right";
     ctx.fillStyle = COLOUR.gold;
-    ctx.font = `600 48px ${SANS}`;
-    ctx.fillText(row.rate.perTola.toLocaleString("en-US"), rowX + rowW - 28, y + 54);
+    ctx.font = `600 52px ${SANS}`;
+    ctx.fillText(row.rate.perTola.toLocaleString("en-US"), rowX + rowW - 30, y + 56);
 
     ctx.fillStyle = "rgba(232,217,181,0.7)";
-    ctx.font = `400 21px ${SANS}`;
-    ctx.fillText(`${row.rate.perGram.toLocaleString("en-US")} per gram`, rowX + rowW - 28, y + 88);
+    ctx.font = `400 22px ${SANS}`;
+    ctx.fillText(`${row.rate.perGram.toLocaleString("en-US")} per gram`, rowX + rowW - 30, y + 92);
 
     y += rowH;
   });
@@ -372,11 +424,11 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(232,217,181,0.6)";
   ctx.font = `400 21px ${SANS}`;
-  ctx.fillText("Rates are indicative · Per tola, in Pakistani rupees", mid, y + 48);
+  ctx.fillText("Rates are indicative · Per tola, in Pakistani rupees", mid, y + 54);
 
   ctx.fillStyle = COLOUR.gold;
-  ctx.font = `400 italic 36px ${DISPLAY}`;
-  ctx.fillText(SITE.tagline, mid, y + 110);
+  ctx.font = `400 italic 38px ${DISPLAY}`;
+  ctx.fillText(SITE.tagline, mid, y + 106);
 
   /*
    * Three claims the shop can stand behind.
@@ -386,7 +438,7 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
    * the rest of the site already promises.
    */
   const badges = ["HALLMARKED", `SINCE ${SITE.founded}`, "LIFETIME BUY-BACK"];
-  const badgeY = y + 168;
+  const badgeY = y + 152;
   const step = rowW / badges.length;
 
   ctx.font = `600 17px ${SANS}`;
@@ -402,22 +454,32 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
     tracked(ctx, badge, bx, badgeY, 2, "center");
   });
 
-  // The address, in a pill, last.
-  ctx.font = `500 21px ${SANS}`;
-  const urlText = "ALMADINAJEWELLER.COM";
-  const urlW = ctx.measureText(urlText).width + 40 + 84;
-  const urlY = badgeY + 44;
+  /*
+   * The address, in a pill, last.
+   *
+   * Set in a heavier weight and left almost untracked. It was spaced like the
+   * wordmark, which suits three words in display type and ruins one long
+   * lowercase string — the gaps invited the eye to read breaks that are not
+   * there. This is the line somebody has to be able to type back in.
+   */
+  ctx.font = `600 26px ${SANS}`;
+  // Taken from the canonical origin rather than typed again, so the card cannot
+  // drift from the address the rest of the site declares.
+  const urlText = SITE.origin.replace(/^https?:\/\//, "");
+  const urlW = ctx.measureText(urlText).width + 96;
+  const urlY = badgeY + 46;
 
-  ctx.fillStyle = "rgba(201,162,75,0.14)";
-  roundedRect(ctx, mid - urlW / 2, urlY, urlW, 58, 29);
+  ctx.fillStyle = "rgba(201,162,75,0.16)";
+  roundedRect(ctx, mid - urlW / 2, urlY, urlW, 64, 32);
   ctx.fill();
-  ctx.strokeStyle = "rgba(201,162,75,0.5)";
-  ctx.lineWidth = 1;
-  roundedRect(ctx, mid - urlW / 2, urlY, urlW, 58, 29);
+  ctx.strokeStyle = "rgba(201,162,75,0.55)";
+  ctx.lineWidth = 1.5;
+  roundedRect(ctx, mid - urlW / 2, urlY, urlW, 64, 32);
   ctx.stroke();
 
+  ctx.textAlign = "center";
   ctx.fillStyle = COLOUR.gold;
-  tracked(ctx, urlText, mid, urlY + 37, 3, "center");
+  ctx.fillText(urlText, mid, urlY + 42);
 
   return toJpeg(canvas);
 }
