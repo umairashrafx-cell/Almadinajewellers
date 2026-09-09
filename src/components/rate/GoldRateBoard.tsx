@@ -1,5 +1,6 @@
 import { BadgeCheck, CalendarDays, Gem, Globe, MapPin, RefreshCcw, TrendingUp } from "lucide-react";
 
+import logoOnLight from "@/assets/brand/logo-stacked-on-light.svg";
 import { RateCard } from "@/components/rate/RateCard";
 import { TrustFeature } from "@/components/rate/TrustFeature";
 import { formatRateStamp, rateCards, type RateSnapshot } from "@/lib/rates";
@@ -47,16 +48,17 @@ export function GoldRateBoard({
       <div className="px-5 py-8 sm:px-8 sm:py-10 lg:px-12">
         {showBrand ? (
           <header className="text-center">
-            <p className="font-display text-3xl font-normal leading-none tracking-[0.08em] text-rate-emerald sm:text-4xl">
-              AL-MADINA
-            </p>
-            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.42em] text-rate-gold-deep sm:text-xs">
-              Jewellers
-            </p>
-
-            <div
-              className="mx-auto mt-4 h-px w-40 bg-gradient-to-r from-transparent via-rate-gold to-transparent sm:w-56"
-              aria-hidden="true"
+            {/*
+              The shop's own artwork rather than the wordmark set in type. The
+              stacked lockup already carries its own rule under "JEWELLERS", so
+              the hand-drawn one that used to sit here is gone with it.
+            */}
+            <img
+              src={logoOnLight}
+              alt={SITE.name}
+              width={620}
+              height={588}
+              className="mx-auto h-24 w-auto sm:h-28"
             />
 
             {/*
