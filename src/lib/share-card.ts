@@ -1,4 +1,5 @@
 import rateCardBackground from "@/assets/hero-bridal.jpg";
+import brandLockup from "@/assets/brand/logo-stacked-on-light.svg";
 import jewelleryIcon from "@/assets/rate-icons/jewellery.png";
 import pathorIcon from "@/assets/rate-icons/pathor.png";
 import pieceIcon from "@/assets/rate-icons/piece.png";
@@ -518,7 +519,11 @@ function iconPin(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: numbe
  * quotes and the figure a customer arrives already holding.
  */
 export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
-  const [, icons] = await Promise.all([ensureFonts(), loadMetalIcons()]);
+  const [, icons, lockup] = await Promise.all([
+    ensureFonts(),
+    loadMetalIcons(),
+    loadImage(brandLockup).catch(() => null),
+  ]);
   const { canvas, ctx } = newCanvas();
 
   const L = 48;
@@ -569,52 +574,24 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.lineWidth = 7;
   ctx.stroke(sweep);
 
-  // The crest: an arch, a rule beneath it, the house initial inside.
-  const crestX = mid;
-  const crestY = 92;
-  ctx.strokeStyle = goldLeaf(ctx, crestX - 60, crestY - 50, crestX + 60, crestY + 30);
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(crestX - 54, crestY + 26);
-  ctx.lineTo(crestX - 54, crestY - 6);
-  ctx.quadraticCurveTo(crestX, crestY - 78, crestX + 54, crestY - 6);
-  ctx.lineTo(crestX + 54, crestY + 26);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(crestX, crestY - 8, 21, 0, Math.PI * 2);
-  ctx.fillStyle = goldLeaf(ctx, crestX - 21, crestY - 29, crestX + 21, crestY + 13);
-  ctx.fill();
-
-  ctx.fillStyle = LIGHT.greenDeep;
-  ctx.font = `600 24px ${DISPLAY}`;
-  ctx.textAlign = "center";
-  ctx.fillText("M", crestX, crestY);
-
-  ctx.fillStyle = LIGHT.green;
-  ctx.font = `600 76px ${DISPLAY}`;
-  ctx.textAlign = "left";
-  tracked(ctx, "AL-MADINA", mid, 196, 4, "center");
-
-  ctx.fillStyle = LIGHT.bronze;
-  ctx.font = `600 30px ${SANS}`;
-  tracked(ctx, "JEWELLERS", mid, 240, 13, "center");
-
-  const rule = ctx.createLinearGradient(mid - 260, 0, mid + 260, 0);
-  rule.addColorStop(0, "rgba(201,162,75,0)");
-  rule.addColorStop(0.5, LIGHT.gold);
-  rule.addColorStop(1, "rgba(201,162,75,0)");
-  ctx.fillStyle = rule;
-  ctx.fillRect(mid - 260, 260, 520, 1.5);
-
   /*
-   * TRUST · PURITY · TIMELESS BEAUTY, set from measured widths.
+   * The lockup, as artwork.
    *
-   * Placed at guessed offsets first, which put the second diamond through the
-   * middle of a word: three phrases of different lengths cannot be centred by
-   * eye. Measured and laid out left to right, the gaps are equal whatever the
-   * words happen to be.
+   * Drawn from the brand file rather than assembled here out of an arch, a
+   * circle and two tracked words. That approximation was only ever standing in
+   * for a logo the shop had not sent yet; now it has, and a canvas can draw an
+   * SVG straight to itself so long as the file is same-origin and carries no
+   * outside references. This one is bundled and self-contained on both counts.
+   *
+   * If it will not load the card still goes out, one element lighter — the
+   * figures are what somebody opened it for.
    */
+  if (lockup) {
+    const lockupH = 190;
+    const lockupW = (lockup.width / lockup.height) * lockupH;
+    ctx.drawImage(lockup, mid - lockupW / 2, 62, lockupW, lockupH);
+  }
+
   ctx.fillStyle = LIGHT.greenSoft;
   ctx.font = `600 17px ${SANS}`;
 

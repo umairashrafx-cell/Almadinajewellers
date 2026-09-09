@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+
+import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
+import logoOnLight from "@/assets/brand/logo-horizontal-on-light.svg";
 import { Search, Heart, Menu, X, ChevronDown, ShoppingBag } from "lucide-react";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE } from "@/lib/site";
@@ -78,28 +81,26 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
       )}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        {/* Wordmark */}
+        {/*
+          The logo, in the shop's own artwork rather than set in type.
+
+          Two files rather than one recoloured by CSS: the mark is a shaded
+          gold diamond, so it cannot inherit a text colour, and the wordmark
+          has to be green over ivory and pale gold over the hero. Both are
+          drawn to the same lockup, so swapping between them at the same box
+          does not move anything.
+
+          The alt text is empty and the name lives on the link, so a screen
+          reader announces "Al-Madina Jewellers home" once rather than twice.
+        */}
         <Link to="/" className="shrink-0 leading-none" aria-label={`${SITE.name} home`}>
-          <span
-            className={cn(
-              "block font-display text-2xl font-light tracking-[0.18em] transition-colors",
-              solid ? "text-primary" : "text-ivory",
-            )}
-          >
-            AL-MADINA
-          </span>
-          <span
-            className={cn(
-              "block text-[9px] font-medium uppercase tracking-[0.55em] transition-colors",
-              // primary/80 rather than warmgrey: at 9px with this much tracking
-              // warmgrey lands at 3.68:1 on ivory, under AA, and the half of the
-              // wordmark that names the trade should not be the hard half to
-              // read. Tying it to the brand green also holds the lockup together.
-              solid ? "text-primary/80" : "text-champagne",
-            )}
-          >
-            Jewellers
-          </span>
+          <img
+            src={solid ? logoOnLight : logoOnDark}
+            alt=""
+            width={1120}
+            height={300}
+            className="h-11 w-auto transition-opacity sm:h-12"
+          />
         </Link>
 
         {/* Centre navigation */}

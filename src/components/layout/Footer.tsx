@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import footerTexture from "@/assets/footer-texture.jpg";
+import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
 
@@ -74,6 +75,23 @@ export function Footer() {
       />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        {/*
+          The mark, once, at the head of the footer.
+
+          The header carries it at the top of every page and the bottom bar
+          already gives the year and the tagline; what was missing was the
+          shop's own face at the foot, where a visitor who has read to the end
+          is deciding whether to trust it. Linked home, since a logo that does
+          nothing when clicked is a small broken promise.
+        */}
+        <Link
+          to="/"
+          className="mb-14 inline-block transition-opacity hover:opacity-90"
+          aria-label={`${SITE.name} home`}
+        >
+          <img src={logoOnDark} alt="" width={1120} height={300} className="h-14 w-auto sm:h-16" />
+        </Link>
+
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {COLUMNS.map((col) => (
             <div key={col.title}>
