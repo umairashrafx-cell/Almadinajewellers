@@ -14,20 +14,37 @@ import { MetalIcon } from "@/components/rate/MetalIcon";
 export function RateCard({ rate }: { rate: RateCardData }) {
   return (
     <li className="group grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 rounded-xl border border-rate-gold/35 bg-white/70 px-4 py-4 shadow-[0_1px_2px_rgb(22_61_52/0.04)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-px hover:border-rate-gold/70 hover:shadow-[0_8px_24px_rgb(22_61_52/0.10)] sm:grid-cols-[auto_1fr_auto] sm:gap-x-6 sm:px-6 sm:py-5">
-      {/* Medallion */}
+      {/*
+        Medallion.
+
+        Cream with a gold ring rather than a gold face: the artwork inside
+        carries its own colours, and yellow bullion on a gold disc is a smudge
+        at forty pixels. The ring keeps the metal in the frame where it costs
+        nothing to read.
+      */}
       <span
-        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-rate-gold-light to-rate-gold text-rate-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.5)] transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14"
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-rate-gold/60 bg-gradient-to-br from-white to-rate-ivory shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_3px_rgb(22_61_52/0.10)] transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14"
         aria-hidden="true"
       >
-        <MetalIcon karat={rate.karat} className="h-6 w-6 stroke-current sm:h-7 sm:w-7" />
+        <MetalIcon karat={rate.karat} className="h-7 w-7 object-contain sm:h-8 sm:w-8" />
       </span>
 
-      {/* Name and purity */}
+      {/*
+        Name and purity.
+
+        Set heavier than the rest of the card on purpose. This column is what
+        somebody scans to find their row before they read the number beside it,
+        and Cormorant at a normal weight is a beautiful face that whispers.
+
+        The name only. The purity stays light underneath at the shop's asking,
+        which is right: two bold lines in one column compete, and the eye needs
+        the name first and the karat as confirmation.
+      */}
       <div className="min-w-0">
-        <h3 className="font-display text-xl font-normal leading-tight text-rate-ink sm:text-2xl">
+        <h3 className="font-display text-[22px] font-semibold leading-tight tracking-[0.01em] text-rate-emerald sm:text-[26px]">
           {rate.label}
         </h3>
-        <p className="nums mt-0.5 text-sm text-rate-ink/80">{rate.purity}</p>
+        <p className="nums mt-1 text-sm text-rate-ink/80">{rate.purity}</p>
       </div>
 
       {/*

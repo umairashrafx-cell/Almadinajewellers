@@ -1,4 +1,8 @@
 import rateCardBackground from "@/assets/hero-bridal.jpg";
+import jewelleryIcon from "@/assets/rate-icons/jewellery.png";
+import pathorIcon from "@/assets/rate-icons/pathor.png";
+import pieceIcon from "@/assets/rate-icons/piece.png";
+import silverIcon from "@/assets/rate-icons/silver.png";
 import type { ProductDetail } from "@/lib/catalogue";
 import { RATE_BOARD, formatRateStamp, type RateSnapshot } from "@/lib/rates";
 import { SITE, formatGrams, formatPKR } from "@/lib/site";
@@ -317,12 +321,18 @@ function goldLeaf(
   return g;
 }
 
-/** The gold disc each rate sits behind. Returns nothing; the symbol is drawn over it. */
+/**
+ * The disc each rate sits on.
+ *
+ * Cream with a gold ring rather than a gold face. When the marks were drawn in
+ * the metal's own colour a gold disc was right; the artwork that replaced them
+ * carries its own — yellow bullion, a coral pendant — and yellow on gold is a
+ * smudge. The ring keeps the metal in the frame, where it costs no legibility.
+ */
 function medallion(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-  const face = ctx.createRadialGradient(cx - r * 0.4, cy - r * 0.45, r * 0.1, cx, cy, r);
-  face.addColorStop(0, "#F7E7B8");
-  face.addColorStop(0.55, "#D4AE5C");
-  face.addColorStop(1, "#9C7A25");
+  const face = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
+  face.addColorStop(0, "#FFFFFF");
+  face.addColorStop(1, "#F4EEE1");
 
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -334,83 +344,34 @@ function medallion(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: num
   ctx.stroke();
 }
 
-/*
- * The symbols on the medallions.
- *
- * Drawn rather than fetched. The design they follow uses photographic icons —
- * modelled bars, a rendered necklace — and there are no such files here; a
- * traced imitation of a photograph looks worse at any size than a clean mark
- * does. These are simple shapes in the metal's own colour, which is what an
- * engraved disc would carry anyway.
- */
-type Symbol = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
-
-const symbolFor: Record<string, Symbol> = {
-  // Stacked bullion, for the purest gold on the board.
-  "24K": (ctx, cx, cy, r) => {
-    const w = r * 0.62;
-    const h = r * 0.26;
-    ctx.fillStyle = "#6B5214";
-    [
-      [cx - w * 0.55, cy + h * 0.75],
-      [cx + w * 0.55, cy + h * 0.75],
-      [cx, cy - h * 0.55],
-    ].forEach(([bx, by]) => {
-      ctx.beginPath();
-      ctx.moveTo(bx! - w / 2 + 3, by! - h / 2);
-      ctx.lineTo(bx! + w / 2 - 3, by! - h / 2);
-      ctx.lineTo(bx! + w / 2, by! + h / 2);
-      ctx.lineTo(bx! - w / 2, by! + h / 2);
-      ctx.closePath();
-      ctx.fill();
-    });
-  },
-
-  // Two rings, for the alloy the shop calls pathor.
-  "23.65K": (ctx, cx, cy, r) => {
-    ctx.strokeStyle = "#6B5214";
-    ctx.lineWidth = r * 0.13;
-    ctx.beginPath();
-    ctx.arc(cx - r * 0.22, cy + r * 0.06, r * 0.38, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx + r * 0.26, cy - r * 0.08, r * 0.32, 0, Math.PI * 2);
-    ctx.stroke();
-  },
-
-  // A collar with a drop, for the jewellery rate.
-  "22K": (ctx, cx, cy, r) => {
-    ctx.strokeStyle = "#6B5214";
-    ctx.lineWidth = r * 0.12;
-    ctx.beginPath();
-    ctx.arc(cx, cy - r * 0.28, r * 0.5, 0.15 * Math.PI, 0.85 * Math.PI);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(cx, cy + r * 0.34, r * 0.16, 0, Math.PI * 2);
-    ctx.fillStyle = "#6B5214";
-    ctx.fill();
-  },
-
-  // Silver keeps its own colour, or it is simply another gold row.
-  "999": (ctx, cx, cy, r) => {
-    const w = r * 0.66;
-    const h = r * 0.28;
-    ctx.fillStyle = "#6E6E70";
-    [
-      [cx - r * 0.16, cy + h * 0.5],
-      [cx + r * 0.2, cy - h * 0.35],
-    ].forEach(([bx, by]) => {
-      ctx.beginPath();
-      ctx.moveTo(bx! - w / 2 + 3, by! - h / 2);
-      ctx.lineTo(bx! + w / 2 - 3, by! - h / 2);
-      ctx.lineTo(bx! + w / 2, by! + h / 2);
-      ctx.lineTo(bx! - w / 2, by! + h / 2);
-      ctx.closePath();
-      ctx.fill();
-    });
-  },
+/** The artwork for each metal, by karat rather than by position. */
+const METAL_ICON: Record<string, string> = {
+  "24K": pieceIcon,
+  "23.65K": pathorIcon,
+  "22K": jewelleryIcon,
+  "999": silverIcon,
 };
+
+/**
+ * Loads the four marks once, together.
+ *
+ * They are bundled with the site, so they are same-origin and cannot taint the
+ * canvas. A mark that will not load is simply left out: an empty disc is a
+ * smaller loss than no card.
+ */
+async function loadMetalIcons(): Promise<Record<string, HTMLImageElement>> {
+  const entries = await Promise.all(
+    Object.entries(METAL_ICON).map(async ([karat, src]) => {
+      try {
+        return [karat, await loadImage(src)] as const;
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return Object.fromEntries(entries.filter((e): e is NonNullable<typeof e> => e !== null));
+}
 
 /** A rising bar chart, for the title banner. */
 function iconRising(ctx: CanvasRenderingContext2D, x: number, y: number, s: number): void {
@@ -557,7 +518,7 @@ function iconPin(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: numbe
  * quotes and the figure a customer arrives already holding.
  */
 export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
-  await ensureFonts();
+  const [, icons] = await Promise.all([ensureFonts(), loadMetalIcons()]);
   const { canvas, ctx } = newCanvas();
 
   const L = 48;
@@ -775,7 +736,17 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
     const cy = y + h / 2;
 
     medallion(ctx, L + 54, cy, 33);
-    symbolFor[row.karat]?.(ctx, L + 54, cy, 33);
+
+    const mark = icons[row.karat];
+    if (mark) {
+      // Fitted inside the disc rather than filling it, so a square icon and a
+      // wide one both sit on the same optical circle.
+      const box = 40;
+      const scale = Math.min(box / mark.width, box / mark.height);
+      const w = mark.width * scale;
+      const h = mark.height * scale;
+      ctx.drawImage(mark, L + 54 - w / 2, cy - h / 2, w, h);
+    }
 
     ctx.textAlign = "left";
     ctx.fillStyle = LIGHT.green;
