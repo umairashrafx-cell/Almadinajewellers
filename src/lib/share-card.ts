@@ -240,23 +240,50 @@ function roundedRect(
   ctx.closePath();
 }
 
-/** A small gold diamond, used to break the panel's sections. */
-function ornament(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number): void {
+/** A small diamond, used to break a panel's sections. */
+function ornament(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  colour: string = COLOUR.gold,
+): void {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(Math.PI / 4);
-  ctx.fillStyle = COLOUR.gold;
+  ctx.fillStyle = colour;
   ctx.fillRect(-size / 2, -size / 2, size, size);
   ctx.restore();
 }
 
 /**
+ * The light palette the rate card is drawn in.
+ *
+ * The brand gold cannot carry text here. Measured against the panel it comes to
+ * 2.4:1, which is unreadable — on the dark card it sat on near-black and had
+ * contrast to spare, and the same colour on cream simply does not. So gold
+ * keeps the rules, borders and ornaments, where contrast is not a legibility
+ * question, and the figures move to a deeper bronze at 5:1. No card is worth a
+ * rate somebody has to squint at.
+ */
+const LIGHT = {
+  ivory: "#FAF7F2",
+  champagne: "#F2E7D4",
+  panel: "#FFFDFA",
+  green: "#0B3D2E",
+  greenSoft: "#4A5F55",
+  bronze: "#8A6A18",
+  gold: "#C9A24B",
+} as const;
+
+/**
  * The day's board, as a picture.
  *
- * Laid over a photograph of the shop's own bridal gold rather than flat green.
- * The panel holding the figures is drawn dark enough to read at a glance in a
- * chat list, with the jewellery left showing down the right side — the picture
- * has to survive being a thumbnail before it can be admired at full size.
+ * Cream and gold rather than deep green: this reads as a jeweller's card where
+ * the dark one read as a screen. The photograph of the shop's own bridal gold
+ * is still underneath, held well back behind a cream wash so it is texture
+ * rather than subject, and left strongest down the right where nothing has to
+ * be read over it.
  *
  * Per tola is set large with per gram small beneath it, because tola is what
  * the market quotes and the figure a customer arrives already holding.
@@ -265,7 +292,12 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   await ensureFonts();
   const { canvas, ctx } = newCanvas();
 
-  ctx.fillStyle = COLOUR.deep;
+  // Cream, warming towards the bottom.
+  const ground = ctx.createLinearGradient(0, 0, 0, CARD_H);
+  ground.addColorStop(0, LIGHT.ivory);
+  ground.addColorStop(0.55, "#F7F1E7");
+  ground.addColorStop(1, LIGHT.champagne);
+  ctx.fillStyle = ground;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
   // The background is bundled with the site, so it is same-origin and cannot
@@ -274,31 +306,32 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
     const bg = await loadImage(rateCardBackground);
     drawCover(ctx, bg, 0, 0, CARD_W, CARD_H, 300);
   } catch {
-    // Flat green is a perfectly good card; the figures are the point.
+    // Cream alone is a perfectly good card; the figures are the point.
   }
 
   /*
-   * Two washes over the photograph. A flat one to sink the whole picture, then
-   * a left-weighted one so the panel side is dark enough for small text while
-   * the jewellery still shows on the right.
+   * Two creams over the photograph rather than one.
+   *
+   * A single wash heavy enough to protect the small type kills the picture
+   * everywhere, and a light one leaves the panel unreadable. So the left, where
+   * the text sits, is taken almost to solid, and the right is left at under
+   * half so the gold still glints through.
    */
-  ctx.fillStyle = "rgba(4,24,15,0.38)";
+  ctx.fillStyle = "rgba(250,247,242,0.62)";
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
-  const side = ctx.createLinearGradient(0, 0, CARD_W, 0);
-  side.addColorStop(0, "rgba(4,24,15,0.80)");
-  side.addColorStop(0.6, "rgba(4,24,15,0.36)");
-  side.addColorStop(1, "rgba(4,24,15,0)");
-  ctx.fillStyle = side;
+  const wash = ctx.createLinearGradient(0, 0, CARD_W, 0);
+  wash.addColorStop(0, "rgba(250,247,242,0.96)");
+  wash.addColorStop(0.6, "rgba(250,247,242,0.8)");
+  wash.addColorStop(1, "rgba(250,247,242,0.42)");
+  ctx.fillStyle = wash;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
-  // The masthead sits on the photograph rather than on the panel, so it gets
-  // its own ground rather than trusting whatever the picture happens to show.
-  const top = ctx.createLinearGradient(0, 0, 0, 300);
-  top.addColorStop(0, "rgba(4,24,15,0.9)");
-  top.addColorStop(1, "rgba(4,24,15,0)");
-  ctx.fillStyle = top;
-  ctx.fillRect(0, 0, CARD_W, 300);
+  // A hairline frame, the way a certificate is bordered.
+  ctx.strokeStyle = "rgba(201,162,75,0.55)";
+  ctx.lineWidth = 1.5;
+  roundedRect(ctx, 26, 26, CARD_W - 52, CARD_H - 52, 10);
+  ctx.stroke();
 
   const PANEL_X = 46;
   const PANEL_W = 748;
@@ -306,27 +339,27 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   // Masthead, centred over the panel column rather than the whole card.
   const mid = PANEL_X + PANEL_W / 2;
 
-  ornament(ctx, mid, 78, 16);
+  ornament(ctx, mid, 88, 16, LIGHT.gold);
 
   ctx.textAlign = "left";
-  ctx.fillStyle = COLOUR.gold;
+  ctx.fillStyle = LIGHT.green;
   ctx.font = `300 70px ${DISPLAY}`;
-  tracked(ctx, "AL-MADINA", mid, 170, 7, "center");
+  tracked(ctx, "AL-MADINA", mid, 178, 7, "center");
 
-  ctx.fillStyle = COLOUR.champagne;
+  ctx.fillStyle = LIGHT.bronze;
   ctx.font = `500 22px ${SANS}`;
-  tracked(ctx, "JEWELLERS", mid, 210, 12, "center");
+  tracked(ctx, "JEWELLERS", mid, 218, 12, "center");
 
   const rule = ctx.createLinearGradient(mid - 200, 0, mid + 200, 0);
   rule.addColorStop(0, "rgba(201,162,75,0)");
-  rule.addColorStop(0.5, COLOUR.gold);
+  rule.addColorStop(0.5, LIGHT.gold);
   rule.addColorStop(1, "rgba(201,162,75,0)");
   ctx.fillStyle = rule;
-  ctx.fillRect(mid - 200, 232, 400, 1);
+  ctx.fillRect(mid - 200, 240, 400, 1.5);
 
-  ctx.fillStyle = "rgba(232,217,181,0.85)";
+  ctx.fillStyle = LIGHT.greenSoft;
   ctx.font = `500 18px ${SANS}`;
-  tracked(ctx, "TRUST · PURITY · TIMELESS BEAUTY", mid, 268, 4, "center");
+  tracked(ctx, "TRUST · PURITY · TIMELESS BEAUTY", mid, 276, 4, "center");
 
   // The panel.
   /*
@@ -334,25 +367,31 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
    * from the top of the rows, and the address pill has to land inside the
    * panel: at these sizes there are 22 pixels to spare beneath it.
    */
-  const panelY = 300;
-  const panelH = CARD_H - panelY - 36;
+  const panelY = 306;
+  const panelH = CARD_H - panelY - 42;
 
-  ctx.fillStyle = "rgba(4,24,15,0.84)";
-  roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 28);
+  // A card on the card: white, a soft drop, a gold hairline.
+  ctx.save();
+  ctx.shadowColor = "rgba(74,60,30,0.16)";
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = LIGHT.panel;
+  roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 26);
   ctx.fill();
+  ctx.restore();
 
-  ctx.strokeStyle = "rgba(201,162,75,0.45)";
+  ctx.strokeStyle = "rgba(201,162,75,0.5)";
   ctx.lineWidth = 1.5;
-  roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 28);
+  roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 26);
   ctx.stroke();
 
   ctx.textAlign = "center";
 
-  ctx.fillStyle = COLOUR.ivory;
+  ctx.fillStyle = LIGHT.green;
   ctx.font = `300 76px ${DISPLAY}`;
   ctx.fillText("Today's Gold Rate", mid, panelY + 100);
 
-  ctx.fillStyle = COLOUR.gold;
+  ctx.fillStyle = LIGHT.bronze;
   ctx.font = `500 25px ${SANS}`;
   tracked(ctx, "MANDI BAHAUDDIN", mid, panelY + 146, 5, "center");
 
@@ -367,12 +406,15 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
 
   ctx.font = `400 22px ${SANS}`;
   const stampW = ctx.measureText(stamp).width + 56;
-  ctx.strokeStyle = "rgba(201,162,75,0.4)";
+  ctx.fillStyle = "rgba(242,231,212,0.75)";
+  roundedRect(ctx, mid - stampW / 2, panelY + 168, stampW, 50, 25);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(201,162,75,0.5)";
   ctx.lineWidth = 1;
   roundedRect(ctx, mid - stampW / 2, panelY + 168, stampW, 50, 25);
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(232,217,181,0.9)";
+  ctx.fillStyle = LIGHT.greenSoft;
   ctx.fillText(stamp, mid, panelY + 200);
 
   // The board, in the order the shop reads it out.
@@ -387,31 +429,31 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   let y = panelY + 240;
 
   rows.forEach((row) => {
-    ctx.fillStyle = "rgba(232,217,181,0.06)";
-    roundedRect(ctx, rowX, y, rowW, rowH - 16, 18);
+    ctx.fillStyle = "rgba(242,231,212,0.5)";
+    roundedRect(ctx, rowX, y, rowW, rowH - 16, 16);
     ctx.fill();
 
-    ctx.strokeStyle = "rgba(201,162,75,0.18)";
+    ctx.strokeStyle = "rgba(201,162,75,0.32)";
     ctx.lineWidth = 1;
-    roundedRect(ctx, rowX, y, rowW, rowH - 16, 18);
+    roundedRect(ctx, rowX, y, rowW, rowH - 16, 16);
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.fillStyle = COLOUR.ivory;
+    ctx.fillStyle = LIGHT.green;
     ctx.font = `400 46px ${DISPLAY}`;
     ctx.fillText(row.name, rowX + 30, y + 62);
 
     const nameW = ctx.measureText(row.name).width;
-    ctx.fillStyle = COLOUR.gold;
+    ctx.fillStyle = LIGHT.bronze;
     ctx.font = `500 22px ${SANS}`;
     ctx.fillText(`(${row.mark})`, rowX + 30 + nameW + 13, y + 62);
 
     ctx.textAlign = "right";
-    ctx.fillStyle = COLOUR.gold;
+    ctx.fillStyle = LIGHT.bronze;
     ctx.font = `600 52px ${SANS}`;
     ctx.fillText(row.rate.perTola.toLocaleString("en-US"), rowX + rowW - 30, y + 56);
 
-    ctx.fillStyle = "rgba(232,217,181,0.7)";
+    ctx.fillStyle = LIGHT.greenSoft;
     ctx.font = `400 22px ${SANS}`;
     ctx.fillText(`${row.rate.perGram.toLocaleString("en-US")} per gram`, rowX + rowW - 30, y + 92);
 
@@ -419,14 +461,14 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   });
 
   y += 10;
-  ornament(ctx, mid, y, 10);
+  ornament(ctx, mid, y, 10, LIGHT.gold);
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(232,217,181,0.6)";
+  ctx.fillStyle = LIGHT.greenSoft;
   ctx.font = `400 21px ${SANS}`;
   ctx.fillText("Rates are indicative · Per tola, in Pakistani rupees", mid, y + 54);
 
-  ctx.fillStyle = COLOUR.gold;
+  ctx.fillStyle = LIGHT.bronze;
   ctx.font = `400 italic 38px ${DISPLAY}`;
   ctx.fillText(SITE.tagline, mid, y + 106);
 
@@ -446,11 +488,11 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
     const bx = rowX + step * i + step / 2;
 
     if (i > 0) {
-      ctx.fillStyle = "rgba(201,162,75,0.3)";
+      ctx.fillStyle = "rgba(201,162,75,0.45)";
       ctx.fillRect(rowX + step * i, badgeY - 18, 1, 26);
     }
 
-    ctx.fillStyle = "rgba(232,217,181,0.8)";
+    ctx.fillStyle = LIGHT.greenSoft;
     tracked(ctx, badge, bx, badgeY, 2, "center");
   });
 
@@ -469,16 +511,18 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   const urlW = ctx.measureText(urlText).width + 96;
   const urlY = badgeY + 46;
 
-  ctx.fillStyle = "rgba(201,162,75,0.16)";
+  /*
+   * Solid green rather than an outline. On cream this is the one element that
+   * has to hold the eye at the end of the card, and a tinted pill with gold
+   * text was the weakest thing on it — the same 2.4:1 problem the figures had.
+   * Reversed out on green the address is unmissable and reads at 11:1.
+   */
+  ctx.fillStyle = LIGHT.green;
   roundedRect(ctx, mid - urlW / 2, urlY, urlW, 64, 32);
   ctx.fill();
-  ctx.strokeStyle = "rgba(201,162,75,0.55)";
-  ctx.lineWidth = 1.5;
-  roundedRect(ctx, mid - urlW / 2, urlY, urlW, 64, 32);
-  ctx.stroke();
 
   ctx.textAlign = "center";
-  ctx.fillStyle = COLOUR.gold;
+  ctx.fillStyle = LIGHT.champagne;
   ctx.fillText(urlText, mid, urlY + 42);
 
   return toJpeg(canvas);
