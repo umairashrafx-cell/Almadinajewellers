@@ -39,6 +39,15 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* The rate board — see the :root block. */
+  --color-rate-emerald: var(--rate-emerald);
+  --color-rate-forest: var(--rate-forest);
+  --color-rate-gold: var(--rate-gold);
+  --color-rate-gold-light: var(--rate-gold-light);
+  --color-rate-gold-deep: var(--rate-gold-deep);
+  --color-rate-ivory: var(--rate-ivory);
+  --color-rate-ink: var(--rate-ink);
+
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-champagne: var(--champagne);
@@ -87,6 +96,29 @@
   --card-foreground: var(--ink);
   --popover: var(--ivory);
   --popover-foreground: var(--ink);
+  /*
+   * The rate board's own palette.
+   *
+   * Close to the brand's but not identical: the emerald is a touch deeper than
+   * Madina green and the ivory a touch warmer, which is what lets the board sit
+   * on the page as its own object rather than dissolving into it. Kept as
+   * tokens so the board can be restyled in one place.
+   */
+  --rate-emerald: #063f32;
+  --rate-forest: #0b2f27;
+  --rate-gold: #c9a24a;
+  --rate-gold-light: #e5c979;
+  /*
+   * The gold to write in.
+   *
+   * --rate-gold is the metal: correct for rules, medallions and anything on a
+   * dark ground. On cream it measures 2.4:1, so it cannot carry a word. This
+   * is the same hue taken down until it can — 5:1 on the board's ivory.
+   */
+  --rate-gold-deep: #8a6a18;
+  --rate-ivory: #f8f5ec;
+  --rate-ink: #163d34;
+
   --primary: oklch(0.3 0.06 160); /* #0B3D2E Madina Green */
   --primary-foreground: var(--ivory);
   --primary-deep: oklch(0.16 0.035 160); /* #04180F */
