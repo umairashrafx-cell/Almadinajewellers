@@ -118,13 +118,13 @@ function GoldRatePage() {
           {/*
             The board itself, not a table of it.
 
-            showBrand is off because the page heading two inches above already
-            said whose rates these are, and repeating the wordmark inside the
-            frame makes the page look like a brochure pasted into itself. The
-            standalone version keeps it — see the component.
+            Introduced in full, wordmark and creed included, at the shop's
+            asking. It repeats the page heading above, which is the trade: the
+            board reads as a complete object — the same one that goes out on
+            WhatsApp — rather than as a fragment of the page around it.
           */}
           <Reveal>
-            <GoldRateBoard snapshot={snapshot} showBrand={false} />
+            <GoldRateBoard snapshot={snapshot} />
           </Reveal>
 
           <Reveal delay={80}>
