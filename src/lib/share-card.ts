@@ -163,6 +163,22 @@ function tracked(
   }
 }
 
+/** What `tracked` will occupy, so a row of tracked words can be laid out. */
+function trackedWidth(ctx: CanvasRenderingContext2D, text: string, spacing: number): number {
+  const spacedByBrowser = typeof (ctx as { letterSpacing?: unknown }).letterSpacing === "string";
+
+  if (spacedByBrowser) {
+    const previous = ctx.letterSpacing;
+    ctx.letterSpacing = `${spacing}px`;
+    const width = ctx.measureText(text).width;
+    ctx.letterSpacing = previous;
+    return width;
+  }
+
+  const chars = [...text];
+  return chars.reduce((sum, c) => sum + ctx.measureText(c).width, 0) + spacing * (chars.length - 1);
+}
+
 /** Breaks a long name across lines. */
 function wrap(ctx: CanvasRenderingContext2D, text: string, max: number): string[] {
   const words = text.split(/\s+/);
@@ -259,271 +275,637 @@ function ornament(
 /**
  * The light palette the rate card is drawn in.
  *
- * The brand gold cannot carry text here. Measured against the panel it comes to
- * 2.4:1, which is unreadable — on the dark card it sat on near-black and had
- * contrast to spare, and the same colour on cream simply does not. So gold
- * keeps the rules, borders and ornaments, where contrast is not a legibility
- * question, and the figures move to a deeper bronze at 5:1. No card is worth a
- * rate somebody has to squint at.
+ * The brand gold cannot carry small text here. Measured against cream it comes
+ * to 2.4:1 — on a dark ground it had contrast to spare, and the same gold on
+ * cream does not. So gold does the metalwork: rules, borders, medallions and
+ * the frame, where contrast is decoration rather than legibility. Everything
+ * anybody has to read is deep green.
  */
 const LIGHT = {
   ivory: "#FAF7F2",
+  cream: "#F7F0E4",
   champagne: "#F2E7D4",
   panel: "#FFFDFA",
   green: "#0B3D2E",
+  greenDeep: "#08301F",
   greenSoft: "#4A5F55",
   bronze: "#8A6A18",
   gold: "#C9A24B",
 } as const;
 
 /**
+ * A bar of gold, as a gradient.
+ *
+ * Flat gold looks like mustard. Real gold is only ever a set of reflections,
+ * so the ramp runs light to deep and back — that alternation is what the eye
+ * reads as metal rather than as a colour.
+ */
+function goldLeaf(
+  ctx: CanvasRenderingContext2D,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): CanvasGradient {
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  g.addColorStop(0, "#E3C378");
+  g.addColorStop(0.22, "#F6E7B4");
+  g.addColorStop(0.45, "#C9A24B");
+  g.addColorStop(0.68, "#F2E0A6");
+  g.addColorStop(0.85, "#B8912F");
+  g.addColorStop(1, "#8A6A18");
+  return g;
+}
+
+/** The gold disc each rate sits behind. Returns nothing; the symbol is drawn over it. */
+function medallion(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  const face = ctx.createRadialGradient(cx - r * 0.4, cy - r * 0.45, r * 0.1, cx, cy, r);
+  face.addColorStop(0, "#F7E7B8");
+  face.addColorStop(0.55, "#D4AE5C");
+  face.addColorStop(1, "#9C7A25");
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = face;
+  ctx.fill();
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = goldLeaf(ctx, cx - r, cy - r, cx + r, cy + r);
+  ctx.stroke();
+}
+
+/*
+ * The symbols on the medallions.
+ *
+ * Drawn rather than fetched. The design they follow uses photographic icons —
+ * modelled bars, a rendered necklace — and there are no such files here; a
+ * traced imitation of a photograph looks worse at any size than a clean mark
+ * does. These are simple shapes in the metal's own colour, which is what an
+ * engraved disc would carry anyway.
+ */
+type Symbol = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
+
+const symbolFor: Record<string, Symbol> = {
+  // Stacked bullion, for the purest gold on the board.
+  "24K": (ctx, cx, cy, r) => {
+    const w = r * 0.62;
+    const h = r * 0.26;
+    ctx.fillStyle = "#6B5214";
+    [
+      [cx - w * 0.55, cy + h * 0.75],
+      [cx + w * 0.55, cy + h * 0.75],
+      [cx, cy - h * 0.55],
+    ].forEach(([bx, by]) => {
+      ctx.beginPath();
+      ctx.moveTo(bx! - w / 2 + 3, by! - h / 2);
+      ctx.lineTo(bx! + w / 2 - 3, by! - h / 2);
+      ctx.lineTo(bx! + w / 2, by! + h / 2);
+      ctx.lineTo(bx! - w / 2, by! + h / 2);
+      ctx.closePath();
+      ctx.fill();
+    });
+  },
+
+  // Two rings, for the alloy the shop calls pathor.
+  "23.65K": (ctx, cx, cy, r) => {
+    ctx.strokeStyle = "#6B5214";
+    ctx.lineWidth = r * 0.13;
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.22, cy + r * 0.06, r * 0.38, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.26, cy - r * 0.08, r * 0.32, 0, Math.PI * 2);
+    ctx.stroke();
+  },
+
+  // A collar with a drop, for the jewellery rate.
+  "22K": (ctx, cx, cy, r) => {
+    ctx.strokeStyle = "#6B5214";
+    ctx.lineWidth = r * 0.12;
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.28, r * 0.5, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy + r * 0.34, r * 0.16, 0, Math.PI * 2);
+    ctx.fillStyle = "#6B5214";
+    ctx.fill();
+  },
+
+  // Silver keeps its own colour, or it is simply another gold row.
+  "999": (ctx, cx, cy, r) => {
+    const w = r * 0.66;
+    const h = r * 0.28;
+    ctx.fillStyle = "#6E6E70";
+    [
+      [cx - r * 0.16, cy + h * 0.5],
+      [cx + r * 0.2, cy - h * 0.35],
+    ].forEach(([bx, by]) => {
+      ctx.beginPath();
+      ctx.moveTo(bx! - w / 2 + 3, by! - h / 2);
+      ctx.lineTo(bx! + w / 2 - 3, by! - h / 2);
+      ctx.lineTo(bx! + w / 2, by! + h / 2);
+      ctx.lineTo(bx! - w / 2, by! + h / 2);
+      ctx.closePath();
+      ctx.fill();
+    });
+  },
+};
+
+/** A rising bar chart, for the title banner. */
+function iconRising(ctx: CanvasRenderingContext2D, x: number, y: number, s: number): void {
+  ctx.fillStyle = goldLeaf(ctx, x, y + s, x + s, y);
+  [0.42, 0.66, 0.92].forEach((h, i) => {
+    ctx.fillRect(x + i * s * 0.3, y + s * (1 - h), s * 0.2, s * h);
+  });
+
+  ctx.strokeStyle = goldLeaf(ctx, x, y + s, x + s, y);
+  ctx.lineWidth = s * 0.09;
+  ctx.beginPath();
+  ctx.moveTo(x + s * 0.06, y + s * 0.52);
+  ctx.lineTo(x + s * 0.44, y + s * 0.2);
+  ctx.lineTo(x + s * 0.92, y - s * 0.04);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x + s * 0.94, y - s * 0.1);
+  ctx.lineTo(x + s * 0.72, y + s * 0.02);
+  ctx.lineTo(x + s * 0.9, y + s * 0.18);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** A calendar, for the date pill. */
+function iconCalendar(ctx: CanvasRenderingContext2D, x: number, y: number, s: number): void {
+  ctx.strokeStyle = LIGHT.greenDeep;
+  ctx.lineWidth = 1.8;
+  roundedRect(ctx, x, y + s * 0.14, s, s * 0.86, 3);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x, y + s * 0.4);
+  ctx.lineTo(x + s, y + s * 0.4);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x + s * 0.26, y);
+  ctx.lineTo(x + s * 0.26, y + s * 0.24);
+  ctx.moveTo(x + s * 0.74, y);
+  ctx.lineTo(x + s * 0.74, y + s * 0.24);
+  ctx.stroke();
+}
+
+/** The three marks under the rates: a shield, a gem, a cycle. */
+function iconShield(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.strokeStyle = LIGHT.green;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s);
+  ctx.lineTo(cx + s * 0.78, cy - s * 0.62);
+  ctx.lineTo(cx + s * 0.78, cy + s * 0.14);
+  ctx.quadraticCurveTo(cx + s * 0.78, cy + s * 0.76, cx, cy + s);
+  ctx.quadraticCurveTo(cx - s * 0.78, cy + s * 0.76, cx - s * 0.78, cy + s * 0.14);
+  ctx.lineTo(cx - s * 0.78, cy - s * 0.62);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.3, cy + s * 0.04);
+  ctx.lineTo(cx - s * 0.06, cy + s * 0.3);
+  ctx.lineTo(cx + s * 0.36, cy - s * 0.26);
+  ctx.stroke();
+}
+
+function iconGem(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.strokeStyle = LIGHT.green;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s);
+  ctx.lineTo(cx + s, cy);
+  ctx.lineTo(cx, cy + s);
+  ctx.lineTo(cx - s, cy);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.5, cy - s * 0.5);
+  ctx.lineTo(cx + s * 0.5, cy - s * 0.5);
+  ctx.moveTo(cx - s, cy);
+  ctx.lineTo(cx + s, cy);
+  ctx.stroke();
+}
+
+function iconCycle(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.strokeStyle = LIGHT.green;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, s * 0.82, 0.35 * Math.PI, 1.75 * Math.PI);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx + s * 0.16, cy - s * 1.02);
+  ctx.lineTo(cx + s * 0.62, cy - s * 0.72);
+  ctx.lineTo(cx + s * 0.12, cy - s * 0.44);
+  ctx.closePath();
+  ctx.fillStyle = LIGHT.green;
+  ctx.fill();
+}
+
+/** A globe and a map pin, for the footer band. */
+function iconGlobe(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.strokeStyle = LIGHT.champagne;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(cx, cy, s, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, s * 0.45, s, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy);
+  ctx.lineTo(cx + s, cy);
+  ctx.stroke();
+}
+
+function iconPin(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.fillStyle = LIGHT.champagne;
+  ctx.beginPath();
+  ctx.arc(cx, cy - s * 0.22, s * 0.7, Math.PI, 0);
+  ctx.lineTo(cx, cy + s);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy - s * 0.24, s * 0.26, 0, Math.PI * 2);
+  ctx.fillStyle = LIGHT.greenDeep;
+  ctx.fill();
+}
+
+/**
  * The day's board, as a picture.
  *
- * Cream and gold rather than deep green: this reads as a jeweller's card where
- * the dark one read as a screen. The photograph of the shop's own bridal gold
- * is still underneath, held well back behind a cream wash so it is texture
- * rather than subject, and left strongest down the right where nothing has to
- * be read over it.
+ * Cream and gold with a green title band, a medallion against each rate, and
+ * the shop's own bridal gold revealed behind a gold curve down the right.
  *
- * Per tola is set large with per gram small beneath it, because tola is what
- * the market quotes and the figure a customer arrives already holding.
+ * Everything read is deep green on cream or cream on deep green. The gold is
+ * structural — the frame, the curve, the medallions, the rules — which is the
+ * only way to use it at this scale without the figures becoming a squint.
+ *
+ * Per tola is set large with per gram beneath, because tola is what the market
+ * quotes and the figure a customer arrives already holding.
  */
 export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   await ensureFonts();
   const { canvas, ctx } = newCanvas();
 
-  // Cream, warming towards the bottom.
+  const L = 48;
+  const R = 748;
+  const mid = (L + R) / 2;
+
+  // Cream, warming towards the foot.
   const ground = ctx.createLinearGradient(0, 0, 0, CARD_H);
   ground.addColorStop(0, LIGHT.ivory);
-  ground.addColorStop(0.55, "#F7F1E7");
+  ground.addColorStop(0.6, LIGHT.cream);
   ground.addColorStop(1, LIGHT.champagne);
   ctx.fillStyle = ground;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
-  // The background is bundled with the site, so it is same-origin and cannot
-  // taint the canvas the way a storage photograph would.
+  /*
+   * The jewellery, behind a curve rather than a straight edge.
+   *
+   * The photograph is bundled with the site, so it is same-origin and cannot
+   * taint the canvas the way a storage image would. The curve is stroked in
+   * gold afterwards, which is what turns a cropped photograph into an inlay.
+   */
+  const sweep = new Path2D();
+  sweep.moveTo(CARD_W, 0);
+  sweep.lineTo(792, 0);
+  sweep.bezierCurveTo(846, 300, 742, 560, 806, 830);
+  sweep.bezierCurveTo(852, 1030, 826, 1180, 906, CARD_H);
+  sweep.lineTo(CARD_W, CARD_H);
+  sweep.closePath();
+
   try {
     const bg = await loadImage(rateCardBackground);
-    drawCover(ctx, bg, 0, 0, CARD_W, CARD_H, 300);
+    ctx.save();
+    ctx.clip(sweep);
+    drawCover(ctx, bg, 700, 0, CARD_W - 700, CARD_H, 120);
+    // A whisper of cream so the gold in the picture sits with the card's gold.
+    ctx.fillStyle = "rgba(250,247,242,0.12)";
+    ctx.fillRect(700, 0, CARD_W - 700, CARD_H);
+    ctx.restore();
   } catch {
-    // Cream alone is a perfectly good card; the figures are the point.
+    ctx.save();
+    ctx.clip(sweep);
+    ctx.fillStyle = LIGHT.greenDeep;
+    ctx.fillRect(700, 0, CARD_W - 700, CARD_H);
+    ctx.restore();
   }
 
-  /*
-   * Two creams over the photograph rather than one.
-   *
-   * A single wash heavy enough to protect the small type kills the picture
-   * everywhere, and a light one leaves the panel unreadable. So the left, where
-   * the text sits, is taken almost to solid, and the right is left at under
-   * half so the gold still glints through.
-   */
-  ctx.fillStyle = "rgba(250,247,242,0.62)";
-  ctx.fillRect(0, 0, CARD_W, CARD_H);
+  ctx.strokeStyle = goldLeaf(ctx, 760, 0, 920, CARD_H);
+  ctx.lineWidth = 7;
+  ctx.stroke(sweep);
 
-  const wash = ctx.createLinearGradient(0, 0, CARD_W, 0);
-  wash.addColorStop(0, "rgba(250,247,242,0.96)");
-  wash.addColorStop(0.6, "rgba(250,247,242,0.8)");
-  wash.addColorStop(1, "rgba(250,247,242,0.42)");
-  ctx.fillStyle = wash;
-  ctx.fillRect(0, 0, CARD_W, CARD_H);
-
-  // A hairline frame, the way a certificate is bordered.
-  ctx.strokeStyle = "rgba(201,162,75,0.55)";
-  ctx.lineWidth = 1.5;
-  roundedRect(ctx, 26, 26, CARD_W - 52, CARD_H - 52, 10);
+  // The crest: an arch, a rule beneath it, the house initial inside.
+  const crestX = mid;
+  const crestY = 92;
+  ctx.strokeStyle = goldLeaf(ctx, crestX - 60, crestY - 50, crestX + 60, crestY + 30);
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(crestX - 54, crestY + 26);
+  ctx.lineTo(crestX - 54, crestY - 6);
+  ctx.quadraticCurveTo(crestX, crestY - 78, crestX + 54, crestY - 6);
+  ctx.lineTo(crestX + 54, crestY + 26);
   ctx.stroke();
 
-  const PANEL_X = 46;
-  const PANEL_W = 748;
+  ctx.beginPath();
+  ctx.arc(crestX, crestY - 8, 21, 0, Math.PI * 2);
+  ctx.fillStyle = goldLeaf(ctx, crestX - 21, crestY - 29, crestX + 21, crestY + 13);
+  ctx.fill();
 
-  // Masthead, centred over the panel column rather than the whole card.
-  const mid = PANEL_X + PANEL_W / 2;
+  ctx.fillStyle = LIGHT.greenDeep;
+  ctx.font = `600 24px ${DISPLAY}`;
+  ctx.textAlign = "center";
+  ctx.fillText("M", crestX, crestY);
 
-  ornament(ctx, mid, 88, 16, LIGHT.gold);
-
-  ctx.textAlign = "left";
   ctx.fillStyle = LIGHT.green;
-  ctx.font = `300 70px ${DISPLAY}`;
-  tracked(ctx, "AL-MADINA", mid, 178, 7, "center");
+  ctx.font = `600 76px ${DISPLAY}`;
+  ctx.textAlign = "left";
+  tracked(ctx, "AL-MADINA", mid, 196, 4, "center");
 
   ctx.fillStyle = LIGHT.bronze;
-  ctx.font = `500 22px ${SANS}`;
-  tracked(ctx, "JEWELLERS", mid, 218, 12, "center");
+  ctx.font = `600 30px ${SANS}`;
+  tracked(ctx, "JEWELLERS", mid, 240, 13, "center");
 
-  const rule = ctx.createLinearGradient(mid - 200, 0, mid + 200, 0);
+  const rule = ctx.createLinearGradient(mid - 260, 0, mid + 260, 0);
   rule.addColorStop(0, "rgba(201,162,75,0)");
   rule.addColorStop(0.5, LIGHT.gold);
   rule.addColorStop(1, "rgba(201,162,75,0)");
   ctx.fillStyle = rule;
-  ctx.fillRect(mid - 200, 240, 400, 1.5);
+  ctx.fillRect(mid - 260, 260, 520, 1.5);
 
-  ctx.fillStyle = LIGHT.greenSoft;
-  ctx.font = `500 18px ${SANS}`;
-  tracked(ctx, "TRUST · PURITY · TIMELESS BEAUTY", mid, 276, 4, "center");
-
-  // The panel.
   /*
-   * Panel geometry is budgeted rather than guessed. Everything below stacks
-   * from the top of the rows, and the address pill has to land inside the
-   * panel: at these sizes there are 22 pixels to spare beneath it.
+   * TRUST · PURITY · TIMELESS BEAUTY, set from measured widths.
+   *
+   * Placed at guessed offsets first, which put the second diamond through the
+   * middle of a word: three phrases of different lengths cannot be centred by
+   * eye. Measured and laid out left to right, the gaps are equal whatever the
+   * words happen to be.
    */
-  const panelY = 306;
-  const panelH = CARD_H - panelY - 42;
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `600 17px ${SANS}`;
 
-  // A card on the card: white, a soft drop, a gold hairline.
+  const creed = ["TRUST", "PURITY", "TIMELESS BEAUTY"];
+  const creedGap = 52;
+  const creedW = creed.map((word) => trackedWidth(ctx, word, 5));
+  const creedTotal = creedW.reduce((a, b) => a + b, 0) + creedGap * (creed.length - 1);
+
+  let creedX = mid - creedTotal / 2;
+  creed.forEach((word, i) => {
+    tracked(ctx, word, creedX, 292, 5);
+    creedX += creedW[i]!;
+
+    if (i < creed.length - 1) {
+      ornament(ctx, creedX + creedGap / 2, 287, 8, LIGHT.gold);
+      creedX += creedGap;
+    }
+  });
+
+  // The title band.
+  const bandY = 318;
+  const bandH = 128;
+
   ctx.save();
-  ctx.shadowColor = "rgba(74,60,30,0.16)";
-  ctx.shadowBlur = 30;
-  ctx.shadowOffsetY = 10;
-  ctx.fillStyle = LIGHT.panel;
-  roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 26);
+  ctx.shadowColor = "rgba(11,61,46,0.28)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = LIGHT.green;
+  roundedRect(ctx, L, bandY, R - L, bandH, 16);
   ctx.fill();
   ctx.restore();
 
-  ctx.strokeStyle = "rgba(201,162,75,0.5)";
-  ctx.lineWidth = 1.5;
-  roundedRect(ctx, PANEL_X, panelY, PANEL_W, panelH, 26);
+  ctx.strokeStyle = goldLeaf(ctx, L, bandY, R, bandY + bandH);
+  ctx.lineWidth = 3;
+  roundedRect(ctx, L, bandY, R - L, bandH, 16);
   ctx.stroke();
 
-  ctx.textAlign = "center";
-
-  ctx.fillStyle = LIGHT.green;
-  ctx.font = `300 76px ${DISPLAY}`;
-  ctx.fillText("Today's Gold Rate", mid, panelY + 100);
-
-  ctx.fillStyle = LIGHT.bronze;
-  ctx.font = `500 25px ${SANS}`;
-  tracked(ctx, "MANDI BAHAUDDIN", mid, panelY + 146, 5, "center");
+  iconRising(ctx, L + 34, bandY + 36, 58);
 
   /*
-   * The stamp without its timezone.
+   * "Today's Gold Rate", with only the middle word in gold.
    *
-   * formatRateStamp appends PKT for the website, where a reader in Dubai or
-   * Toronto needs telling which clock it is. A picture forwarded inside
-   * Pakistan does not, and the shop asked for it gone.
+   * Set in three pieces and centred as one, so the gold word sits where it
+   * belongs rather than where a guess at its width would put it.
+   */
+  ctx.textAlign = "left";
+  ctx.font = `300 58px ${DISPLAY}`;
+  const w1 = ctx.measureText("Today's ").width;
+  const w3 = ctx.measureText(" Rate").width;
+  ctx.font = `600 58px ${DISPLAY}`;
+  const w2 = ctx.measureText("Gold").width;
+
+  const titleX = L + 130 + (R - L - 130 - (w1 + w2 + w3)) / 2;
+  const titleY = bandY + 64;
+
+  ctx.font = `300 58px ${DISPLAY}`;
+  ctx.fillStyle = LIGHT.ivory;
+  ctx.fillText("Today's ", titleX, titleY);
+
+  ctx.font = `600 58px ${DISPLAY}`;
+  ctx.fillStyle = goldLeaf(ctx, titleX + w1, titleY - 40, titleX + w1 + w2, titleY + 8);
+  ctx.fillText("Gold", titleX + w1, titleY);
+
+  ctx.font = `300 58px ${DISPLAY}`;
+  ctx.fillStyle = LIGHT.ivory;
+  ctx.fillText(" Rate", titleX + w1 + w2, titleY);
+
+  ctx.fillStyle = "rgba(250,247,242,0.92)";
+  ctx.font = `500 26px ${SANS}`;
+  tracked(ctx, "MANDI BAHAUDDIN", L + 130 + (R - L - 130) / 2, bandY + 106, 6, "center");
+
+  /*
+   * The stamp, without its timezone. The website labels the zone because a
+   * reader in Dubai or Toronto would otherwise assume their own clock; a
+   * picture forwarded inside Pakistan does not need telling.
    */
   const stamp = formatRateStamp(snapshot).replace(/\s*PKT\s*$/, "");
 
-  ctx.font = `400 22px ${SANS}`;
-  const stampW = ctx.measureText(stamp).width + 56;
-  ctx.fillStyle = "rgba(242,231,212,0.75)";
-  roundedRect(ctx, mid - stampW / 2, panelY + 168, stampW, 50, 25);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(201,162,75,0.5)";
-  ctx.lineWidth = 1;
-  roundedRect(ctx, mid - stampW / 2, panelY + 168, stampW, 50, 25);
-  ctx.stroke();
+  ctx.font = `500 24px ${SANS}`;
+  const pillW = ctx.measureText(stamp).width + 108;
+  const pillY = bandY + bandH + 14;
 
-  ctx.fillStyle = LIGHT.greenSoft;
-  ctx.fillText(stamp, mid, panelY + 200);
+  ctx.fillStyle = goldLeaf(ctx, mid - pillW / 2, pillY, mid + pillW / 2, pillY + 52);
+  roundedRect(ctx, mid - pillW / 2, pillY, pillW, 52, 26);
+  ctx.fill();
+
+  iconCalendar(ctx, mid - pillW / 2 + 30, pillY + 16, 20);
+
+  ctx.fillStyle = LIGHT.greenDeep;
+  ctx.textAlign = "left";
+  ctx.fillText(stamp, mid - pillW / 2 + 66, pillY + 34);
 
   // The board, in the order the shop reads it out.
   const rows = RATE_BOARD.flatMap((entry) => {
     const rate = snapshot.rates.find((r) => r.karat === entry.karat);
-    return rate ? [{ name: String(entry.name), mark: String(entry.mark), rate }] : [];
+    return rate
+      ? [{ karat: String(entry.karat), mark: String(entry.mark), name: String(entry.name), rate }]
+      : [];
   });
 
-  const rowH = 124;
-  const rowW = PANEL_W - 76;
-  const rowX = PANEL_X + 38;
-  let y = panelY + 240;
+  const rowH = 112;
+  let y = pillY + 74;
 
   rows.forEach((row) => {
-    ctx.fillStyle = "rgba(242,231,212,0.5)";
-    roundedRect(ctx, rowX, y, rowW, rowH - 16, 16);
+    const h = rowH - 14;
+
+    const fill = ctx.createLinearGradient(L, y, R, y);
+    fill.addColorStop(0, "rgba(255,253,250,0.95)");
+    fill.addColorStop(1, "rgba(242,231,212,0.85)");
+    ctx.fillStyle = fill;
+    roundedRect(ctx, L, y, R - L, h, 14);
     ctx.fill();
 
-    ctx.strokeStyle = "rgba(201,162,75,0.32)";
-    ctx.lineWidth = 1;
-    roundedRect(ctx, rowX, y, rowW, rowH - 16, 16);
+    ctx.strokeStyle = "rgba(201,162,75,0.42)";
+    ctx.lineWidth = 1.2;
+    roundedRect(ctx, L, y, R - L, h, 14);
     ctx.stroke();
+
+    const cy = y + h / 2;
+
+    medallion(ctx, L + 54, cy, 33);
+    symbolFor[row.karat]?.(ctx, L + 54, cy, 33);
 
     ctx.textAlign = "left";
     ctx.fillStyle = LIGHT.green;
-    ctx.font = `400 46px ${DISPLAY}`;
-    ctx.fillText(row.name, rowX + 30, y + 62);
+    ctx.font = `400 38px ${DISPLAY}`;
+    ctx.fillText(row.name === "Silver" ? "Silver" : "Gold", L + 106, cy - 4);
 
-    const nameW = ctx.measureText(row.name).width;
-    ctx.fillStyle = LIGHT.bronze;
-    ctx.font = `500 22px ${SANS}`;
-    ctx.fillText(`(${row.mark})`, rowX + 30 + nameW + 13, y + 62);
+    ctx.fillStyle = LIGHT.greenSoft;
+    ctx.font = `500 24px ${SANS}`;
+    ctx.fillText(
+      row.name === "Silver" ? `(${row.mark})` : `${row.name} (${row.mark})`,
+      L + 106,
+      cy + 30,
+    );
+
+    ctx.fillStyle = "rgba(201,162,75,0.5)";
+    ctx.fillRect(L + 330, cy - 26, 1.5, 52);
 
     ctx.textAlign = "right";
-    ctx.fillStyle = LIGHT.bronze;
-    ctx.font = `600 52px ${SANS}`;
-    ctx.fillText(row.rate.perTola.toLocaleString("en-US"), rowX + rowW - 30, y + 56);
+    ctx.fillStyle = LIGHT.green;
+    ctx.font = `700 50px ${SANS}`;
+    ctx.fillText(row.rate.perTola.toLocaleString("en-US"), R - 26, cy + 2);
 
     ctx.fillStyle = LIGHT.greenSoft;
     ctx.font = `400 22px ${SANS}`;
-    ctx.fillText(`${row.rate.perGram.toLocaleString("en-US")} per gram`, rowX + rowW - 30, y + 92);
+    ctx.fillText(`${row.rate.perGram.toLocaleString("en-US")} per gram`, R - 26, cy + 34);
 
     y += rowH;
   });
 
-  y += 10;
-  ornament(ctx, mid, y, 10, LIGHT.gold);
+  y += 6;
+  const sep = ctx.createLinearGradient(L + 60, 0, R - 60, 0);
+  sep.addColorStop(0, "rgba(201,162,75,0)");
+  sep.addColorStop(0.5, "rgba(201,162,75,0.7)");
+  sep.addColorStop(1, "rgba(201,162,75,0)");
+  ctx.fillStyle = sep;
+  ctx.fillRect(L + 60, y, R - L - 120, 1.5);
+  ornament(ctx, mid, y, 11, LIGHT.gold);
 
   ctx.textAlign = "center";
   ctx.fillStyle = LIGHT.greenSoft;
-  ctx.font = `400 21px ${SANS}`;
-  ctx.fillText("Rates are indicative · Per tola, in Pakistani rupees", mid, y + 54);
+  ctx.font = `400 22px ${SANS}`;
+  ctx.fillText("Rates are indicative · Per tola, in Pakistani rupees", mid, y + 44);
 
   ctx.fillStyle = LIGHT.bronze;
   ctx.font = `400 italic 38px ${DISPLAY}`;
-  ctx.fillText(SITE.tagline, mid, y + 106);
+  ctx.fillText(SITE.tagline, mid, y + 98);
 
   /*
-   * Three claims the shop can stand behind.
+   * Three marks the shop can stand behind.
    *
-   * The reference this was drawn from said "100% pure gold", which would be
-   * untrue over a board whose own headline figure is 22k. These are the things
-   * the rest of the site already promises.
+   * The design this follows says "100% pure gold", which would be untrue over
+   * a board whose own headline figure is 22k. These are the promises the rest
+   * of the site already makes.
    */
-  const badges = ["HALLMARKED", `SINCE ${SITE.founded}`, "LIFETIME BUY-BACK"];
-  const badgeY = y + 152;
-  const step = rowW / badges.length;
+  const marks: {
+    icon: (c: CanvasRenderingContext2D, x: number, yy: number, s: number) => void;
+    lines: string[];
+  }[] = [
+    { icon: iconShield, lines: ["HALLMARKED", "GOLD"] },
+    { icon: iconGem, lines: [`SINCE ${SITE.founded}`] },
+    { icon: iconCycle, lines: ["LIFETIME", "BUY-BACK"] },
+  ];
 
-  ctx.font = `600 17px ${SANS}`;
-  badges.forEach((badge, i) => {
-    const bx = rowX + step * i + step / 2;
+  const markY = y + 158;
+  const step = (R - L) / marks.length;
+
+  marks.forEach((m, i) => {
+    const bx = L + step * i + step / 2;
 
     if (i > 0) {
-      ctx.fillStyle = "rgba(201,162,75,0.45)";
-      ctx.fillRect(rowX + step * i, badgeY - 18, 1, 26);
+      ctx.fillStyle = "rgba(201,162,75,0.4)";
+      ctx.fillRect(L + step * i, markY - 24, 1, 48);
     }
 
-    ctx.fillStyle = LIGHT.greenSoft;
-    tracked(ctx, badge, bx, badgeY, 2, "center");
+    m.icon(ctx, bx - 58, markY, 15);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = LIGHT.green;
+    ctx.font = `700 17px ${SANS}`;
+    m.lines.forEach((line, li) => {
+      tracked(ctx, line, bx - 34, markY - 4 + li * 22, 1.5);
+    });
   });
 
   /*
-   * The address, in a pill, last.
+   * The footer band: the address to type, and the address to walk to.
    *
-   * Set in a heavier weight and left almost untracked. It was spaced like the
-   * wordmark, which suits three words in display type and ruins one long
-   * lowercase string — the gaps invited the eye to read breaks that are not
-   * there. This is the line somebody has to be able to type back in.
+   * Deep green across the foot, which anchors a card that is otherwise all
+   * cream, and gives the one line somebody has to read back the highest
+   * contrast on the whole picture.
    */
+  const footY = CARD_H - 104;
+
+  ctx.fillStyle = LIGHT.green;
+  ctx.beginPath();
+  ctx.moveTo(0, footY + 26);
+  ctx.quadraticCurveTo(CARD_W * 0.4, footY - 16, CARD_W, footY + 4);
+  ctx.lineTo(CARD_W, CARD_H);
+  ctx.lineTo(0, CARD_H);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = goldLeaf(ctx, 0, footY, CARD_W, footY + 30);
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, footY + 26);
+  ctx.quadraticCurveTo(CARD_W * 0.4, footY - 16, CARD_W, footY + 4);
+  ctx.stroke();
+
+  const footTextY = CARD_H - 40;
+
+  iconGlobe(ctx, 70, footTextY - 8, 15);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = LIGHT.champagne;
   ctx.font = `600 26px ${SANS}`;
   // Taken from the canonical origin rather than typed again, so the card cannot
   // drift from the address the rest of the site declares.
   const urlText = SITE.origin.replace(/^https?:\/\//, "");
-  const urlW = ctx.measureText(urlText).width + 96;
-  const urlY = badgeY + 46;
+  ctx.fillText(urlText, 98, footTextY);
 
-  /*
-   * Solid green rather than an outline. On cream this is the one element that
-   * has to hold the eye at the end of the card, and a tinted pill with gold
-   * text was the weakest thing on it — the same 2.4:1 problem the figures had.
-   * Reversed out on green the address is unmissable and reads at 11:1.
-   */
-  ctx.fillStyle = LIGHT.green;
-  roundedRect(ctx, mid - urlW / 2, urlY, urlW, 64, 32);
-  ctx.fill();
+  const dividerX = 98 + ctx.measureText(urlText).width + 34;
+  ctx.fillStyle = "rgba(242,231,212,0.4)";
+  ctx.fillRect(dividerX, footTextY - 22, 1.5, 30);
 
-  ctx.textAlign = "center";
+  iconPin(ctx, dividerX + 34, footTextY - 12, 14);
+
   ctx.fillStyle = LIGHT.champagne;
-  ctx.fillText(urlText, mid, urlY + 42);
+  ctx.font = `400 24px ${SANS}`;
+  ctx.fillText("Sarafa Market, Mandi Bahauddin", dividerX + 58, footTextY);
 
   return toJpeg(canvas);
 }

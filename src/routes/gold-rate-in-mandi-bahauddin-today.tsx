@@ -12,6 +12,7 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { InternationalGold } from "@/components/rate/InternationalGold";
+import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
 
 import {
   FALLBACK_SNAPSHOT,
@@ -113,48 +114,17 @@ function GoldRatePage() {
         <InternationalGold />
 
         {/* Rate table */}
-        <section className="section-y mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Reveal className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left">
-              <caption className="sr-only">
-                Gold rates per gram and per tola in Pakistani rupees
-              </caption>
-              <thead>
-                <tr className="border-b border-gold text-[11px] uppercase tracking-[0.2em] text-warmgrey">
-                  <th scope="col" className="py-4 font-medium">
-                    Rate
-                  </th>
-                  <th scope="col" className="py-4 text-right font-medium">
-                    Per Gram
-                  </th>
-                  <th scope="col" className="py-4 text-right font-medium">
-                    Per Tola
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {board.map((row) => (
-                  <tr key={row.karat} className="border-b border-gold/20">
-                    <th scope="row" className="py-5 text-left">
-                      <span className="font-display text-2xl font-light tracking-wide text-primary">
-                        {row.name}
-                      </span>{" "}
-                      {/* The purity, small: it settles the question without
-                          being the thing anyone reads first. */}
-                      <span className="nums ml-1 align-middle text-[11px] font-medium lowercase tracking-widest text-warmgrey">
-                        {row.mark}
-                      </span>
-                    </th>
-                    <td className="nums py-5 text-right text-base text-ink">
-                      {row.rate ? `Rs. ${row.rate.perGram.toLocaleString("en-US")}` : "—"}
-                    </td>
-                    <td className="nums py-5 text-right text-base font-semibold text-ink">
-                      {row.rate ? `Rs. ${row.rate.perTola.toLocaleString("en-US")}` : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section className="section-y mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          {/*
+            The board itself, not a table of it.
+
+            showBrand is off because the page heading two inches above already
+            said whose rates these are, and repeating the wordmark inside the
+            frame makes the page look like a brochure pasted into itself. The
+            standalone version keeps it — see the component.
+          */}
+          <Reveal>
+            <GoldRateBoard snapshot={snapshot} showBrand={false} />
           </Reveal>
 
           <Reveal delay={80}>

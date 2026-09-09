@@ -237,6 +237,47 @@ export function rateBoard(
   }));
 }
 
+/** One row of the board, shaped for display. */
+export type RateCardData = {
+  /** Stable key, the karat, so React and the icon map agree on identity. */
+  karat: string;
+  /** "Gold Piece", "Silver" — what the counter calls it. */
+  label: string;
+  purity: string;
+  perTola: number;
+  perGram: number;
+};
+
+/**
+ * The board as cards, ready to render.
+ *
+ * The presentation layer gets numbers and finished labels and nothing else:
+ * which metals appear, in what order, and what each is called all live in
+ * RATE_BOARD, and the figures come from whatever the shop last published
+ * through the admin. Adding a metal to the board adds a card, with no
+ * component to edit.
+ *
+ * Rows the shop has not published are dropped rather than shown empty — a card
+ * reading "—" invites the reader to wonder whether the shop forgot.
+ */
+export function rateCards(snapshot: RateSnapshot | undefined): RateCardData[] {
+  return RATE_BOARD.flatMap((row) => {
+    const rate = snapshot?.rates.find((r) => r.karat === row.karat);
+    if (!rate) return [];
+
+    return [
+      {
+        karat: row.karat,
+        // Silver is silver; everything else on this board is a kind of gold.
+        label: row.name === "Silver" ? "Silver" : `Gold ${row.name}`,
+        purity: row.mark,
+        perTola: rate.perTola,
+        perGram: rate.perGram,
+      },
+    ];
+  });
+}
+
 export function rateFor(snapshot: RateSnapshot | undefined, karat: string): MetalRate | undefined {
   return snapshot?.rates.find((r) => r.karat === karat);
 }
