@@ -29,12 +29,22 @@ export function RateCard({ rate }: { rate: RateCardData }) {
         <MetalIcon karat={rate.karat} className="h-7 w-7 object-contain sm:h-8 sm:w-8" />
       </span>
 
-      {/* Name and purity */}
+      {/*
+        Name and purity.
+
+        Set heavier than the rest of the card on purpose. This column is what
+        somebody scans to find their row before they read the number beside it,
+        and Cormorant at a normal weight is a beautiful face that whispers.
+
+        The name only. The purity stays light underneath at the shop's asking,
+        which is right: two bold lines in one column compete, and the eye needs
+        the name first and the karat as confirmation.
+      */}
       <div className="min-w-0">
-        <h3 className="font-display text-xl font-normal leading-tight text-rate-ink sm:text-2xl">
+        <h3 className="font-display text-[22px] font-semibold leading-tight tracking-[0.01em] text-rate-emerald sm:text-[26px]">
           {rate.label}
         </h3>
-        <p className="nums mt-0.5 text-sm text-rate-ink/80">{rate.purity}</p>
+        <p className="nums mt-1 text-sm text-rate-ink/80">{rate.purity}</p>
       </div>
 
       {/*
