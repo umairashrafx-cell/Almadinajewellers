@@ -89,7 +89,7 @@ export function Footer() {
           className="mb-14 inline-block transition-opacity hover:opacity-90"
           aria-label={`${SITE.name} home`}
         >
-          <img src={logoOnDark} alt="" width={1120} height={300} className="h-14 w-auto sm:h-16" />
+          <img src={logoOnDark} alt="" width={1120} height={300} className="h-16 w-auto sm:h-20" />
         </Link>
 
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">

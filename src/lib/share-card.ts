@@ -587,7 +587,7 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
    * figures are what somebody opened it for.
    */
   if (lockup) {
-    const lockupH = 190;
+    const lockupH = 215;
     const lockupW = (lockup.width / lockup.height) * lockupH;
     ctx.drawImage(lockup, mid - lockupW / 2, 62, lockupW, lockupH);
   }

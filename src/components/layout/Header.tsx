@@ -99,7 +99,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
             alt=""
             width={1120}
             height={300}
-            className="h-11 w-auto transition-opacity sm:h-12"
+            className="h-12 w-auto transition-opacity sm:h-14"
           />
         </Link>
 
