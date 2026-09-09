@@ -58,7 +58,7 @@ export function GoldRateBoard({
               alt={SITE.name}
               width={620}
               height={588}
-              className="mx-auto h-24 w-auto sm:h-28"
+              className="mx-auto h-28 w-auto sm:h-32"
             />
 
             {/*
