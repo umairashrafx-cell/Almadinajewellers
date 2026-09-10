@@ -236,7 +236,7 @@ function Consultation() {
           <p className="mt-4 text-sm leading-relaxed text-warmgrey">
             Thank you, {submitted.name.trim().split(" ")[0]}. We will call you on{" "}
             <span className="nums">{submitted.phone.trim()}</span> to confirm a time. We are open
-            11:00am to 8:00pm, {SITE.address}.
+            Saturday to Thursday, 11:00am to 8:00pm, at {SITE.address}.
           </p>
           <p className="mt-6 text-sm leading-relaxed text-warmgrey">
             If it is easier, send the same details on WhatsApp and we will reply there.

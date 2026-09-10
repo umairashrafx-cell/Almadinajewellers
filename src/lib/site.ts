@@ -35,7 +35,9 @@ export const STORES = [
     address: "Sarafa Market, Mandi Bahauddin, Punjab, Pakistan",
     phones: ["+92 321 7759959", "+92 321 7744282"],
     whatsapp: "92546502244",
-    hours: "Monday to Sunday, 11:00am – 8:00pm",
+    hours: "Saturday to Thursday, 11:00am – 8:00pm",
+    /** Said outright wherever the hours are, so nobody makes a Friday trip. */
+    closed: "Closed on Friday",
     /**
      * Google Maps place query. Was "Sarafa Bazar" while the address above said
      * "Sarafa Market" — the same place under two names, which is exactly the

@@ -831,6 +831,8 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
                   {days}
                   <br />
                   {hours}
+                  <br />
+                  <span className="text-champagne/90">{store.closed}</span>
                 </dd>
               </div>
               <div className="bg-primary p-6 sm:p-7">

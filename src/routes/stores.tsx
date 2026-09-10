@@ -16,7 +16,7 @@ export const Route = createFileRoute("/stores")({
   head: () => {
     const store = STORES[0]!;
     const title = `Visit Us — ${store.name}, ${store.city} · ${SITE.name}`;
-    const description = `${SITE.name} at ${store.address}. Open ${store.hours}. Call ${store.phones[0]} or message us on WhatsApp.`;
+    const description = `${SITE.name} at ${store.address}. Open ${store.hours}. ${store.closed}. Call ${store.phones[0]} or message us on WhatsApp.`;
     return {
       meta: [
         { title },
@@ -117,6 +117,7 @@ function StoresPage() {
 
                       <Detail icon={Clock} label="Opening hours">
                         <p className="nums text-ink">{store.hours}</p>
+                        <p className="mt-1 text-ink">{store.closed}</p>
                       </Detail>
 
                       <Detail icon={Phone} label="Phone">
