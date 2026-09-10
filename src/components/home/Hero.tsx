@@ -5,7 +5,7 @@ import { SITE } from "@/lib/site";
 /** Full-screen hero with a slow Ken Burns zoom and green gradient. */
 export function Hero() {
   return (
-    <section className="relative -mt-[74px] flex min-h-screen items-end overflow-hidden">
+    <section className="relative -mt-[var(--header-h)] flex min-h-screen items-end overflow-hidden">
       <img
         src={heroImage}
         alt="A stack of hand-worked 22K gold bangles on a dark reflective surface"

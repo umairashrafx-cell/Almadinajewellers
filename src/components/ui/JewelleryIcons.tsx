@@ -88,3 +88,13 @@ export function EarringIcon(props: SVGProps<SVGSVGElement>) {
     </Icon>
   );
 }
+
+export function GoldBarsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M3.4 19.5 5 14.8h5.6l1.6 4.7Z" />
+      <path d="M11.8 19.5 13.4 14.8H19l1.6 4.7Z" />
+      <path d="M7.6 13.2 9.2 8.5h5.6l1.6 4.7Z" />
+    </Icon>
+  );
+}

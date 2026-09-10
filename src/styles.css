@@ -48,6 +48,17 @@
   --color-rate-ivory: var(--rate-ivory);
   --color-rate-ink: var(--rate-ink);
 
+  /* The header's luxury palette — see the :root block. */
+  --color-lux-ivory: var(--lux-ivory);
+  --color-lux-cream: var(--lux-cream);
+  --color-lux-border: var(--lux-border);
+  --color-lux-gold: var(--lux-gold);
+  --color-lux-gold-light: var(--lux-gold-light);
+  --color-lux-gold-deep: var(--lux-gold-deep);
+  --color-lux-gold-dark: var(--lux-gold-dark);
+  --color-lux-ink: var(--lux-ink);
+  --color-lux-muted: var(--lux-muted);
+
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-champagne: var(--champagne);
@@ -73,6 +84,8 @@
   /* Typography */
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* The header navigation only. */
+  --font-nav: "Montserrat", Arial, sans-serif;
 
   /* Elevation */
   --shadow-lift: 0 18px 40px -24px oklch(0.22 0.006 80 / 0.45);
@@ -118,6 +131,22 @@
   --rate-gold-deep: #8a6a18;
   --rate-ivory: #f8f5ec;
   --rate-ink: #163d34;
+
+  /*
+   * The header's palette: a warmer ivory and a deeper, more metallic gold
+   * than the site's own, for the navigation alone. Hover and active text on
+   * the gold is --lux-ink, which clears AA on both ends of the gradient; white
+   * does not. The badge uses --lux-gold-dark for the same reason.
+   */
+  --lux-ivory: #fcfaf6;
+  --lux-cream: #f8f4ec;
+  --lux-border: #e8dcc7;
+  --lux-gold: #b8892d;
+  --lux-gold-light: #d6b15a;
+  --lux-gold-deep: #a97820;
+  --lux-gold-dark: #8f671e;
+  --lux-ink: #111111;
+  --lux-muted: #6b6255;
 
   --primary: oklch(0.3 0.06 160); /* #0B3D2E Madina Green */
   --primary-foreground: var(--ivory);
@@ -190,6 +219,26 @@
   :focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
+  }
+}
+
+/*
+ * The header's height. The heroes that sit under a transparent header pull
+ * up by exactly this, so the two can never drift apart again.
+ */
+:root {
+  --header-h: 72px;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --header-h: 80px;
+  }
+}
+
+@media (width >= 80rem) {
+  :root {
+    --header-h: 96px;
   }
 }
 
