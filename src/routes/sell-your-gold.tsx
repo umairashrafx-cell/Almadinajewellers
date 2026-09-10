@@ -309,8 +309,8 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
               <p className="mt-4 text-sm leading-relaxed text-ink">
                 Every piece we sell carries a lifetime buy-back, at the same 20k rate and on the
                 rate of the day you return it rather than the day you bought it. Bring the piece and
-                the bill to {SITE.address} — the weight is already on the bill, so there is nothing
-                to establish and nothing to argue about.
+                the bill to {SITE.name} — the weight is already on the bill, so there is nothing to
+                establish and nothing to argue about.
               </p>
               <p className="mt-4 text-sm leading-relaxed text-warmgrey">
                 The 20k rate is how the making charges come off: it sits below what the same gold
