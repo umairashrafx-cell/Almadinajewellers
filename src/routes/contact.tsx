@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/contact")({
   head: () => {
     const title = `Contact Us — ${SITE.name}`;
-    const description = `Call ${SITE.phones[0]}, message us on WhatsApp at ${SITE.whatsappDisplay}, or send an enquiry. Sarafa Market, Mandi Bahauddin. Open daily 11:00am to 8:00pm.`;
+    const description = `Call ${SITE.phones[0]}, message us on WhatsApp at ${SITE.whatsappDisplay}, or send an enquiry. Sarafa Market, Mandi Bahauddin. Open Saturday to Thursday, 11:00am to 8:00pm; closed Friday.`;
     return {
       meta: [
         { title },
@@ -144,7 +144,9 @@ function ContactPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-xs text-warmgrey">{store.hours}</p>
+                <p className="mt-2 text-xs text-warmgrey">
+                  {store.hours} · {store.closed}
+                </p>
               </div>
             </Reveal>
 

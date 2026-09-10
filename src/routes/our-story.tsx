@@ -240,7 +240,7 @@ function OurStoryPage() {
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-champagne/80">
               The full range is on the tray at the counter, and the scale is on the table. We are
-              open every day, 11:00am to 8:00pm.
+              open Saturday to Thursday, 11:00am to 8:00pm, and closed on Friday.
             </p>
             <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
               <ActionLink href="/stores">Find the shop</ActionLink>

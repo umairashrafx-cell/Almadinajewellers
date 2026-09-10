@@ -41,7 +41,8 @@ export function storeSchemaNode() {
     },
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      // Friday is the shop's closed day, so it is absent rather than listed.
+      dayOfWeek: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
       opens: "11:00",
       closes: "20:00",
     },

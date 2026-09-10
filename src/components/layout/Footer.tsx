@@ -123,7 +123,8 @@ export function Footer() {
             </h3>
             <address className="mt-6 space-y-2 text-sm not-italic text-champagne/75">
               <p>{SITE.address}</p>
-              <p className="nums">Mon – Sun, 11:00am – 8:00pm </p>
+              <p className="nums">Sat – Thu, 11:00am – 8:00pm</p>
+              <p>Closed on Friday</p>
               {SITE.phones.map((phone) => (
                 <p key={phone}>
                   <a
