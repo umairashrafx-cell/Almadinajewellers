@@ -283,6 +283,80 @@ export function rateFor(snapshot: RateSnapshot | undefined, karat: string): Meta
 }
 
 /**
+ * Per-gram is always derived from per-tola, never typed, so the two can never
+ * disagree. Kept here rather than beside the admin that publishes rates, so a
+ * public page deriving a figure does it exactly the way the published ones were.
+ */
+export function perGramFromTola(perTola: number): number {
+  return Math.round(perTola / TOLA_IN_GRAMS);
+}
+
+/** The unit a customer typed a weight in. */
+export type WeightUnit = "g" | "tola";
+
+/**
+ * What a weight of metal is worth at a rate.
+ *
+ * Shared by the rate page's calculator and the sell page's, so the two can
+ * never price the same ten grams differently.
+ */
+export function metalValue(amount: number, unit: WeightUnit, rate: MetalRate) {
+  const grams = unit === "g" ? amount : amount * TOLA_IN_GRAMS;
+  return {
+    grams,
+    tolas: grams / TOLA_IN_GRAMS,
+    // Priced off the rate for the unit the customer typed in. Going via
+    // per-gram for a tola input would land a rupee or two off the published
+    // per-tola figure, and that is exactly the arithmetic buyers check.
+    value: Math.round(unit === "tola" ? amount * rate.perTola : grams * rate.perGram),
+  };
+}
+
+/**
+ * The purities a seller can pick in the sell-page calculator.
+ *
+ * These describe the customer's piece, not rates the shop publishes, which is
+ * why 21K and 18K appear here after leaving the board. Plenty of older
+ * jewellery in this market is 21K, and someone holding it has to be able to
+ * say so.
+ */
+export const SELL_PURITIES = ["24K", "22K", "21K", "20K", "18K"] as const;
+export type SellPurity = (typeof SELL_PURITIES)[number];
+
+/**
+ * The purity the published buying rate is quoted for. The shop buys jewellery,
+ * which it sells as 22K, at the 20K rate — the one buying figure it publishes.
+ */
+const BUY_RATE_PURITY = 22;
+
+/**
+ * The buying rate for gold of a given purity.
+ *
+ * ASSUMPTION, awaiting the shop's confirmation: other purities are paid in
+ * proportion to their gold content against the published buying rate, so 18K
+ * is 18/22 of it and 24K is 24/22. The shop has only ever published the one
+ * figure, and this is the single place that turns it into the others — if the
+ * counter works differently, this function is the whole of the change.
+ *
+ * 22K hands back the published figures untouched rather than multiplied by
+ * one, so the rate in the calculator is character-for-character the rate at
+ * the top of the page.
+ */
+export function buyingRateFor(
+  snapshot: RateSnapshot | undefined,
+  purity: SellPurity,
+): MetalRate | undefined {
+  const published = rateFor(snapshot, BUY_KARAT);
+  if (!published) return undefined;
+
+  const karats = Number.parseFloat(purity);
+  if (karats === BUY_RATE_PURITY) return { ...published, karat: purity };
+
+  const perTola = roundRateToHundred((published.perTola * karats) / BUY_RATE_PURITY);
+  return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
+}
+
+/**
  * The shop's own clock. Pinned rather than left to the runtime for two reasons:
  * the server renders in UTC and the browser in the visitor's zone, and an
  * unpinned format would differ between them and trip a hydration mismatch; and

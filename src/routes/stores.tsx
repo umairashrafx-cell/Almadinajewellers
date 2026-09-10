@@ -9,7 +9,8 @@ import { Footer } from "@/components/layout/Footer";
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { Reveal } from "@/components/ui/Reveal";
-import { SITE, STORES, directionsUrl, mapEmbedUrl, placeUrl, reviewUrl } from "@/lib/site";
+import { StoreSchema } from "@/components/seo/StoreSchema";
+import { SITE, STORES, directionsUrl, mapEmbedUrl, reviewUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/stores")({
   head: () => {
@@ -213,49 +214,5 @@ function Detail({
         <dd className="mt-1.5">{children}</dd>
       </div>
     </div>
-  );
-}
-
-/** JewelryStore schema, which is what feeds a Google Business listing. */
-function StoreSchema() {
-  const store = STORES[0]!;
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "JewelryStore",
-    name: SITE.name,
-    description: SITE.tagline,
-    url: `${SITE.origin}/stores`,
-    telephone: store.phones[0],
-    // How Google confirms that this site, the Business Profile and the social
-    // accounts are one business rather than several with a similar name.
-    sameAs: [placeUrl(store.placeId), SITE.instagram, SITE.facebook, SITE.tiktok],
-    founder: { "@type": "Person", name: SITE.founder },
-    // Exact coordinates, so search engines place the shop where it is rather
-    // than geocoding a street name shared with every jeweller on it.
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: store.lat,
-      longitude: store.lng,
-    },
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: store.name,
-      addressLocality: store.city,
-      addressRegion: "Punjab",
-      addressCountry: "PK",
-    },
-    openingHoursSpecification: {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      opens: "11:00",
-      closes: "20:00",
-    },
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
   );
 }
