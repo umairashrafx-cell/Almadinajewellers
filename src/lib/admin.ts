@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PRODUCT_IMAGE_BUCKET } from "@/lib/catalogue";
-import { TOLA_IN_GRAMS, roundRateToHundred } from "@/lib/rates";
+import { perGramFromTola, roundRateToHundred } from "@/lib/rates";
 import type { Tables } from "@/integrations/supabase/types";
 
 /**
@@ -566,10 +566,8 @@ export async function removeProductImage(key: string): Promise<void> {
 
 export type RateDraft = { karat: string; perTola: number };
 
-/** Per-gram is always derived, never typed, so the two can never disagree. */
-export function perGramFromTola(perTola: number): number {
-  return Math.round(perTola / TOLA_IN_GRAMS);
-}
+/** Per-gram is always derived, never typed. Defined with the rates it derives from. */
+export { perGramFromTola };
 
 /**
  * Publishes one day's rates. The table holds one row per karat per day, so this

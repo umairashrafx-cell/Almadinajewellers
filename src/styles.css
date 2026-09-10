@@ -366,6 +366,41 @@
 }
 
 /*
+ * Entrance for what is already on screen when a page loads, where a scroll
+ * reveal would never fire. Short, so it reads as the page settling into place
+ * rather than as the page being slow.
+ */
+@utility rise-in {
+  animation: rise-in 520ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * A figure being replaced by a new one — a calculator result, an opened answer.
+ * Opacity only and brief: enough to show that something changed, never enough
+ * to make someone wait for a number.
+ */
+@utility value-in {
+  animation: value-in 220ms ease-out;
+}
+
+@keyframes value-in {
+  from {
+    opacity: 0.35;
+  }
+}
+
+/*
  * Honour a reduced-motion preference.
  *
  * Everything decorative is turned off rather than merely shortened: the Ken
@@ -386,6 +421,11 @@
   }
 
   .page-enter {
+    animation: none;
+  }
+
+  .rise-in,
+  .value-in {
     animation: none;
   }
 

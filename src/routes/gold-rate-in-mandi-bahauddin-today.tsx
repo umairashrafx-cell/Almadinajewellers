@@ -24,8 +24,10 @@ import {
   formatRateDate,
   formatRateStamp,
   goldOnly,
+  metalValue,
   rateFor,
   type RateSnapshot,
+  type WeightUnit,
 } from "@/lib/rates";
 import { SITE, formatPKR, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
@@ -184,7 +186,7 @@ function GoldRatePage() {
 /** Grams or tola in, estimated metal value out. */
 function Calculator({ snapshot }: { snapshot: RateSnapshot }) {
   const [amount, setAmount] = useState("10");
-  const [unit, setUnit] = useState<"g" | "tola">("g");
+  const [unit, setUnit] = useState<WeightUnit>("g");
   const [karat, setKarat] = useState<string>("22K");
 
   const rate = rateFor(snapshot, karat) ?? rateFor(FALLBACK_SNAPSHOT, karat);
@@ -193,15 +195,8 @@ function Calculator({ snapshot }: { snapshot: RateSnapshot }) {
     const parsed = Number.parseFloat(amount);
     if (!Number.isFinite(parsed) || parsed <= 0 || !rate) return null;
 
-    const grams = unit === "g" ? parsed : parsed * TOLA_IN_GRAMS;
-    return {
-      grams,
-      tolas: grams / TOLA_IN_GRAMS,
-      // Priced off the rate for the unit the customer typed in. Going via
-      // per-gram for a tola input would land a rupee or two off the published
-      // per-tola figure, and that is exactly the arithmetic buyers check.
-      value: Math.round(unit === "tola" ? parsed * rate.perTola : grams * rate.perGram),
-    };
+    // The same arithmetic as the sell page's calculator, from the same place.
+    return metalValue(parsed, unit, rate);
   }, [amount, unit, rate]);
 
   return (
