@@ -324,35 +324,36 @@ export const SELL_PURITIES = ["24K", "22K", "21K", "20K", "18K"] as const;
 export type SellPurity = (typeof SELL_PURITIES)[number];
 
 /**
- * The purity the published buying rate is quoted for. The shop buys jewellery,
- * which it sells as 22K, at the 20K rate — the one buying figure it publishes.
- */
-const BUY_RATE_PURITY = 22;
-
-/**
- * The buying rate for gold of a given purity.
+ * The rate for gold of a given purity, valued at its actual purity.
  *
- * ASSUMPTION, awaiting the shop's confirmation: other purities are paid in
- * proportion to their gold content against the published buying rate, so 18K
- * is 18/22 of it and 24K is 24/22. The shop has only ever published the one
- * figure, and this is the single place that turns it into the others — if the
- * counter works differently, this function is the whole of the change.
+ * Where the shop publishes a rate for the purity itself — 24K, 22K and the
+ * 20K buying rate — that figure is returned untouched, so 24K means the 24K
+ * rate on the board and 20K lands exactly on the buying rate at the top of the
+ * sell page. The shop's 22K is its own figure rather than 22/24 of 24K: it is
+ * derived through pathor, and scaling would quote a seller more than the shop
+ * sells 22K jewellery for.
  *
- * 22K hands back the published figures untouched rather than multiplied by
- * one, so the rate in the calculator is character-for-character the rate at
- * the top of the page.
+ * Purities with no published rate, 21K and 18K, are the 24K rate in
+ * proportion to their gold content, rounded to the nearest hundred per tola —
+ * the arithmetic the admin itself uses to derive 20K from 24K.
+ *
+ * Nothing is returned for the fallback snapshot. Its figures exist so a rate
+ * band never renders empty; an estimate built on them would quote a customer
+ * a price nobody set.
  */
 export function buyingRateFor(
   snapshot: RateSnapshot | undefined,
   purity: SellPurity,
 ): MetalRate | undefined {
-  const published = rateFor(snapshot, BUY_KARAT);
-  if (!published) return undefined;
+  if (!snapshot?.date) return undefined;
 
-  const karats = Number.parseFloat(purity);
-  if (karats === BUY_RATE_PURITY) return { ...published, karat: purity };
+  const published = rateFor(snapshot, purity);
+  if (published) return { ...published, karat: purity };
 
-  const perTola = roundRateToHundred((published.perTola * karats) / BUY_RATE_PURITY);
+  const fine = rateFor(snapshot, "24K");
+  if (!fine) return undefined;
+
+  const perTola = roundRateToHundred((fine.perTola * Number.parseFloat(purity)) / 24);
   return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
 }
 
