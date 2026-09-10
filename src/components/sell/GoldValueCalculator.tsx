@@ -45,7 +45,9 @@ const money = (n: number) => n.toLocaleString("en-US");
 export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
   const [amount, setAmount] = useState("10");
   const [unit, setUnit] = useState<WeightUnit>("g");
-  const [purity, setPurity] = useState<SellPurity>("22K");
+  // 20K first: it is what jewellery is bought at, so the estimate a seller
+  // sees before touching anything matches the buying rate above it.
+  const [purity, setPurity] = useState<SellPurity>("20K");
   const id = useId();
 
   const rate = buyingRateFor(snapshot, purity);
@@ -93,7 +95,8 @@ export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
             ))}
           </div>
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
-            Jewellery sold as 22K is bought at the 20K rate. Not sure of the purity? Testing at the
+            Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is
+            bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the
             counter establishes it.
           </p>
         </fieldset>
