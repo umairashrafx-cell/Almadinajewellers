@@ -83,7 +83,7 @@ function OurStoryPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative -mt-[74px] flex min-h-[70vh] items-end overflow-hidden">
+        <section className="relative -mt-[var(--header-h)] flex min-h-[70vh] items-end overflow-hidden">
           {/*
             The crop is pulled up from centre. This is a landscape frame in a
             hero that is wider than it is tall, so object-cover takes the

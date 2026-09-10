@@ -66,7 +66,7 @@ function BridalPage() {
 
       <main>
         {/* Cinematic hero */}
-        <section className="relative -mt-[74px] flex min-h-[85vh] items-end overflow-hidden">
+        <section className="relative -mt-[var(--header-h)] flex min-h-[85vh] items-end overflow-hidden">
           <img
             src={heroImage}
             alt="22K gold bridal set with necklace, earrings and tikka"

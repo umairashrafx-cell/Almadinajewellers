@@ -38,7 +38,7 @@ import {
   EarringIcon,
   NecklaceIcon,
   RingIcon,
-} from "@/components/sell/JewelleryIcons";
+} from "@/components/ui/JewelleryIcons";
 import { ProcessTimeline, type Step } from "@/components/sell/ProcessTimeline";
 import { RateComparison } from "@/components/sell/RateComparison";
 import { SellFaq, type Faq } from "@/components/sell/SellFaq";
