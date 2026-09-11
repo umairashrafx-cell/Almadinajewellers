@@ -10,6 +10,12 @@
  * Components must only use these tokens (bg-primary, text-gold, ...).
  */
 
+/*
+ * A wide landscape screen: where the portrait hero film sits in its arch
+ * beside the headline rather than filling the screen behind it.
+ */
+@custom-variant panel (@media (width >= 80rem) and (orientation: landscape));
+
 @theme inline {
   --radius-sm: 0px;
   --radius-md: 2px;
