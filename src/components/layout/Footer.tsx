@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 
 import footerTexture from "@/assets/footer-texture.jpg";
 import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
+import automa8Wordmark from "@/assets/brand/automa8-wordmark.png";
+import adminIcon from "@/assets/icons/admin.png";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
 
@@ -200,26 +202,7 @@ export function Footer() {
         <div className="hairline mt-16" />
 
         <div className="mt-8 flex flex-col gap-4 text-xs text-champagne/60 sm:flex-row sm:items-center sm:justify-between">
-          <p className="nums">
-            © {new Date().getFullYear()} {SITE.name}
-          </p>
-
-          <p className="font-display text-base tracking-wide text-gold sm:order-2">
-            {SITE.tagline}
-          </p>
-
-          {/* Build credit, kept quiet and last in the reading order. */}
-          <p className="sm:order-3">
-            Project built by{" "}
-            <a
-              href="https://www.automa8.co"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-b border-champagne/30 pb-0.5 transition-colors hover:border-gold hover:text-gold"
-            >
-              Automa8
-            </a>
-            {" · "}
+          <div className="flex items-center gap-3">
             {/*
               The way in for the shop, so nobody has to remember the address.
 
@@ -234,10 +217,62 @@ export function Footer() {
             <Link
               to="/admin"
               rel="nofollow"
-              className="border-b border-champagne/30 pb-0.5 transition-colors hover:border-gold hover:text-gold"
+              aria-label="Admin"
+              title="Admin"
+              className="inline-grid h-8 w-8 place-items-center rounded-full transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
-              Admin
+              {/*
+                The icon is a mask, not an image, so it takes the text colour
+                around it and turns gold on hover with the other links. As a
+                picture its black lines would vanish into the footer.
+              */}
+              <span
+                aria-hidden="true"
+                className="block h-5 w-5 bg-current"
+                style={{
+                  WebkitMaskImage: `url(${adminIcon})`,
+                  maskImage: `url(${adminIcon})`,
+                  WebkitMaskSize: "contain",
+                  maskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  maskPosition: "center",
+                }}
+              />
             </Link>
+            <p className="nums">
+              © {new Date().getFullYear()} {SITE.name}
+            </p>
+          </div>
+
+          <p className="font-display text-base tracking-wide text-gold sm:order-2">
+            {SITE.tagline}
+          </p>
+
+          {/* Build credit, kept quiet and last in the reading order. */}
+          <p className="flex items-center gap-2 sm:order-3">
+            Project built by
+            {/*
+              The studio's own wordmark, cut from its logo: the full square
+              carries a tagline that would be illegible at this size.
+            */}
+            <a
+              href="https://www.automa8.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-sm opacity-90 transition-opacity hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+            >
+              <img
+                src={automa8Wordmark}
+                alt="Automa8"
+                width={411}
+                height={72}
+                loading="lazy"
+                decoding="async"
+                className="h-5 w-auto"
+              />
+            </a>
           </p>
         </div>
       </div>
