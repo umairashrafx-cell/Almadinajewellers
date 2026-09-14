@@ -1,5 +1,5 @@
 import type { ProductDetail } from "@/lib/catalogue";
-import { formatRateStamp, goldOnly, type RateSnapshot } from "@/lib/rates";
+import { formatRateDate, rateFor, rateStampParts, type RateSnapshot } from "@/lib/rates";
 import { SITE, formatGrams, formatPKR, productUrl } from "@/lib/site";
 
 /**
@@ -87,30 +87,38 @@ export function productShareMessage(product: ProductDetail, listedPkr: number): 
 }
 
 /**
- * The day's rates, formatted for a broadcast list.
+ * The day's rates as a message: the one text behind both the Copy button and
+ * the WhatsApp share on the rate page, so the two can never say different
+ * things.
  *
- * The monospace block is doing real work: without it the three columns wrap
- * differently on every handset and the table stops being a table.
+ * Each figure is the board's headline — the rate per tola — with no unit
+ * written beside it, as the shop words it. The figures, the date and the time
+ * all come from the published snapshot; none is typed here. A metal the shop
+ * has not published today is left out rather than shown as a placeholder, and
+ * so is the time on the rare snapshot that carries only a date.
  */
 export function rateShareMessage(snapshot: RateSnapshot): string {
-  const rates = goldOnly(snapshot);
+  const rupees = (karat: string) => {
+    const rate = rateFor(snapshot, karat);
+    return rate ? `Rs. ${rate.perTola.toLocaleString("en-US")}` : undefined;
+  };
 
-  const perGram = alignRight(["Per gram", ...rates.map((r) => r.perGram.toLocaleString("en-US"))]);
-  const perTola = alignRight(["Per tola", ...rates.map((r) => r.perTola.toLocaleString("en-US"))]);
+  const stamp = snapshot.publishedAt ? rateStampParts(snapshot.publishedAt) : undefined;
+  const date = stamp?.date ?? formatRateDate(snapshot.date);
 
-  const rows = rates.map((r, i) => `${pad(r.karat, 6)}${perGram[i + 1]}   ${perTola[i + 1]}`);
+  const rows: [string, string | undefined][] = [
+    ["🥇 24K Gold", rupees("24K")],
+    ["🥇 23.65K Gold", rupees("23.65K")],
+    ["🥇 22K Gold", rupees("22K")],
+    ["🥈 Silver", rupees("999")],
+  ];
 
   return [
-    `*Today's Gold Rate*`,
-    `${SITE.name} · ${formatRateStamp(snapshot)}`,
+    `📅 Gold & Silver Rates — ${date}`,
+    ...(stamp ? [`🕐 Updated: ${stamp.time} PKT`] : []),
     "",
-    "```",
-    `${pad("Karat", 6)}${perGram[0]}   ${perTola[0]}`,
-    ...rows,
-    "```",
+    ...rows.flatMap(([label, value]) => (value ? [`${label}: ${value}`] : [])),
     "",
-    "_Rates are indicative. Your price is confirmed against the rate on the day you buy, and every piece is weighed in front of you._",
-    "",
-    `${SITE.origin}/gold-rate-in-mandi-bahauddin-today`,
+    "Prices may vary. Final rates are confirmed at the time of purchase.",
   ].join("\n");
 }

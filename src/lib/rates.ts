@@ -366,28 +366,41 @@ export function buyingRateFor(
  */
 const SHOP_TIME_ZONE = "Asia/Karachi";
 
-/** "21 August 2026 at 2:15 pm" — the moment the day's rates were published. */
-export function formatRateTimestamp(iso: string): string {
+/**
+ * The publish moment as its two displayed parts, in the shop's clock:
+ * "21 August 2026" and "2:15 pm". Undefined if the timestamp is unreadable.
+ *
+ * Kept apart so a message that puts the date and the time on separate lines
+ * shows exactly what the page does, rather than formatting them a second way.
+ */
+export function rateStampParts(iso: string): { date: string; time: string } | undefined {
   const at = new Date(iso);
-  if (Number.isNaN(at.getTime())) return "";
+  if (Number.isNaN(at.getTime())) return undefined;
 
-  const date = at.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: SHOP_TIME_ZONE,
-  });
+  return {
+    date: at.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      timeZone: SHOP_TIME_ZONE,
+    }),
+    time: at.toLocaleTimeString("en-GB", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: SHOP_TIME_ZONE,
+    }),
+  };
+}
 
-  const time = at.toLocaleTimeString("en-GB", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: SHOP_TIME_ZONE,
-  });
+/** "21 August 2026 at 2:15 pm PKT" — the moment the day's rates were published. */
+export function formatRateTimestamp(iso: string): string {
+  const parts = rateStampParts(iso);
+  if (!parts) return "";
 
   // Labelled, because a bare time on a page read from Dubai, London or Toronto
   // invites the reader to assume it is their own.
-  return `${date} at ${time} PKT`;
+  return `${parts.date} at ${parts.time} PKT`;
 }
 
 /**

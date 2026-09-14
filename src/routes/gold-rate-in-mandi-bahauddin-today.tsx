@@ -33,6 +33,7 @@ import { SITE, formatPKR, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { renderRateCard } from "@/lib/share-card";
 import { ShareCardButton } from "@/components/ui/ShareCardButton";
+import { CopyTextButton } from "@/components/ui/CopyTextButton";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
@@ -69,6 +70,8 @@ function GoldRatePage() {
   const snapshot = Route.useLoaderData();
   const gold = goldOnly(snapshot);
   const board = rateBoard(snapshot);
+  // One message behind Copy and WhatsApp, so the two can never differ.
+  const rateText = rateShareMessage(snapshot);
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -135,16 +138,21 @@ function GoldRatePage() {
               Your final price is confirmed against the rate at the time of purchase, and every
               piece is weighed in front of you before it is billed.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            {/*
+              Four actions: the row wraps rather than squeezing each label onto
+              two lines.
+            */}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:[&>*]:whitespace-nowrap">
               {/* Share first: this is the page the shop forwards every morning. */}
               <ActionLink
-                href={shareOnWhatsApp(rateShareMessage(snapshot))}
+                href={shareOnWhatsApp(rateText)}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <WhatsAppIcon className="h-4 w-4" />
                 Share today's rate
               </ActionLink>
+              <CopyTextButton text={rateText} label="Copy rates" />
               {/*
                 The same board as a picture, for a status or a broadcast list
                 where nobody reads a table.
