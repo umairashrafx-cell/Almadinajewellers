@@ -91,35 +91,40 @@ export function productShareMessage(product: ProductDetail, listedPkr: number): 
  * the WhatsApp share on the rate page, so the two can never say different
  * things.
  *
- * Each figure is the board's headline — the rate per tola — with no unit
- * written beside it, as the shop words it. The figures, the date and the time
- * all come from the published snapshot; none is typed here. A metal the shop
- * has not published today is left out rather than shown as a placeholder, and
- * so is the time on the rare snapshot that carries only a date.
+ * Every figure is the board's headline rate per tola, stated once underneath
+ * rather than beside each line. The figures, the date and the time all come
+ * from the published snapshot; none is typed here. A metal the shop has not
+ * published today is left out rather than shown as a placeholder, and so is
+ * the time on the rare snapshot that carries only a date.
+ *
+ * The figures are bold in WhatsApp's own markup, a single asterisk either
+ * side. Doubled asterisks are not WhatsApp formatting: they arrive as visible
+ * stars around a number that is not bold.
  */
 export function rateShareMessage(snapshot: RateSnapshot): string {
-  const rupees = (karat: string) => {
+  const bold = (karat: string) => {
     const rate = rateFor(snapshot, karat);
-    return rate ? `Rs. ${rate.perTola.toLocaleString("en-US")}` : undefined;
+    return rate ? `*${rate.perTola.toLocaleString("en-US")}*` : undefined;
   };
 
   const stamp = snapshot.publishedAt ? rateStampParts(snapshot.publishedAt) : undefined;
   const date = stamp?.date ?? formatRateDate(snapshot.date);
 
   const rows: [string, string | undefined][] = [
-    // Labels exactly as the shop writes them: the three gold lines carry a
-    // space before the colon, silver does not.
-    ["24K ", rupees("24K")],
-    ["23.65K ", rupees("23.65K")],
-    ["22K ", rupees("22K")],
-    ["Silver", rupees("999")],
+    ["24K", bold("24K")],
+    ["23.65K", bold("23.65K")],
+    ["22K", bold("22K")],
+    ["Silver", bold("999")],
   ];
 
   return [
-    `Gold & Silver Rates — ${date}`,
-    ...(stamp ? [`Updated: ${stamp.time} PKT`] : []),
+    `📅 Gold & Silver Rates — ${date}`,
+    // "10:38 PM" in the message, as the shop writes it; the page keeps its own stamp.
+    ...(stamp ? [`🕐 Updated: ${stamp.time.toUpperCase()} PKT`] : []),
     "",
-    ...rows.flatMap(([label, value]) => (value ? [`${label}: ${value}`] : [])),
+    ...rows.flatMap(([label, value]) => (value ? [`${label} : ${value}`] : [])),
+    "",
+    "Per Tola | PKR",
     "",
     "Prices may vary. Final rates are confirmed at the time of purchase.",
   ].join("\n");
