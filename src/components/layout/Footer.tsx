@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import footerTexture from "@/assets/footer-texture.jpg";
 import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
-import automa8Wordmark from "@/assets/brand/automa8-wordmark.png";
+import automa8Wordmark from "@/assets/brand/automa8-wordmark.svg";
 import adminIcon from "@/assets/icons/admin.png";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
@@ -254,23 +254,25 @@ export function Footer() {
           <p className="flex items-center gap-2 sm:order-3">
             Project built by
             {/*
-              The studio's own wordmark, cut from its logo: the full square
-              carries a tagline that would be illegible at this size.
+              Automa8's own wordmark, from its v1.0 brand kit: the version drawn
+              for dark grounds. 24px tall draws it 124px wide, just over the
+              kit's 120px minimum, and it carries no fade or effect because the
+              kit rules those out.
             */}
             <a
               href="https://www.automa8.co"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex rounded-sm opacity-90 transition-opacity hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+              className="inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               <img
                 src={automa8Wordmark}
                 alt="Automa8"
-                width={411}
-                height={72}
+                width={4200}
+                height={812}
                 loading="lazy"
                 decoding="async"
-                className="h-5 w-auto"
+                className="h-6 w-auto"
               />
             </a>
           </p>
