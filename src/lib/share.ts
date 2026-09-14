@@ -107,15 +107,17 @@ export function rateShareMessage(snapshot: RateSnapshot): string {
   const date = stamp?.date ?? formatRateDate(snapshot.date);
 
   const rows: [string, string | undefined][] = [
-    ["🥇 24K Gold", rupees("24K")],
-    ["🥇 23.65K Gold", rupees("23.65K")],
-    ["🥇 22K Gold", rupees("22K")],
-    ["🥈 Silver", rupees("999")],
+    // Labels exactly as the shop writes them: the three gold lines carry a
+    // space before the colon, silver does not.
+    ["24K ", rupees("24K")],
+    ["23.65K ", rupees("23.65K")],
+    ["22K ", rupees("22K")],
+    ["Silver", rupees("999")],
   ];
 
   return [
-    `📅 Gold & Silver Rates — ${date}`,
-    ...(stamp ? [`🕐 Updated: ${stamp.time} PKT`] : []),
+    `Gold & Silver Rates — ${date}`,
+    ...(stamp ? [`Updated: ${stamp.time} PKT`] : []),
     "",
     ...rows.flatMap(([label, value]) => (value ? [`${label}: ${value}`] : [])),
     "",
