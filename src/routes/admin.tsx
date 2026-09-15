@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
+  Calculator,
   Coins,
   Inbox,
   Loader2,
@@ -85,15 +86,15 @@ function AdminLayout() {
           </div>
 
           {/*
-            Seven tabs need about 744px laid out in a row, and a phone offers
+            Eight tabs need about 860px laid out in a row, and a phone offers
             343. They used to be given `flex-1` and no way to wrap, so each one
-            was squeezed to a seventh of the width and the labels were
+            was squeezed to a sliver of the width and the labels were
             unreadable. On a phone they become a four-up grid of stacked
-            icon-and-label tiles — every tab visible without scrolling or
-            hiding, and a target big enough for a thumb. From sm up there is
-            room for the original single row.
+            icon-and-label tiles — two full rows, every tab visible without
+            scrolling or hiding, and a target big enough for a thumb. From sm
+            up they sit in a single row, wrapping if the screen runs out.
           */}
-          <nav className="order-3 grid w-full grid-cols-4 gap-1 sm:order-none sm:flex sm:w-auto">
+          <nav className="order-3 grid w-full grid-cols-4 gap-1 sm:order-none sm:flex sm:w-auto sm:flex-wrap">
             <NavTab to="/admin" exact icon={Inbox}>
               Enquiries
             </NavTab>
@@ -114,6 +115,9 @@ function AdminLayout() {
             </NavTab>
             <NavTab to="/admin/rates" icon={Coins}>
               Gold rate
+            </NavTab>
+            <NavTab to="/admin/calculator" icon={Calculator}>
+              Calculator
             </NavTab>
           </nav>
 

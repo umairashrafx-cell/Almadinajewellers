@@ -26,6 +26,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminCalculatorRouteImport } from './routes/admin/calculator'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
 import { Route as AdminCustomOrdersRouteImport } from './routes/admin/custom-orders'
 import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
@@ -124,6 +125,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCalculatorRoute = AdminCalculatorRouteImport.update({
+  id: '/calculator',
+  path: '/calculator',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/calculator': typeof AdminCalculatorRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/custom-orders': typeof AdminCustomOrdersRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/calculator': typeof AdminCalculatorRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/custom-orders': typeof AdminCustomOrdersRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/calculator': typeof AdminCalculatorRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/custom-orders': typeof AdminCustomOrdersRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/calculator'
     | '/admin/categories'
     | '/admin/custom-orders'
     | '/admin/orders'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/calculator'
     | '/admin/categories'
     | '/admin/custom-orders'
     | '/admin/orders'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/calculator'
     | '/admin/categories'
     | '/admin/custom-orders'
     | '/admin/orders'
@@ -507,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/calculator': {
+      id: '/admin/calculator'
+      path: '/calculator'
+      fullPath: '/admin/calculator'
+      preLoaderRoute: typeof AdminCalculatorRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/categories': {
       id: '/admin/categories'
       path: '/categories'
@@ -588,6 +607,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminCalculatorRoute: typeof AdminCalculatorRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCustomOrdersRoute: typeof AdminCustomOrdersRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -598,6 +618,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCalculatorRoute: AdminCalculatorRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCustomOrdersRoute: AdminCustomOrdersRoute,
   AdminOrdersRoute: AdminOrdersRoute,
