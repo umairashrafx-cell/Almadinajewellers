@@ -214,13 +214,16 @@ export function Footer() {
               gain by extending it. It hides nothing: the panel is guarded by
               the sign-in and by row-level security underneath it, not by the
               address being hard to guess.
+
+              hide-in-app: not shown inside the Android app, which has no login
+              anywhere for customers. Staff reach the panel from a browser.
             */}
             <Link
               to="/admin"
               rel="nofollow"
               aria-label="Admin"
               title="Admin"
-              className="inline-grid h-8 w-8 place-items-center rounded-full transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+              className="hide-in-app inline-grid h-8 w-8 place-items-center rounded-full transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               {/*
                 The icon is a mask, not an image, so it takes the text colour
