@@ -141,8 +141,11 @@ update the privacy policy's Analytics section.
    passwords.
 3. `bubblewrap build` → upload `app-release-bundle.aab` to **Internal testing**,
    with Play App Signing on.
+   `public/.well-known/assetlinks.json` already lists the **upload key**
+   (`2B:4B:…:FA:EB`), so the APK you build and sideload opens with no address
+   bar. Copies installed from Play are signed by Google's key instead, so:
 4. Copy the **App signing key certificate SHA-256** from
-   _Setup → App signing_ → add it to `public/.well-known/assetlinks.json` →
+   _Setup → App signing_ → add it to `public/.well-known/assetlinks.json` alongside the upload key →
    merge → confirm the app opens with no address bar.
 5. Complete App content and Data safety from this file; upload the listing
    assets.
