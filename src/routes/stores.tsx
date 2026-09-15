@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 
-import storeImage from "@/assets/store-counter.jpg";
+import storeImage from "@/assets/store-counter.webp";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";

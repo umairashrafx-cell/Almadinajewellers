@@ -122,6 +122,7 @@ function FounderPage() {
                 alt={`${SITE.founder}, founder of ${SITE.name}`}
                 width={1160}
                 height={1356}
+                fetchPriority="high"
                 className="relative z-10 w-64 max-w-full drop-shadow-2xl sm:w-80 lg:w-[26rem]"
               />
               {/* A soft gold pool behind him, so the cut-out edge never reads as a sticker. */}

@@ -43,6 +43,10 @@ import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 import { Reviews } from "@/components/product/Reviews";
 import { safeFetchReviews } from "@/lib/reviews";
 import { cn } from "@/lib/utils";
+import { responsiveImage, sizedImage } from "@/lib/images";
+
+/** The product photograph: full width on a phone, just under half on a wide screen. */
+const GALLERY_WIDTHS = [600, 900, 1200];
 
 export const Route = createFileRoute("/products/$slug")({
   // A loader rather than useQuery: the title, description and Product schema
@@ -300,9 +304,16 @@ function Gallery({ product }: { product: ProductDetail }) {
           <CarouselContent>
             {images.map((src, i) => (
               <CarouselItem key={i}>
+                {/*
+                  The first photograph is what the page opens on, so it is
+                  fetched first; the others wait until they are swiped near.
+                */}
                 <img
-                  src={src}
+                  {...responsiveImage(src, GALLERY_WIDTHS, "100vw")}
                   alt={i === 0 ? product.name : `${product.name} view ${i + 1}`}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  fetchPriority={i === 0 ? "high" : "auto"}
+                  decoding={i === 0 ? "auto" : "async"}
                   className="aspect-square w-full object-cover"
                 />
               </CarouselItem>
@@ -329,7 +340,13 @@ function Gallery({ product }: { product: ProductDetail }) {
                 i === active ? "border-gold" : "border-transparent hover:border-gold/40",
               )}
             >
-              <img src={src} alt="" className="h-full w-full object-cover" />
+              <img
+                src={sizedImage(src, 160)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </button>
           ))}
         </div>
@@ -342,8 +359,9 @@ function Gallery({ product }: { product: ProductDetail }) {
               aria-label={`Zoom ${product.name}`}
             >
               <img
-                src={images[active]}
+                {...responsiveImage(images[active] ?? "", GALLERY_WIDTHS, "45vw")}
                 alt={product.name}
+                fetchPriority="high"
                 className="aspect-square w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
               />
               <span className="absolute bottom-4 right-4 grid h-10 w-10 place-items-center bg-ivory/90 text-primary">

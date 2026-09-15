@@ -28,6 +28,7 @@ import {
 import { useCart } from "@/hooks/use-cart";
 import { SITE, formatGrams, formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { sizedImage } from "@/lib/images";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -146,9 +147,10 @@ function CartPage() {
                     <li key={line.product.sku} className="flex gap-4 py-6">
                       <Link to="/products/$slug" params={{ slug: line.product.slug }}>
                         <img
-                          src={line.product.images[0]}
+                          src={sizedImage(line.product.images[0] ?? "", 200)}
                           alt={line.product.name}
                           loading="lazy"
+                          decoding="async"
                           className="h-24 w-24 shrink-0 object-cover"
                         />
                       </Link>

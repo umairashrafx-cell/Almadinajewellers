@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronRight } from "lucide-react";
 
-import heroImage from "@/assets/cat-bridal.jpg";
-import workshopImage from "@/assets/story-workshop.jpg";
+import heroImage from "@/assets/cat-bridal.webp";
+import workshopImage from "@/assets/story-workshop.webp";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -70,6 +70,7 @@ function BridalPage() {
           <img
             src={heroImage}
             alt="22K gold bridal set with necklace, earrings and tikka"
+            fetchPriority="high"
             className="ken-burns absolute inset-0 h-full w-full object-cover"
           />
           <div

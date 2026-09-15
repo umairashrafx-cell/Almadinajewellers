@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 
-import workshopImage from "@/assets/story-workshop.jpg";
-import bridalImage from "@/assets/cat-bridal.jpg";
-import banglesImage from "@/assets/cat-bangles.jpg";
+import workshopImage from "@/assets/story-workshop.webp";
+import bridalImage from "@/assets/cat-bridal.webp";
+import banglesImage from "@/assets/cat-bangles.webp";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -94,6 +94,7 @@ function OurStoryPage() {
           <img
             src={workshopImage}
             alt="Goldsmith working at the bench in the Al-Madina workshop"
+            fetchPriority="high"
             className="ken-burns absolute inset-0 h-full w-full object-cover object-[50%_22%]"
           />
           <div

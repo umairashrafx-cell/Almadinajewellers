@@ -10,6 +10,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCategories } from "@/lib/catalogue";
 import { SITE } from "@/lib/site";
+import { CARD_SIZES, CARD_WIDTHS, responsiveImage } from "@/lib/images";
 
 const title = "Collections — Al-Madina Jewellers";
 const description =
@@ -68,9 +69,10 @@ function CollectionsIndex() {
                       aria-label={`Browse ${cat.name}`}
                     >
                       <img
-                        src={cat.image}
+                        {...responsiveImage(cat.image, CARD_WIDTHS, CARD_SIZES)}
                         alt={cat.name}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                       />
                       <span

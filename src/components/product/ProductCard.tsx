@@ -2,6 +2,7 @@ import { Heart } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Product } from "@/data/products";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { CARD_SIZES, CARD_WIDTHS, responsiveImage } from "@/lib/images";
 import { formatGrams, formatPKR, productEnquiryLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { has, toggle } = useWishlist();
   const wished = has(product.sku);
   const onSale = typeof product.salePricePkr === "number";
+  const alternate = product.images[1] && product.images[1] !== product.images[0];
 
   return (
     <article className="group relative bg-card transition-shadow duration-500 hover:shadow-[var(--shadow-lift)]">
@@ -27,18 +29,27 @@ export function ProductCard({ product }: { product: Product }) {
           aria-label={product.name}
         >
           <img
-            src={product.images[0]}
+            {...responsiveImage(product.images[0] ?? "", CARD_WIDTHS, CARD_SIZES)}
             alt={product.name}
             loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-0"
           />
-          <img
-            src={product.images[1]}
-            alt={`${product.name} alternate view`}
-            loading="lazy"
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-100"
-          />
+          {/*
+            The second view only appears on hover, so it is only rendered where
+            hovering is possible. On a phone it was downloaded for every card and
+            never seen; hidden with display:none, a lazy image is not fetched.
+          */}
+          {alternate ? (
+            <img
+              {...responsiveImage(product.images[1] ?? "", CARD_WIDTHS, CARD_SIZES)}
+              alt={`${product.name} alternate view`}
+              loading="lazy"
+              decoding="async"
+              aria-hidden="true"
+              className="absolute inset-0 hidden h-full w-full object-cover opacity-0 transition-all duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-100 [@media(hover:hover)]:block"
+            />
+          ) : null}
         </Link>
 
         {/* Karat badge */}

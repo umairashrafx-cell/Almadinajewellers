@@ -5,6 +5,7 @@ import { Search, X } from "lucide-react";
 
 import { fetchAllProducts, searchProducts } from "@/lib/catalogue";
 import { formatGrams, formatPKR } from "@/lib/site";
+import { sizedImage } from "@/lib/images";
 
 const TRENDING = ["Bridal set", "Kara", "Jhumka", "Ayat pendant", "Solitaire", "Silver"];
 
@@ -136,9 +137,10 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                     className="group flex items-center gap-4 py-4"
                   >
                     <img
-                      src={product.images[0]}
+                      src={sizedImage(product.images[0] ?? "", 160)}
                       alt=""
                       loading="lazy"
+                      decoding="async"
                       className="h-16 w-16 shrink-0 object-cover"
                     />
                     <div className="min-w-0 flex-1">

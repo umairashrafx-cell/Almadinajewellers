@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import storyImage from "@/assets/story-workshop.jpg";
+import storyImage from "@/assets/story-workshop.webp";
 import { Reveal } from "@/components/ui/Reveal";
 import { SITE } from "@/lib/site";
 

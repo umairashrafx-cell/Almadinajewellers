@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 
-import footerTexture from "@/assets/footer-texture.jpg";
 import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
 import automa8Wordmark from "@/assets/brand/automa8-wordmark.svg";
 import adminIcon from "@/assets/icons/admin.png";
@@ -58,12 +57,21 @@ export function Footer() {
         drops under AA. Raising it costs contrast quickly: 35% leaves only
         5.1:1, which is too little room for a background.
       */}
+      {/*
+        Served from /public rather than imported. An imported image is listed
+        in the build manifest, and the framework preloads it at the top of every
+        page — so this photograph at the very bottom was one of the first things
+        downloaded, competing with the hero. From /public it loads lazily, only
+        as the footer comes near the screen.
+      */}
       <img
-        src={footerTexture}
+        src="/images/footer-texture.webp"
         alt=""
         aria-hidden="true"
-        width={2000}
-        height={1333}
+        width={1600}
+        height={1066}
+        loading="lazy"
+        decoding="async"
         className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-[0.26]"
       />
       {/*
@@ -94,7 +102,15 @@ export function Footer() {
           className="mb-14 inline-block transition-opacity hover:opacity-90"
           aria-label={`${SITE.name} home`}
         >
-          <img src={logoOnDark} alt="" width={1120} height={300} className="h-16 w-auto sm:h-20" />
+          <img
+            src={logoOnDark}
+            alt=""
+            width={1120}
+            height={300}
+            loading="lazy"
+            decoding="async"
+            className="h-16 w-auto sm:h-20"
+          />
         </Link>
 
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
