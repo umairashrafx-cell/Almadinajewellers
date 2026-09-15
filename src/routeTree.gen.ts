@@ -20,6 +20,7 @@ import { Route as GoldRateInMandiBahauddinTodayRouteImport } from './routes/gold
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
 import { Route as PoliciesRouteImport } from './routes/policies'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as SellYourGoldRouteImport } from './routes/sell-your-gold'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StoresRouteImport } from './routes/stores'
@@ -91,6 +92,11 @@ const OurStoryRoute = OurStoryRouteImport.update({
 const PoliciesRoute = PoliciesRouteImport.update({
   id: '/policies',
   path: '/policies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SellYourGoldRoute = SellYourGoldRouteImport.update({
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/sell-your-gold': typeof SellYourGoldRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/sell-your-gold': typeof SellYourGoldRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/sell-your-gold': typeof SellYourGoldRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
+    | '/privacy-policy'
     | '/sell-your-gold'
     | '/sitemap.xml'
     | '/stores'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
+    | '/privacy-policy'
     | '/sell-your-gold'
     | '/sitemap.xml'
     | '/stores'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
+    | '/privacy-policy'
     | '/sell-your-gold'
     | '/sitemap.xml'
     | '/stores'
@@ -362,6 +374,7 @@ export interface RootRouteChildren {
   NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
   PoliciesRoute: typeof PoliciesRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   SellYourGoldRoute: typeof SellYourGoldRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoresRoute: typeof StoresRoute
@@ -450,6 +463,13 @@ declare module '@tanstack/react-router' {
       path: '/policies'
       fullPath: '/policies'
       preLoaderRoute: typeof PoliciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sell-your-gold': {
@@ -601,6 +621,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
   PoliciesRoute: PoliciesRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   SellYourGoldRoute: SellYourGoldRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoresRoute: StoresRoute,

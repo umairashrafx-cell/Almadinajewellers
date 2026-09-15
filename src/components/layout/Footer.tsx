@@ -35,6 +35,7 @@ const COLUMNS = [
       { label: "Buy-Back & Exchange", to: "/policies#exchange" },
       { label: "Delivery & Payment", to: "/policies#delivery" },
       { label: "Contact", to: "/contact" },
+      { label: "Privacy Policy", to: "/privacy-policy" },
     ],
   },
 ];
