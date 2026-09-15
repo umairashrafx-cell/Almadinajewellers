@@ -112,23 +112,26 @@ contact page, as the privacy policy explains. The app has no user accounts.
 _optional_ (the user chooses to send it), purpose **App functionality** and
 **Customer support**:
 
-| Category          | Data type                    | Where it comes from                                           |
-| ----------------- | ---------------------------- | ------------------------------------------------------------- |
-| Personal info     | Name                         | Contact, bridal, custom order, order request and review forms |
-| Personal info     | Phone number                 | The same forms                                                |
+| Category          | Data type                    | Where it comes from                                                                                            |
+| ----------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Personal info     | Name                         | Contact, bridal, custom order, order request and review forms                                                  |
+| Personal info     | Phone number                 | The same forms                                                                                                 |
 | Personal info     | Email address                | Contact form (optional field); newsletter sign-up on the home page — also purpose **Developer communications** |
-| Personal info     | Other info                   | City, wedding date, budget range, piece size, order reference |
-| Photos and videos | Photos                       | Custom order form (optional attachment)                       |
-| Audio             | Voice or sound recordings    | Custom order form (optional voice note)                       |
-| App activity      | Other user-generated content | Messages, piece descriptions, product reviews                 |
+| Personal info     | Other info                   | City, wedding date, budget range, piece size, order reference                                                  |
+| Photos and videos | Photos                       | Custom order form (optional attachment)                                                                        |
+| Audio             | Voice or sound recordings    | Custom order form (optional voice note)                                                                        |
+| App activity      | Other user-generated content | Messages, piece descriptions, product reviews                                                                  |
 
 **Not collected:** location, financial or payment info, contacts, calendar,
 health, files, device IDs, web browsing history.
 
-**Analytics:** Google Analytics and the Meta Pixel are currently **off** (their
-IDs are not set). If either is ever switched on, add _App interactions_ and
-_Device or other IDs_ under Analytics, mark them as shared with Google/Meta, and
-update the privacy policy's Analytics section.
+**Analytics: both are ON.** Google Analytics and the Meta Pixel run on the
+website the app displays, so Data safety must declare, under **App activity →
+App interactions** and **Device or other IDs**: collected, **shared** (with
+Google and Meta), not ephemeral, collection required, purposes **Analytics**
+and — for the Pixel — **Advertising or marketing**. The privacy policy names
+both and says how to block them. If the IDs are ever removed from the Vercel
+environment, reverse all of that.
 
 ---
 

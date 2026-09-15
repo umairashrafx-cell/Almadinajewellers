@@ -69,7 +69,12 @@ const SECTIONS: Section[] = [
       <>
         <p>
           You can browse the catalogue, check the gold rate and use the calculators without telling
-          us anything. We only receive information you choose to send us:
+          us your name or your number. Everything below is information you choose to send us; the
+          one thing collected automatically is website statistics, described under{" "}
+          <a href="#other-services" className="underline underline-offset-4">
+            other services our pages use
+          </a>
+          .
         </p>
         <ul>
           <li>
@@ -153,11 +158,24 @@ const SECTIONS: Section[] = [
             same basic connection details.
           </li>
           <li>
-            <strong>Analytics.</strong> The website can use Google Analytics and the Meta Pixel to
-            count visits and see which pages are read. When they are switched on, they set cookies
-            and collect details such as the pages you visit, your device and approximate location,
-            and they are covered by Google&rsquo;s and Meta&rsquo;s own privacy policies. This page
-            will say so here if either is in use.
+            <strong>Google Analytics.</strong> In use on this website and in our app. It counts
+            visits and shows which pages are read. It sets cookies and receives the pages you visit,
+            roughly where you are, and details of your device and browser, and it is covered by
+            Google&rsquo;s own privacy policy. It never receives your name, phone number or anything
+            you type into a form.
+          </li>
+          <li>
+            <strong>Meta Pixel.</strong> Also in use. It tells us how many people reached the
+            website from our Facebook and Instagram posts, and lets us show our jewellery to people
+            who have visited before. It sets cookies and sends Meta the pages you visit and details
+            of your device, under Meta&rsquo;s own privacy policy. It never receives your name,
+            phone number or anything you type into a form.
+          </li>
+          <li>
+            <strong>Turning these off.</strong> Both can be blocked in your browser or phone
+            settings — private browsing, a tracker blocker, or the &ldquo;do not track&rdquo; and
+            ad-personalisation settings in your Google and Meta accounts. Nothing on this website
+            stops working if you block them.
           </li>
         </ul>
       </>
