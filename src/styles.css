@@ -509,3 +509,18 @@
     transform: none;
   }
 }
+
+/*
+ * Hidden inside the installed Android app. data-in-app is set by a script in
+ * the document head when the site is opened by the app; the display-mode
+ * query also covers the site installed as a standalone app.
+ */
+:root[data-in-app] .hide-in-app {
+  display: none !important;
+}
+
+@media (display-mode: standalone) {
+  .hide-in-app {
+    display: none !important;
+  }
+}

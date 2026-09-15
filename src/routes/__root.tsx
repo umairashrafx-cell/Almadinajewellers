@@ -244,10 +244,24 @@ function SiteSchema() {
   );
 }
 
+/**
+ * Marks the page as running inside the Android app, before first paint.
+ *
+ * The app (a Trusted Web Activity) opens the site with a referrer of
+ * android-app://com.almadinajeweller.app. That referrer is only present on the
+ * first page, so it is remembered for the session. Anything with the
+ * hide-in-app class — the staff admin link — is then hidden by CSS, with no
+ * flash, because this runs before the body is drawn.
+ */
+const IN_APP_SCRIPT = `try{var k="amj:in-app";if(document.referrer.indexOf("android-app://com.almadinajeweller.app")===0){sessionStorage.setItem(k,"1")}if(sessionStorage.getItem(k)==="1"){document.documentElement.setAttribute("data-in-app","")}}catch(e){}`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the in-app script may add data-in-app to this
+    // element before React hydrates it, which is intended.
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: IN_APP_SCRIPT }} />
         <HeadContent />
         {/*
           The server sends every revealed section at opacity 0 and JavaScript
