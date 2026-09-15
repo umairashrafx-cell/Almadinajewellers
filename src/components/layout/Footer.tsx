@@ -34,6 +34,7 @@ const COLUMNS = [
       { label: "Certification & Hallmarking", to: "/our-story#standards" },
       { label: "Buy-Back & Exchange", to: "/policies#exchange" },
       { label: "Delivery & Payment", to: "/policies#delivery" },
+      { label: "FAQ", to: "/faq" },
       { label: "Contact", to: "/contact" },
       { label: "Privacy Policy", to: "/privacy-policy" },
     ],
