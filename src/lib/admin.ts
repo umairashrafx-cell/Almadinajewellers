@@ -922,3 +922,87 @@ export async function signAttachment(path: string, seconds = 60 * 60): Promise<s
   if (error) return null;
   return data?.signedUrl ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Counter calculations
+// ---------------------------------------------------------------------------
+
+export type CounterMode = "selling" | "buying";
+
+/**
+ * One counted line of a saved bill, stored as it was worked out. `factor` is
+ * the polish in grams per tola when selling and the kaat in rati when buying;
+ * `extra` is the polish or kaat in grams and `billed` the weight charged or
+ * paid for.
+ */
+export type CounterLine = {
+  weight: number;
+  factor: number;
+  rate: number;
+  extra: number;
+  billed: number;
+  amount: number;
+};
+
+export type SavedCalculation = {
+  id: string;
+  mode: CounterMode;
+  customer_name: string;
+  lines: CounterLine[];
+  total_weight_g: number;
+  total_billed_g: number;
+  total_amount_pkr: number;
+  created_at: string;
+};
+
+/** `counter_calculations` postdates the generated Database type, so it is reached untyped. */
+export async function saveCalculation(draft: {
+  mode: CounterMode;
+  customerName: string;
+  lines: CounterLine[];
+  totalWeight: number;
+  totalBilled: number;
+  totalAmount: number;
+}): Promise<SavedCalculation> {
+  const { data, error } = await untyped
+    .from("counter_calculations")
+    .insert({
+      mode: draft.mode,
+      customer_name: draft.customerName.trim(),
+      lines: draft.lines,
+      total_weight_g: Number(draft.totalWeight.toFixed(3)),
+      total_billed_g: Number(draft.totalBilled.toFixed(3)),
+      total_amount_pkr: Math.round(draft.totalAmount),
+    })
+    .select("*")
+    .single();
+
+  if (error) throw readableError(error, "Could not save the calculation");
+  return normaliseCalculation(data as SavedCalculation);
+}
+
+export async function fetchCalculations(): Promise<SavedCalculation[]> {
+  const { data, error } = await untyped
+    .from("counter_calculations")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw readableError(error, "Could not load saved calculations");
+  return ((data ?? []) as SavedCalculation[]).map(normaliseCalculation);
+}
+
+export async function deleteCalculation(id: string): Promise<void> {
+  const { error } = await untyped.from("counter_calculations").delete().eq("id", id);
+  if (error) throw readableError(error, "Could not delete that calculation");
+}
+
+/** Postgres numeric arrives as a string; the screen wants numbers. */
+function normaliseCalculation(row: SavedCalculation): SavedCalculation {
+  return {
+    ...row,
+    total_weight_g: Number(row.total_weight_g),
+    total_billed_g: Number(row.total_billed_g),
+    total_amount_pkr: Number(row.total_amount_pkr),
+  };
+}
