@@ -116,7 +116,7 @@ _optional_ (the user chooses to send it), purpose **App functionality** and
 | ----------------- | ---------------------------- | ------------------------------------------------------------- |
 | Personal info     | Name                         | Contact, bridal, custom order, order request and review forms |
 | Personal info     | Phone number                 | The same forms                                                |
-| Personal info     | Email address                | Contact form (optional field)                                 |
+| Personal info     | Email address                | Contact form (optional field); newsletter sign-up on the home page — also purpose **Developer communications** |
 | Personal info     | Other info                   | City, wedding date, budget range, piece size, order reference |
 | Photos and videos | Photos                       | Custom order form (optional attachment)                       |
 | Audio             | Voice or sound recordings    | Custom order form (optional voice note)                       |

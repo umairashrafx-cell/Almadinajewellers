@@ -11,7 +11,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { SITE, STORES, whatsappLink } from "@/lib/site";
 
 /** Change this whenever a section below changes. */
-const LAST_UPDATED = "15 September 2026";
+const LAST_UPDATED = "16 September 2026";
 
 export const Route = createFileRoute("/privacy-policy")({
   head: () => {
@@ -91,6 +91,10 @@ const SECTIONS: Section[] = [
             you give one. Once we approve a review, your name, city, rating and review are shown on
             the piece&rsquo;s page. The order reference is never published.
           </li>
+          <li>
+            <strong>Newsletter</strong> — your email address, if you sign up on the home page. We
+            use it only to send that newsletter.
+          </li>
         </ul>
         <p>
           Your <strong>wishlist and bag</strong> are saved only on your own device. They are not
@@ -106,8 +110,9 @@ const SECTIONS: Section[] = [
       <>
         <p>
           We use what you send to reply to you: to call or message you back, to prepare a quote or a
-          custom piece, to arrange a consultation, and to check and publish reviews. We do not sell
-          your information, and we do not use it to show you advertising.
+          custom piece, to arrange a consultation, and to check and publish reviews. If you sign up
+          for the newsletter, we use your email address to send it. We do not sell your information,
+          and we do not use it to show you advertising.
         </p>
       </>
     ),
@@ -175,9 +180,10 @@ const SECTIONS: Section[] = [
       <>
         <p>
           You can ask us what we hold about you, ask us to correct it, or ask us to delete it —
-          including a photograph, voice note or review you sent. Contact us by phone, on WhatsApp or
-          through our contact page, tell us the name and phone number you used, and we will do it.
-          We may ask you to confirm the request from that phone number before deleting anything.
+          including a photograph, voice note or review you sent, or your email address on the
+          newsletter list. Contact us by phone, on WhatsApp or through our contact page, tell us the
+          name and phone number you used, and we will do it. We may ask you to confirm the request
+          from that phone number before deleting anything.
         </p>
         <p>
           You do not need an account to use our website or app, so there is no account to delete.

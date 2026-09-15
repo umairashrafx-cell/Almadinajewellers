@@ -152,3 +152,44 @@ export async function safeFetchReviews(sku: string): Promise<Review[]> {
     return [];
   }
 }
+
+export type FeaturedReview = Review & {
+  /** The piece it was written about, when that piece is still listed. */
+  product: { name: string; slug: string } | null;
+};
+
+/**
+ * The most recent approved reviews across every piece, for the home page.
+ *
+ * These replace testimonials that were written into the code. Only reviews a
+ * customer submitted and the shop approved can appear, so what the home page
+ * quotes is always something a real customer said.
+ *
+ * The piece is found by product id rather than SKU: a SKU can be edited in the
+ * admin after a review is written, and the id is what the review actually
+ * belongs to.
+ */
+export async function fetchFeaturedReviews(limit = 3): Promise<FeaturedReview[]> {
+  const { data, error } = await untyped
+    .from("reviews")
+    .select("id, product_id, product_sku, name, city, rating, body, verified_purchase, created_at")
+    .gte("rating", 4)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  const reviews = (data ?? []) as (Review & { product_id: string })[];
+  if (reviews.length === 0) return [];
+
+  const ids = [...new Set(reviews.map((r) => r.product_id))];
+  const { data: products } = await untyped.from("products").select("id, name, slug").in("id", ids);
+
+  const byId = new Map(
+    ((products ?? []) as { id: string; name: string; slug: string }[]).map((p) => [p.id, p]),
+  );
+
+  return reviews.map(({ product_id, ...review }) => {
+    const product = byId.get(product_id);
+    return { ...review, product: product ? { name: product.name, slug: product.slug } : null };
+  });
+}

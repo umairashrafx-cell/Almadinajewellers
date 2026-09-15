@@ -1006,3 +1006,31 @@ function normaliseCalculation(row: SavedCalculation): SavedCalculation {
     total_amount_pkr: Number(row.total_amount_pkr),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Newsletter subscribers
+// ---------------------------------------------------------------------------
+
+export type NewsletterSubscriber = {
+  id: string;
+  email: string;
+  source: string;
+  created_at: string;
+};
+
+/** `newsletter_subscribers` postdates the generated Database type, so it is read untyped. */
+export async function fetchSubscribers(): Promise<NewsletterSubscriber[]> {
+  const { data, error } = await untyped
+    .from("newsletter_subscribers")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(5000);
+
+  if (error) throw readableError(error, "Could not load newsletter subscribers");
+  return (data ?? []) as NewsletterSubscriber[];
+}
+
+export async function deleteSubscriber(id: string): Promise<void> {
+  const { error } = await untyped.from("newsletter_subscribers").delete().eq("id", id);
+  if (error) throw readableError(error, "Could not remove that subscriber");
+}
