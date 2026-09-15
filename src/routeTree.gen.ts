@@ -12,12 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BridalRouteImport } from './routes/bridal'
+import { Route as BuyBackExchangeRouteImport } from './routes/buy-back-exchange'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomOrderRouteImport } from './routes/custom-order'
+import { Route as DeliveryPaymentRouteImport } from './routes/delivery-payment'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
 import { Route as GoldRateInMandiBahauddinTodayRouteImport } from './routes/gold-rate-in-mandi-bahauddin-today'
+import { Route as HallmarkingRouteImport } from './routes/hallmarking'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as OurStoryRouteImport } from './routes/our-story'
 import { Route as PoliciesRouteImport } from './routes/policies'
@@ -55,6 +58,11 @@ const BridalRoute = BridalRouteImport.update({
   path: '/bridal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuyBackExchangeRoute = BuyBackExchangeRouteImport.update({
+  id: '/buy-back-exchange',
+  path: '/buy-back-exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
@@ -68,6 +76,11 @@ const ContactRoute = ContactRouteImport.update({
 const CustomOrderRoute = CustomOrderRouteImport.update({
   id: '/custom-order',
   path: '/custom-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryPaymentRoute = DeliveryPaymentRouteImport.update({
+  id: '/delivery-payment',
+  path: '/delivery-payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -86,6 +99,11 @@ const GoldRateInMandiBahauddinTodayRoute =
     path: '/gold-rate-in-mandi-bahauddin-today',
     getParentRoute: () => rootRouteImport,
   } as any)
+const HallmarkingRoute = HallmarkingRouteImport.update({
+  id: '/hallmarking',
+  path: '/hallmarking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewArrivalsRoute = NewArrivalsRouteImport.update({
   id: '/new-arrivals',
   path: '/new-arrivals',
@@ -196,12 +214,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/bridal': typeof BridalRoute
+  '/buy-back-exchange': typeof BuyBackExchangeRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
+  '/delivery-payment': typeof DeliveryPaymentRoute
   '/faq': typeof FaqRoute
   '/gold-rate': typeof GoldRateRoute
   '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
+  '/hallmarking': typeof HallmarkingRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
@@ -227,12 +248,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bridal': typeof BridalRoute
+  '/buy-back-exchange': typeof BuyBackExchangeRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
+  '/delivery-payment': typeof DeliveryPaymentRoute
   '/faq': typeof FaqRoute
   '/gold-rate': typeof GoldRateRoute
   '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
+  '/hallmarking': typeof HallmarkingRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
@@ -260,12 +284,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/bridal': typeof BridalRoute
+  '/buy-back-exchange': typeof BuyBackExchangeRoute
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
+  '/delivery-payment': typeof DeliveryPaymentRoute
   '/faq': typeof FaqRoute
   '/gold-rate': typeof GoldRateRoute
   '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
+  '/hallmarking': typeof HallmarkingRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/our-story': typeof OurStoryRoute
   '/policies': typeof PoliciesRoute
@@ -294,12 +321,15 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/bridal'
+    | '/buy-back-exchange'
     | '/cart'
     | '/contact'
     | '/custom-order'
+    | '/delivery-payment'
     | '/faq'
     | '/gold-rate'
     | '/gold-rate-in-mandi-bahauddin-today'
+    | '/hallmarking'
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
@@ -325,12 +355,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/bridal'
+    | '/buy-back-exchange'
     | '/cart'
     | '/contact'
     | '/custom-order'
+    | '/delivery-payment'
     | '/faq'
     | '/gold-rate'
     | '/gold-rate-in-mandi-bahauddin-today'
+    | '/hallmarking'
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
@@ -357,12 +390,15 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/bridal'
+    | '/buy-back-exchange'
     | '/cart'
     | '/contact'
     | '/custom-order'
+    | '/delivery-payment'
     | '/faq'
     | '/gold-rate'
     | '/gold-rate-in-mandi-bahauddin-today'
+    | '/hallmarking'
     | '/new-arrivals'
     | '/our-story'
     | '/policies'
@@ -390,12 +426,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   BridalRoute: typeof BridalRoute
+  BuyBackExchangeRoute: typeof BuyBackExchangeRoute
   CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
   CustomOrderRoute: typeof CustomOrderRoute
+  DeliveryPaymentRoute: typeof DeliveryPaymentRoute
   FaqRoute: typeof FaqRoute
   GoldRateRoute: typeof GoldRateRoute
   GoldRateInMandiBahauddinTodayRoute: typeof GoldRateInMandiBahauddinTodayRoute
+  HallmarkingRoute: typeof HallmarkingRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   OurStoryRoute: typeof OurStoryRoute
   PoliciesRoute: typeof PoliciesRoute
@@ -434,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BridalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/buy-back-exchange': {
+      id: '/buy-back-exchange'
+      path: '/buy-back-exchange'
+      fullPath: '/buy-back-exchange'
+      preLoaderRoute: typeof BuyBackExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cart': {
       id: '/cart'
       path: '/cart'
@@ -455,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/delivery-payment': {
+      id: '/delivery-payment'
+      path: '/delivery-payment'
+      fullPath: '/delivery-payment'
+      preLoaderRoute: typeof DeliveryPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/faq': {
       id: '/faq'
       path: '/faq'
@@ -474,6 +527,13 @@ declare module '@tanstack/react-router' {
       path: '/gold-rate-in-mandi-bahauddin-today'
       fullPath: '/gold-rate-in-mandi-bahauddin-today'
       preLoaderRoute: typeof GoldRateInMandiBahauddinTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hallmarking': {
+      id: '/hallmarking'
+      path: '/hallmarking'
+      fullPath: '/hallmarking'
+      preLoaderRoute: typeof HallmarkingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new-arrivals': {
@@ -654,12 +714,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   BridalRoute: BridalRoute,
+  BuyBackExchangeRoute: BuyBackExchangeRoute,
   CartRoute: CartRoute,
   ContactRoute: ContactRoute,
   CustomOrderRoute: CustomOrderRoute,
+  DeliveryPaymentRoute: DeliveryPaymentRoute,
   FaqRoute: FaqRoute,
   GoldRateRoute: GoldRateRoute,
   GoldRateInMandiBahauddinTodayRoute: GoldRateInMandiBahauddinTodayRoute,
+  HallmarkingRoute: HallmarkingRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   OurStoryRoute: OurStoryRoute,
   PoliciesRoute: PoliciesRoute,

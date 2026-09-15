@@ -8,8 +8,9 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
 
 /**
- * Footer navigation. Every entry resolves to a real page — the policy links
- * point at the section that actually answers them rather than at stub pages.
+ * Footer navigation. Every entry resolves to a real page that answers it —
+ * hallmarking, buy-back and delivery each have their own page rather than a
+ * section of another one.
  */
 const COLUMNS = [
   {
@@ -31,9 +32,9 @@ const COLUMNS = [
       { label: "Gold Rate", to: "/gold-rate-in-mandi-bahauddin-today" },
       { label: "Sell Your Gold", to: "/sell-your-gold" },
       { label: "Custom Order", to: "/custom-order" },
-      { label: "Certification & Hallmarking", to: "/our-story#standards" },
-      { label: "Buy-Back & Exchange", to: "/policies#exchange" },
-      { label: "Delivery & Payment", to: "/policies#delivery" },
+      { label: "Hallmarking & Purity", to: "/hallmarking" },
+      { label: "Buy-Back & Exchange", to: "/buy-back-exchange" },
+      { label: "Delivery & Payment", to: "/delivery-payment" },
       { label: "FAQ", to: "/faq" },
       { label: "Contact", to: "/contact" },
       { label: "Privacy Policy", to: "/privacy-policy" },
