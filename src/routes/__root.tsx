@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 import { Analytics } from "@/components/layout/Analytics";
+import { ServiceWorker } from "@/components/layout/ServiceWorker";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -281,6 +282,8 @@ function RootComponent() {
       </div>
       {/* Renders nothing and loads nothing unless the tracking IDs are set. */}
       <Analytics />
+      {/* Production only: the offline page for the website and the Android app. */}
+      <ServiceWorker />
     </QueryClientProvider>
   );
 }
