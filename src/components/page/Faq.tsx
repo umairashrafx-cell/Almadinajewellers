@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 
+import { SectionHeading } from "@/components/ui/SectionHeading";
+
 export type FaqItem = {
   q: string;
   /** Plain text, so the same words can go into the FAQPage structured data. */
@@ -46,6 +48,50 @@ export function FaqList({ items, name }: { items: FaqItem[]; name: string }) {
         </details>
       ))}
     </div>
+  );
+}
+
+/**
+ * A page's closing questions: a heading, then each topic's answers, with a link
+ * to the full FAQ.
+ *
+ * Deliberately no FAQPage structured data here. The same questions are marked
+ * up once, on /faq, rather than repeated across every page that shows them.
+ */
+export function FaqSection({
+  topics,
+  name,
+  title = "Questions we are asked",
+}: {
+  topics: { id: string; title: string; items: FaqItem[] }[];
+  name: string;
+  title?: string;
+}) {
+  return (
+    <section className="section-y">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading eyebrow="Questions" title={title} strong />
+        <div className="mt-12 space-y-12">
+          {topics.map((topic) => (
+            <div key={topic.id}>
+              {topics.length > 1 ? (
+                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-rate-gold-deep">
+                  {topic.title}
+                </h3>
+              ) : null}
+              <FaqList items={topic.items} name={name} />
+            </div>
+          ))}
+        </div>
+        <p className="mt-10 text-center text-sm text-ink/75">
+          More answers on the{" "}
+          <Link to="/faq" className="text-primary underline underline-offset-4 hover:text-gold">
+            full FAQ page
+          </Link>
+          .
+        </p>
+      </div>
+    </section>
   );
 }
 
