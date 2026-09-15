@@ -1,5 +1,7 @@
-import heroImage from "@/assets/hero-bangles.jpg";
-import heroMotionPoster from "@/assets/video/hero-motion-poster.jpg";
+import heroImage1280 from "@/assets/hero-bangles-1280.webp";
+import heroImage1920 from "@/assets/hero-bangles-1920.webp";
+import heroImage2560 from "@/assets/hero-bangles-2560.webp";
+import heroMotionPoster from "@/assets/video/hero-motion-poster.webp";
 import { HeroMotion } from "@/components/home/HeroMotion";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { SITE } from "@/lib/site";
@@ -16,14 +18,21 @@ export function Hero() {
         served there is the film's own first frame — the same file as its
         poster, fetched once — rather than a 2560px photograph nobody sees.
         Decorative: the headline says what the page is.
+
+        It is the largest thing on screen when the page opens, so it is fetched
+        at high priority, and a landscape screen is sent the width it needs —
+        1280, 1920 or 2560 pixels — rather than the full photograph every time.
       */}
       <picture>
         <source media="(orientation: portrait)" srcSet={heroMotionPoster} />
         <img
-          src={heroImage}
+          src={heroImage1920}
+          srcSet={`${heroImage1280} 1280w, ${heroImage1920} 1920w, ${heroImage2560} 2560w`}
+          sizes="100vw"
           alt=""
           width={2560}
           height={1707}
+          fetchPriority="high"
           className="ken-burns absolute inset-0 h-full w-full object-cover"
         />
       </picture>

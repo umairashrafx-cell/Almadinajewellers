@@ -6,6 +6,7 @@ import { formatGrams, formatPKR } from "@/lib/site";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { responsiveImage } from "@/lib/images";
 
 /** Horizontal-scroll carousel of flagship bridal sets, heaviest first. */
 export function SignatureBridal() {
@@ -60,9 +61,14 @@ export function SignatureBridal() {
                 >
                   <div className="relative aspect-[4/5] overflow-hidden bg-primary-deep">
                     <img
-                      src={set.images[0]}
+                      {...responsiveImage(
+                        set.images[0] ?? "",
+                        [400, 600, 900],
+                        "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
+                      )}
                       alt={set.name}
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     />
                     <span className="absolute left-0 top-0 bg-primary-deep/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-champagne">

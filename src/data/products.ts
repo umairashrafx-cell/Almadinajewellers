@@ -1,9 +1,9 @@
-import bridal from "@/assets/cat-bridal.jpg";
-import bangles from "@/assets/cat-bangles.jpg";
-import rings from "@/assets/cat-rings.jpg";
-import earrings from "@/assets/cat-earrings.jpg";
-import lockets from "@/assets/cat-lockets.jpg";
-import silver from "@/assets/cat-silver.jpg";
+import bridal from "@/assets/cat-bridal.webp";
+import bangles from "@/assets/cat-bangles.webp";
+import rings from "@/assets/cat-rings.webp";
+import earrings from "@/assets/cat-earrings.webp";
+import lockets from "@/assets/cat-lockets.webp";
+import silver from "@/assets/cat-silver.webp";
 
 /** Shape the product card and detail page consume. Rows come from Supabase. */
 export type Product = {

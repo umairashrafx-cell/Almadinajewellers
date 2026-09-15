@@ -1,4 +1,4 @@
-import rateCardBackground from "@/assets/hero-bridal.jpg";
+import rateCardBackground from "@/assets/hero-bridal.webp";
 import brandLockup from "@/assets/brand/logo-stacked-on-light.svg";
 import jewelleryIcon from "@/assets/rate-icons/jewellery.png";
 import pathorIcon from "@/assets/rate-icons/pathor.png";

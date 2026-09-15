@@ -5,6 +5,7 @@ import { categoryTree, fetchCategories } from "@/lib/catalogue";
 import { categories as fallbackCategories } from "@/data/products";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
+import { CARD_SIZES, CARD_WIDTHS, responsiveImage } from "@/lib/images";
 
 /**
  * Tall image tiles, one per top-level category.
@@ -40,9 +41,10 @@ export function CategoryTiles() {
                 aria-label={`Browse ${cat.name}`}
               >
                 <img
-                  src={cat.image}
+                  {...responsiveImage(cat.image, CARD_WIDTHS, CARD_SIZES)}
                   alt={cat.name}
                   loading="lazy"
+                  decoding="async"
                   width={800}
                   height={1100}
                   className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"

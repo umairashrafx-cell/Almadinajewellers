@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 
 import heroMotion from "@/assets/video/hero-motion.mp4";
-import heroMotionPoster from "@/assets/video/hero-motion-poster.jpg";
+import heroMotionPoster from "@/assets/video/hero-motion-poster.webp";
 
 /** Where the film is on screen at all: portrait screens, and wide landscape ones. */
 const SHOWN = "(orientation: portrait), (min-width: 1280px)";
