@@ -59,7 +59,7 @@ const POLICIES: Policy[] = [
     points: [
       "Delivery is insured and free of charge across Pakistan, on every order, regardless of value.",
       "Order by WhatsApp. We send photographs and a video of the actual piece, confirm its weight, and price it against that day's gold rate before anything is dispatched.",
-      "Dispatch timing is confirmed with you when you order. Pieces in stock go quickly; bridal work is made to order and takes six to ten weeks.",
+      "Dispatch timing is confirmed with you when you order. Pieces in stock go quickly; bridal work is made to order and is ready within ten days.",
       "Every piece is hallmarked and weighed in front of you in store, or shown weighed on video before dispatch.",
     ],
   },
