@@ -13,6 +13,7 @@ import {
   toneFor,
   type Tone,
 } from "@/components/admin/ui";
+import { NewsletterSubscribers } from "@/components/admin/NewsletterSubscribers";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -184,6 +185,8 @@ function EnquiriesScreen() {
           ))}
         </ul>
       )}
+
+      <NewsletterSubscribers />
     </>
   );
 }

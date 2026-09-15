@@ -30,24 +30,3 @@ export const categories = [
   { name: "Lockets & Chains", slug: "lockets-chains", image: lockets },
   { name: "Silver Essentials", slug: "silver-essentials", image: silver },
 ];
-
-export const testimonials = [
-  {
-    name: "Nimra Shahid",
-    city: "Lahore",
-    quote:
-      "They weighed everything in front of me and explained each charge. My bridal set arrived exactly as promised.",
-  },
-  {
-    name: "Sadia Iqbal",
-    city: "Mandi Bahauddin",
-    quote:
-      "Three generations of my family have bought from this shop. The trust is the reason we keep going back.",
-  },
-  {
-    name: "Ayesha Malik",
-    city: "London, UK",
-    quote:
-      "Ordered from abroad over WhatsApp. Photos, video call, insured delivery to my mother in Gujrat. Faultless.",
-  },
-];
