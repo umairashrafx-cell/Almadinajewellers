@@ -132,6 +132,15 @@ update the privacy policy's Analytics section.
 
 ---
 
+## Signing fingerprints in assetlinks.json
+
+| Key                             | SHA-256                                                                                           | Signs                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| App signing key (Google)        | `32:AC:93:C3:9C:79:45:0D:FC:AA:67:33:FC:1C:CB:CB:80:06:1D:F7:E3:A6:A0:4E:0B:D8:69:A2:4F:08:56:57` | Every copy installed from Google Play            |
+| Upload key (`android.keystore`) | `2B:4B:2D:70:7B:1A:A8:7E:FF:B3:5A:0B:92:8D:BF:1B:BD:59:65:F6:C1:4D:39:06:D9:2D:FD:52:54:C6:FA:EB` | The APK built locally and sideloaded for testing |
+
+Both are public certificate hashes. If Google ever rotates the app signing key, copy the new snippet from _Protected with Play → App signing → Digital Asset Links JSON_.
+
 ## Release checklist
 
 1. Website PR merged and live (service worker, offline page, manifest, privacy
