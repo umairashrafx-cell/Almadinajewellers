@@ -49,6 +49,7 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/our-story/founder", changefreq: "yearly", priority: "0.5" },
   { path: "/stores", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "monthly", priority: "0.6" },
+  { path: "/faq", changefreq: "monthly", priority: "0.6" },
   { path: "/policies", changefreq: "yearly", priority: "0.4" },
   { path: "/privacy-policy", changefreq: "yearly", priority: "0.3" },
 ];

@@ -15,6 +15,7 @@ import { Route as BridalRouteImport } from './routes/bridal'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomOrderRouteImport } from './routes/custom-order'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as GoldRateRouteImport } from './routes/gold-rate'
 import { Route as GoldRateInMandiBahauddinTodayRouteImport } from './routes/gold-rate-in-mandi-bahauddin-today'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
@@ -67,6 +68,11 @@ const ContactRoute = ContactRouteImport.update({
 const CustomOrderRoute = CustomOrderRouteImport.update({
   id: '/custom-order',
   path: '/custom-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoldRateRoute = GoldRateRouteImport.update({
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
+  '/faq': typeof FaqRoute
   '/gold-rate': typeof GoldRateRoute
   '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
   '/new-arrivals': typeof NewArrivalsRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
+  '/faq': typeof FaqRoute
   '/gold-rate': typeof GoldRateRoute
   '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
   '/new-arrivals': typeof NewArrivalsRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/contact': typeof ContactRoute
   '/custom-order': typeof CustomOrderRoute
+  '/faq': typeof FaqRoute
   '/gold-rate': typeof GoldRateRoute
   '/gold-rate-in-mandi-bahauddin-today': typeof GoldRateInMandiBahauddinTodayRoute
   '/new-arrivals': typeof NewArrivalsRoute
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/contact'
     | '/custom-order'
+    | '/faq'
     | '/gold-rate'
     | '/gold-rate-in-mandi-bahauddin-today'
     | '/new-arrivals'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/contact'
     | '/custom-order'
+    | '/faq'
     | '/gold-rate'
     | '/gold-rate-in-mandi-bahauddin-today'
     | '/new-arrivals'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/contact'
     | '/custom-order'
+    | '/faq'
     | '/gold-rate'
     | '/gold-rate-in-mandi-bahauddin-today'
     | '/new-arrivals'
@@ -381,6 +393,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   ContactRoute: typeof ContactRoute
   CustomOrderRoute: typeof CustomOrderRoute
+  FaqRoute: typeof FaqRoute
   GoldRateRoute: typeof GoldRateRoute
   GoldRateInMandiBahauddinTodayRoute: typeof GoldRateInMandiBahauddinTodayRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
@@ -440,6 +453,13 @@ declare module '@tanstack/react-router' {
       path: '/custom-order'
       fullPath: '/custom-order'
       preLoaderRoute: typeof CustomOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gold-rate': {
@@ -637,6 +657,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   ContactRoute: ContactRoute,
   CustomOrderRoute: CustomOrderRoute,
+  FaqRoute: FaqRoute,
   GoldRateRoute: GoldRateRoute,
   GoldRateInMandiBahauddinTodayRoute: GoldRateInMandiBahauddinTodayRoute,
   NewArrivalsRoute: NewArrivalsRoute,
