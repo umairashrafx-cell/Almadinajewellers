@@ -572,8 +572,8 @@ function Details({ product }: { product: ProductDetail }) {
       <AccordionItem value="delivery">
         <AccordionTrigger>Delivery &amp; buy-back</AccordionTrigger>
         <AccordionContent>
-          Insured delivery across Pakistan, free of charge. Made-to-order pieces take six to ten
-          weeks. Every piece carries a lifetime buy-back against the day's rate — bring it back to{" "}
+          Insured delivery across Pakistan, free of charge. Made-to-order pieces are ready within
+          ten days. Every piece carries a lifetime buy-back against the day's rate — bring it back to{" "}
           {SITE.address} with the bill.
         </AccordionContent>
       </AccordionItem>

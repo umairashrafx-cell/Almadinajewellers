@@ -189,7 +189,7 @@ function OurStoryPage() {
                     for sharp edges and weak clasps, then hallmarked before it goes into the tray.
                   </p>
                   <p>
-                    Bridal work is made to order and takes six to ten weeks. We send photographs
+                    Bridal work is made to order and is ready within ten days. We send photographs
                     through the making so nothing is a surprise at the end.
                   </p>
                 </div>

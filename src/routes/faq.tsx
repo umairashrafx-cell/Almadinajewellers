@@ -140,7 +140,7 @@ const TOPICS: Topic[] = [
       },
       {
         q: "How soon will my order be dispatched?",
-        a: "Dispatch timing is confirmed with you when you order. Pieces in stock go quickly; bridal work is made to order and takes six to ten weeks.",
+        a: "Dispatch timing is confirmed with you when you order. Pieces in stock go quickly; bridal work is made to order and is ready within ten days.",
       },
       {
         q: "How do I pay for a piece?",
@@ -160,7 +160,7 @@ const TOPICS: Topic[] = [
       },
       {
         q: "How long does a bridal set take?",
-        a: "Six to ten weeks, because bridal work is made to order. We send photographs through the making so nothing is a surprise at the end. If your wedding is sooner, tell us the date and we will be honest about what is possible.",
+        a: "Within ten days. Bridal work is made to order. We send photographs through the making so nothing is a surprise at the end. If your wedding is sooner, tell us the date and we will be honest about what is possible.",
       },
       {
         q: "Can I book a bridal consultation?",

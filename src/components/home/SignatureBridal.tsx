@@ -30,7 +30,7 @@ export function SignatureBridal() {
         <SectionHeading
           eyebrow="Flagship"
           title="Signature Bridal"
-          description="Our heaviest, most intricate sets. Each one is made to order and takes six to ten weeks."
+          description="Our heaviest, most intricate sets. Each one is made to order and ready within ten days."
           tone="light"
           align="left"
         />

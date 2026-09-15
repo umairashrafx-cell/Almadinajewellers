@@ -34,7 +34,7 @@ export const Route = createFileRoute("/bridal")({
   head: () => {
     const title = `Bridal Jewellery & Consultations — ${SITE.name}`;
     const description =
-      "Hallmarked 22K bridal sets, made to order in six to ten weeks. Book a private consultation at Al-Madina Jewellers, Sarafa Market, Mandi Bahauddin.";
+      "Hallmarked 22K bridal sets, made to order within ten days. Book a private consultation at Al-Madina Jewellers, Sarafa Market, Mandi Bahauddin.";
     return {
       meta: [
         { title },
@@ -128,7 +128,7 @@ function BridalPage() {
                   Made to Order
                 </p>
                 <h2 className="mt-4 font-display text-3xl font-light tracking-wide text-primary sm:text-4xl">
-                  Six to ten weeks, start to finish
+                  Within ten days, start to finish
                 </h2>
                 <div className="mt-6 space-y-4 text-sm leading-relaxed text-warmgrey">
                   <p>

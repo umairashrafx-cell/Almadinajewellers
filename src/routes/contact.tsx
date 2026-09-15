@@ -53,7 +53,7 @@ const FAQS = [
   },
   {
     q: "How long does a bridal set take?",
-    a: "Six to ten weeks, because bridal work is made to order. We send photographs through the making so nothing is a surprise at the end. If your wedding is sooner than that, tell us the date and we will be honest about what is possible.",
+    a: "Within ten days. Bridal work is made to order. We send photographs through the making so nothing is a surprise at the end. If your wedding is sooner than that, tell us the date and we will be honest about what is possible.",
   },
   {
     q: "How is the price calculated?",
