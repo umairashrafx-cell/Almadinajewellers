@@ -7,6 +7,35 @@ import heroMotionPoster from "@/assets/video/hero-motion-poster.webp";
 /** Where the film is on screen at all: portrait screens, and wide landscape ones. */
 const SHOWN = "(orientation: portrait), (min-width: 1280px)";
 
+/** Connections the film is not worth 1.2 MB on. */
+const SLOW = ["slow-2g", "2g", "3g"];
+
+type Connection = {
+  saveData?: boolean;
+  effectiveType?: string;
+  addEventListener?: (type: "change", listener: () => void) => void;
+  removeEventListener?: (type: "change", listener: () => void) => void;
+};
+
+function connection(): Connection | undefined {
+  return (navigator as Navigator & { connection?: Connection }).connection;
+}
+
+/**
+ * Whether the film should be fetched at all on this connection.
+ *
+ * The file is 1.2 MB. On a phone on 3G that is most of a page's budget spent
+ * on decoration, and the still frame says the same thing at 90 KB. Where the
+ * browser does not report the connection — Safari does not — the film plays,
+ * which is the behaviour the site has always had.
+ */
+function connectionAllows(): boolean {
+  const c = connection();
+  if (!c) return true;
+  if (c.saveData === true) return false;
+  return !SLOW.includes(c.effectiveType ?? "");
+}
+
 /**
  * The homepage film: eight seconds of a pendant set in close-up.
  *
@@ -20,7 +49,8 @@ const SHOWN = "(orientation: portrait), (min-width: 1280px)";
  * It costs nothing until it plays. The element is served with preload="none"
  * and a poster, so the page arrives with a still image; the film is only
  * fetched and started once the browser confirms it is on screen, motion is
- * welcome and the visitor has not asked to save data. It pauses when scrolled
+ * welcome, the connection can afford 1.2 MB and the visitor has not asked to
+ * save data. It pauses when scrolled
  * away, and a button pauses it outright — a film that loops for longer than
  * five seconds beside other content has to offer that.
  *
@@ -40,13 +70,10 @@ export function HeroMotion() {
 
     const shown = window.matchMedia(SHOWN);
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const saveData =
-      (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData ===
-      true;
     let onScreen = true;
 
     const update = () => {
-      const allowed = shown.matches && !calm.matches && !saveData;
+      const allowed = shown.matches && !calm.matches && connectionAllows();
       setLive(allowed);
       if (allowed && onScreen && !userPaused.current) {
         // Set here as a property, not only as an attribute: React does not
@@ -70,12 +97,17 @@ export function HeroMotion() {
     observer?.observe(v);
     shown.addEventListener("change", update);
     calm.addEventListener("change", update);
+    // A visitor who walks from wifi onto mobile data, or turns data saver on,
+    // is reassessed rather than left playing.
+    const conn = connection();
+    conn?.addEventListener?.("change", update);
     update();
 
     return () => {
       observer?.disconnect();
       shown.removeEventListener("change", update);
       calm.removeEventListener("change", update);
+      conn?.removeEventListener?.("change", update);
     };
   }, []);
 
