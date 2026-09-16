@@ -204,7 +204,7 @@ function CalculatorScreen() {
               aria-selected={mode === value}
               onClick={() => setMode(value)}
               className={cn(
-                "min-h-10 rounded-md px-5 text-sm font-medium capitalize transition-colors",
+                "min-h-12 rounded-md px-6 text-lg font-medium capitalize transition-colors",
                 mode === value ? "bg-primary text-ivory" : "text-warmgrey hover:text-primary",
               )}
             >
@@ -215,14 +215,14 @@ function CalculatorScreen() {
       </PageHeading>
 
       {boardRates.length > 0 ? (
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-base">
           <span className="text-warmgrey">Use today's rate:</span>
           {boardRates.map((rate) => (
             <button
               key={rate.karat}
               type="button"
               onClick={() => applyRate(rate.perTola)}
-              className="nums rounded-full border border-gold/40 bg-champagne/20 px-3 py-1.5 font-medium text-ink transition-colors hover:border-gold hover:bg-gold/20"
+              className="nums rounded-full border border-gold/40 bg-champagne/20 px-4 py-2 font-medium text-ink transition-colors hover:border-gold hover:bg-gold/20"
             >
               {rate.karat} · {rupees(rate.perTola)}
             </button>
@@ -239,7 +239,7 @@ function CalculatorScreen() {
           return (
             <Card key={row.id} className="p-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className="nums text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
+                <span className="nums text-sm font-semibold uppercase tracking-widest text-warmgrey">
                   Line {index + 1}
                 </span>
                 <button
@@ -255,7 +255,7 @@ function CalculatorScreen() {
               {/* Two up on a phone, with the rate under them; one row from sm. */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div>
-                  <Label htmlFor={`weight-${row.id}`} className="text-xs text-warmgrey">
+                  <Label htmlFor={`weight-${row.id}`} className="text-base text-warmgrey">
                     Weight (g)
                   </Label>
                   <Input
@@ -266,11 +266,11 @@ function CalculatorScreen() {
                     step="0.01"
                     value={row.weight}
                     onChange={(e) => update(row.id, { weight: e.target.value })}
-                    className="nums mt-1"
+                    className="nums mt-1.5 h-14 text-2xl md:h-14 md:text-2xl"
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`factor-${row.id}`} className="text-xs text-warmgrey">
+                  <Label htmlFor={`factor-${row.id}`} className="text-base text-warmgrey">
                     {factorLabel}
                   </Label>
                   <Input
@@ -283,11 +283,11 @@ function CalculatorScreen() {
                     value={row.factor}
                     onChange={(e) => update(row.id, { factor: e.target.value })}
                     aria-invalid={kaatTooHigh || undefined}
-                    className="nums mt-1"
+                    className="nums mt-1.5 h-14 text-2xl md:h-14 md:text-2xl"
                   />
                 </div>
                 <div className="col-span-2 sm:col-span-1">
-                  <Label htmlFor={`rate-${row.id}`} className="text-xs text-warmgrey">
+                  <Label htmlFor={`rate-${row.id}`} className="text-base text-warmgrey">
                     Rate per tola (Rs.)
                   </Label>
                   <Input
@@ -300,37 +300,37 @@ function CalculatorScreen() {
                     // A blank rate follows the line above; the placeholder says so.
                     placeholder={inherited ? `${inherited.toLocaleString("en-US")} (same)` : ""}
                     onChange={(e) => update(row.id, { rate: e.target.value })}
-                    className="nums mt-1"
+                    className="nums mt-1.5 h-14 text-2xl md:h-14 md:text-2xl"
                   />
                 </div>
               </div>
 
               {kaatTooHigh ? (
-                <p className="mt-2 text-xs text-destructive">
+                <p className="mt-2 text-base text-destructive">
                   Kaat can't be more than {RATI_PER_TOLA} rati.
                 </p>
               ) : null}
 
-              <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-gold/15 pt-3 text-sm">
+              <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-gold/15 pt-3 text-lg sm:text-xl">
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wider text-warmgrey sm:text-[11px]">
+                  <dt className="text-xs uppercase tracking-wider text-warmgrey sm:text-sm">
                     {selling ? "Polish" : "Kaat"}
                   </dt>
                   <dd className="nums mt-0.5">{line ? grams(line.extra) : "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wider text-warmgrey sm:text-[11px]">
+                  <dt className="text-xs uppercase tracking-wider text-warmgrey sm:text-sm">
                     {billedLabel}
                   </dt>
                   <dd className="nums mt-0.5">{line ? grams(line.billed) : "—"}</dd>
                 </div>
                 <div className="text-right">
-                  <dt className="text-[10px] uppercase tracking-wider text-warmgrey sm:text-[11px]">
+                  <dt className="text-xs uppercase tracking-wider text-warmgrey sm:text-sm">
                     Amount
                   </dt>
                   <dd
                     className={cn(
-                      "nums mt-0.5 font-display text-lg leading-tight",
+                      "nums mt-0.5 font-display text-xl leading-tight sm:text-3xl",
                       line ? "text-primary" : "text-warmgrey/50",
                     )}
                   >
@@ -375,27 +375,27 @@ function CalculatorScreen() {
         <div className="h-1 bg-gradient-to-r from-gold via-champagne to-gold" aria-hidden="true" />
         <dl className="grid gap-4 p-5 sm:grid-cols-3">
           <div>
-            <dt className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
+            <dt className="text-sm font-semibold uppercase tracking-widest text-warmgrey">
               Total weight
             </dt>
-            <dd className="nums mt-1 text-xl">{grams(totals.weight)}</dd>
+            <dd className="nums mt-1 text-3xl">{grams(totals.weight)}</dd>
           </div>
           <div>
-            <dt className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
+            <dt className="text-sm font-semibold uppercase tracking-widest text-warmgrey">
               {selling ? "With polish" : "24k weight"}
             </dt>
-            <dd className="nums mt-1 text-xl">{grams(totals.billed)}</dd>
+            <dd className="nums mt-1 text-3xl">{grams(totals.billed)}</dd>
           </div>
           <div className="sm:text-right">
-            <dt className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
+            <dt className="text-sm font-semibold uppercase tracking-widest text-warmgrey">
               {selling ? "Customer pays" : "We pay"}
             </dt>
-            <dd className="nums mt-1 font-display text-4xl font-light text-primary">
+            <dd className="nums mt-1 font-display text-4xl font-light text-primary lg:text-5xl">
               {rupees(totals.amount)}
             </dd>
           </div>
         </dl>
-        <p className="border-t border-gold/15 px-5 py-3 text-xs text-muted-foreground">
+        <p className="border-t border-gold/15 px-5 py-3 text-base text-muted-foreground">
           {counted.length} of {current.length} lines counted. A line is left out until its weight,{" "}
           {selling ? "polish" : "kaat"} and rate are all filled in.
         </p>
@@ -494,7 +494,7 @@ function SaveDialog({
               maxLength={80}
               autoComplete="off"
               autoFocus
-              className="mt-1.5"
+              className="mt-1.5 h-12 text-xl md:h-12 md:text-xl"
             />
           </div>
 
@@ -563,9 +563,9 @@ function SavedCalculations() {
       {error ? (
         <Banner tone="error">{error.message}</Banner>
       ) : isPending ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-base text-muted-foreground">Loading…</p>
       ) : shown.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           {needle ? `No saved calculations for “${query.trim()}”.` : "Nothing saved yet."}
         </p>
       ) : (
@@ -615,12 +615,12 @@ function SavedItem({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate font-medium text-ink">{calc.customer_name}</span>
+            <span className="truncate text-lg font-medium text-ink">{calc.customer_name}</span>
             <Chip tone={selling ? "product" : "callback"}>{selling ? "Selling" : "Buying"}</Chip>
           </div>
-          <p className="nums mt-1 text-xs text-warmgrey">{stamp(calc.created_at)}</p>
+          <p className="nums mt-1 text-sm text-warmgrey">{stamp(calc.created_at)}</p>
         </div>
-        <span className="nums font-display text-lg text-primary">
+        <span className="nums font-display text-2xl text-primary">
           {formatPKR(calc.total_amount_pkr)}
         </span>
         <ChevronDown
@@ -635,9 +635,9 @@ function SavedItem({
       {open ? (
         <div className="border-t border-gold/15 p-4">
           <div className="overflow-x-auto">
-            <table className="nums w-full min-w-[32rem] text-sm">
+            <table className="nums w-full min-w-[36rem] text-lg">
               <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wider text-warmgrey">
+                <tr className="text-left text-sm uppercase tracking-wider text-warmgrey">
                   <th className="pb-2 font-medium">#</th>
                   <th className="pb-2 font-medium">Weight</th>
                   <th className="pb-2 font-medium">{selling ? "Polish/tola" : "Kaat"}</th>
