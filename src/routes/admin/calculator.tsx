@@ -635,12 +635,13 @@ function SavedItem({
       {open ? (
         <div className="border-t border-gold/15 p-4">
           <div className="overflow-x-auto">
-            <table className="nums w-full min-w-[36rem] text-lg">
+            <table className="nums w-full min-w-[44rem] text-lg">
               <thead>
                 <tr className="text-left text-sm uppercase tracking-wider text-warmgrey">
                   <th className="pb-2 font-medium">#</th>
                   <th className="pb-2 font-medium">Weight</th>
                   <th className="pb-2 font-medium">{selling ? "Polish/tola" : "Kaat"}</th>
+                  <th className="pb-2 font-medium">{selling ? "Polish wt" : "Kaat wt"}</th>
                   <th className="pb-2 font-medium">{selling ? "Total wt" : "24k wt"}</th>
                   <th className="pb-2 font-medium">Rate</th>
                   <th className="pb-2 text-right font-medium">Amount</th>
@@ -652,6 +653,7 @@ function SavedItem({
                     <td className="py-2 text-warmgrey">{index + 1}</td>
                     <td className="py-2">{grams(line.weight)}</td>
                     <td className="py-2">{selling ? `${line.factor} g` : `${line.factor} rati`}</td>
+                    <td className="py-2">{grams(line.extra)}</td>
                     <td className="py-2">{grams(line.billed)}</td>
                     <td className="py-2">{rupees(line.rate)}</td>
                     <td className="py-2 text-right">{rupees(line.amount)}</td>
@@ -663,6 +665,9 @@ function SavedItem({
                   <td className="pt-2" />
                   <td className="pt-2">{grams(calc.total_weight_g)}</td>
                   <td className="pt-2" />
+                  <td className="pt-2">
+                    {grams(calc.lines.reduce((sum, line) => sum + line.extra, 0))}
+                  </td>
                   <td className="pt-2">{grams(calc.total_billed_g)}</td>
                   <td className="pt-2" />
                   <td className="pt-2 text-right text-primary">
