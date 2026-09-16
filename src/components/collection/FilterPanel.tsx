@@ -27,7 +27,9 @@ type Props = {
 
 function FacetHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold">{children}</h3>
+    <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold-deep">
+      {children}
+    </h3>
   );
 }
 

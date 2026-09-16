@@ -173,7 +173,7 @@ function HallmarkingPage() {
                   <h3 className="mt-6 font-display text-2xl font-light text-primary">
                     {mark.name}
                   </h3>
-                  <p className="nums mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-rate-gold-deep">
+                  <p className="nums mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-deep">
                     {mark.parts}
                   </p>
                   <p className="mt-4 text-[15px] leading-relaxed text-ink/80">{mark.used}</p>

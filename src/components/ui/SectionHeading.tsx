@@ -8,10 +8,11 @@ type Props = {
   align?: "left" | "center";
   tone?: "dark" | "light"; // light = for use on dark green backgrounds
   /**
-   * Darker eyebrow and description, for pages held to AA contrast on a light
-   * ground. Bright gold on ivory measures about 2.2:1 — fine as an ornament,
-   * too faint for eleven-pixel words. Off by default, so no page changes
-   * unless it asks to.
+   * Kept so existing calls still compile. The readable colours it used to
+   * switch on are now the default on a light ground: bright gold on ivory
+   * measures 2.3:1, too faint for eleven-pixel words, so every heading uses
+   * the deep gold and a darker description rather than only the ones that
+   * asked for it.
    */
   strong?: boolean;
   className?: string;
@@ -35,7 +36,6 @@ export function SectionHeading({
   description,
   align = "center",
   tone = "dark",
-  strong = false,
   className,
 }: Props) {
   const { ref, shown } = useReveal<HTMLDivElement>();
@@ -54,7 +54,7 @@ export function SectionHeading({
         <p
           className={cn(
             "text-[11px] font-medium uppercase tracking-[0.3em]",
-            strong && tone === "dark" ? "text-rate-gold-deep" : "text-gold",
+            tone === "light" ? "text-gold" : "text-gold-deep",
           )}
         >
           {eyebrow}
@@ -72,7 +72,7 @@ export function SectionHeading({
         <p
           className={cn(
             "mt-4 text-sm leading-relaxed",
-            tone === "light" ? "text-champagne/80" : strong ? "text-ink/75" : "text-warmgrey",
+            tone === "light" ? "text-champagne/80" : "text-ink/75",
           )}
         >
           {description}

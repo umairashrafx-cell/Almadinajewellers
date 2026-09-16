@@ -154,7 +154,7 @@ function FaqPage() {
           {/* Direct contact, kept in view beside the answers on wide screens */}
           <aside className="hidden lg:block" aria-label="Contact the shop">
             <div className="sticky top-[calc(var(--header-h)+2rem)] border border-gold/30 bg-card p-6 shadow-[var(--shadow-soft)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-rate-gold-deep">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-deep">
                 Still unsure?
               </p>
               <p className="mt-3 font-display text-2xl font-light leading-snug text-primary">
@@ -188,7 +188,7 @@ function FaqPage() {
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
                   <span>
                     {store.hours}
-                    <span className="block text-ink/60">{store.closed}</span>
+                    <span className="block text-ink/70">{store.closed}</span>
                   </span>
                 </li>
                 <li className="flex gap-3">

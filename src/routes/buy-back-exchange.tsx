@@ -191,7 +191,7 @@ function BuyBackPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
                 aria-hidden="true"
               />
               <div className="relative">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-rate-gold-deep">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gold-deep">
                   The 20K rate · paid for jewellery
                 </p>
                 <h2
@@ -238,7 +238,7 @@ function BuyBackPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
 
                 <Link
                   to="/sell-your-gold"
-                  className="mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-rate-gold-deep hover:underline"
+                  className="mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 transition-colors hover:text-gold-deep hover:underline"
                 >
                   Estimate on the Sell Your Gold page
                   <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.8} aria-hidden="true" />

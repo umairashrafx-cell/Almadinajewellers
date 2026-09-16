@@ -20,7 +20,7 @@ export function StorySplit() {
         </Reveal>
 
         <Reveal delay={80}>
-          <p className="text-[11px] uppercase tracking-[0.3em] text-gold">Our Story</p>
+          <p className="text-[11px] uppercase tracking-[0.3em] text-gold-deep">Our Story</p>
           <h2 className="mt-4 font-display text-4xl font-light tracking-wide text-primary lg:text-5xl">
             Three generations. One standard.
           </h2>

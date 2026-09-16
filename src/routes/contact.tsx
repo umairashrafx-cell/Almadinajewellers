@@ -364,7 +364,7 @@ function Field({
     <label className="block">
       <span className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
         {label}
-        {required && <span className="ml-1 text-gold">*</span>}
+        {required && <span className="ml-1 text-gold-deep">*</span>}
       </span>
       {children}
       {error && (

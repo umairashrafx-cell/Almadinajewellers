@@ -162,7 +162,7 @@ function ProductDetailPage() {
 
             {/* Detail column */}
             <div className="mt-10 lg:mt-0">
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold-deep">
                 {categoryName}
               </p>
               <h1 className="mt-4 font-display text-[32px] font-light leading-tight tracking-wide text-primary sm:text-4xl">

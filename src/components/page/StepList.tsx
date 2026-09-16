@@ -42,7 +42,7 @@ export function StepList({ steps }: { steps: StepItem[] }) {
 
           <div className="h-full border border-gold/25 bg-card p-5 shadow-[var(--shadow-soft)] lg:mt-6 lg:p-6">
             <step.icon className="h-6 w-6 text-gold" strokeWidth={1.3} aria-hidden="true" />
-            <p className="nums mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-rate-gold-deep">
+            <p className="nums mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-deep">
               Step {String(i + 1).padStart(2, "0")}
             </p>
             <h3 className="mt-2 font-display text-2xl font-light leading-tight text-primary">

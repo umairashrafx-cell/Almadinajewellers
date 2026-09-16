@@ -89,7 +89,7 @@ export function NewsletterCta() {
                   {problem}
                 </p>
               ) : (
-                <p id="newsletter-note" className="mt-3 text-xs leading-relaxed text-ink/60">
+                <p id="newsletter-note" className="mt-3 text-xs leading-relaxed text-ink/70">
                   Used only for this email. Ask us any time to take you off the list —{" "}
                   <Link
                     to="/privacy-policy"
@@ -105,7 +105,9 @@ export function NewsletterCta() {
         </Reveal>
 
         <Reveal delay={80} className="border border-gold/40 p-10">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-gold">WhatsApp Community</p>
+          <p className="text-[11px] uppercase tracking-[0.3em] text-gold-deep">
+            WhatsApp Community
+          </p>
           <h2 className="mt-4 font-display text-3xl font-light tracking-wide text-primary">
             Daily rates and new pieces
           </h2>
