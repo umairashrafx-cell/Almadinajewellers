@@ -101,7 +101,7 @@ function StoresPage() {
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold-deep">
                       {store.city}
                     </p>
                     <h2 className="mt-4 font-display text-3xl font-light tracking-wide text-primary sm:text-4xl">

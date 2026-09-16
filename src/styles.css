@@ -66,6 +66,7 @@
   --color-lux-muted: var(--lux-muted);
 
   --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
   --color-gold-soft: var(--gold-soft);
   --color-champagne: var(--champagne);
   --color-ivory: var(--ivory);
@@ -103,8 +104,25 @@
 
   --ivory: oklch(0.975 0.006 85); /* #FAF7F2 */
   --ink: oklch(0.22 0.006 80); /* #1E1C18 */
-  --warmgrey: oklch(0.6 0.014 80); /* #8A8378 */
+  /*
+   * Secondary text. Was oklch(0.6 …) — #857F77 — which measured 3.7:1 on the
+   * ivory ground and 4.0:1 on white: under the 4.5:1 AA minimum for the small
+   * print it is used for (weights, dates, labels, captions). Taken down to 0.5
+   * lightness on the same warm hue, it clears 5.3:1 on every light surface
+   * the site uses — white, ivory, the champagne band and muted — and still
+   * reads as grey beside the ink.
+   */
+  --warmgrey: oklch(0.5 0.014 80); /* #67635A */
   --gold: oklch(0.72 0.1 85); /* #C9A24B */
+  /*
+   * Gold to write small words in on a light ground.
+   *
+   * --gold is the metal: right for rules, icons, buttons and any text on the
+   * green, where it measures 5.1:1. On ivory it measures 2.3:1, so an eyebrow
+   * set in it was decoration nobody could read. This is the same hue taken
+   * down until it can carry a word: 5.7:1 on ivory, 5.3:1 on the champagne band.
+   */
+  --gold-deep: oklch(0.5 0.095 85); /* #7C5E13 */
   --gold-soft: oklch(0.72 0.1 85 / 0.35);
   --champagne: oklch(0.89 0.045 90); /* #E8D9B5 */
   --rose: oklch(0.44 0.14 15); /* #9B2C3F */

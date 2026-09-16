@@ -105,7 +105,7 @@ export function GoldRateStrip() {
           </table>
         </Reveal>
 
-        <p className="mt-8 max-w-xl text-xs leading-relaxed text-champagne/60">
+        <p className="mt-8 max-w-xl text-xs leading-relaxed text-champagne/75">
           Rates are indicative. Your final price is confirmed against the day's rate at the time of
           purchase, and every piece is weighed in front of you.
           {isError && " Today's published rate could not be loaded — please confirm on WhatsApp."}

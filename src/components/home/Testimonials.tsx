@@ -38,7 +38,7 @@ export function Testimonials() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h2
           id="testimonials-heading"
-          className="text-center font-sans text-[11px] font-normal uppercase tracking-[0.3em] text-primary/70"
+          className="text-center font-sans text-[11px] font-normal uppercase tracking-[0.3em] text-primary/80"
         >
           In Their Words
         </h2>
@@ -82,7 +82,7 @@ function ReviewQuote({ review, delay }: { review: FeaturedReview; delay: number 
         “{quote}”
       </blockquote>
       <div className="mx-auto mt-6 h-px w-10 bg-gold" />
-      <p className="mt-4 text-[11px] uppercase tracking-[0.25em] text-primary/70">
+      <p className="mt-4 text-[11px] uppercase tracking-[0.25em] text-primary/80">
         {review.name}
         {review.city ? ` · ${review.city}` : ""}
         {review.verified_purchase ? " · Verified purchase" : ""}

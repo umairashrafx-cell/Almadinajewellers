@@ -75,7 +75,7 @@ export function FaqSection({
           {topics.map((topic) => (
             <div key={topic.id}>
               {topics.length > 1 ? (
-                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-rate-gold-deep">
+                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-deep">
                   {topic.title}
                 </h3>
               ) : null}

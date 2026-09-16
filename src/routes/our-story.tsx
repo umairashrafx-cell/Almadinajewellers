@@ -146,7 +146,7 @@ function OurStoryPage() {
                     aria-hidden="true"
                     className="absolute -left-[38px] top-2 grid h-3 w-3 place-items-center rounded-full bg-gold"
                   />
-                  <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold-deep">
                     {g.era}
                   </p>
                   <h3 className="mt-3 font-display text-2xl font-light tracking-wide text-primary sm:text-3xl">
@@ -172,7 +172,7 @@ function OurStoryPage() {
                 />
               </Reveal>
               <Reveal delay={80}>
-                <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+                <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold-deep">
                   The Workshop
                 </p>
                 <h2 className="mt-4 font-display text-3xl font-light tracking-wide text-primary sm:text-4xl">

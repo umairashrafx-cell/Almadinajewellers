@@ -138,7 +138,7 @@ function FounderPage() {
         <section className="section-y bg-champagne/25">
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <Reveal>
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold-deep">
                 Established
               </p>
               <p className="nums mt-4 font-display text-6xl font-light tracking-wide text-primary sm:text-7xl">
@@ -167,7 +167,7 @@ function FounderPage() {
               {PRINCIPLES.map((principle, i) => (
                 <Reveal key={principle.title} delay={(i % 3) * 80}>
                   <article>
-                    <p className="nums font-display text-4xl font-light text-gold">
+                    <p className="nums font-display text-4xl font-light text-gold-deep">
                       {String(i + 1).padStart(2, "0")}
                     </p>
                     <h3 className="mt-4 font-display text-2xl font-light tracking-wide text-primary">
