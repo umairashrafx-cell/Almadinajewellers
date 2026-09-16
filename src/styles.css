@@ -542,3 +542,105 @@
     display: none !important;
   }
 }
+
+/*
+ * A counter bill from the admin calculator (components/admin/PrintBill.tsx).
+ * It is only in the page while printing; on paper it is the only thing shown.
+ */
+@media screen {
+  .print-bill {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body:has(> .print-bill) {
+    background: #fff !important;
+  }
+
+  body:has(> .print-bill) > :not(.print-bill) {
+    display: none !important;
+  }
+
+  .print-bill {
+    color: #000;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 12pt;
+  }
+
+  .print-bill p {
+    margin: 0;
+  }
+
+  .print-bill-head {
+    border-bottom: 2px solid #000;
+    padding-bottom: 8pt;
+    text-align: center;
+  }
+
+  .print-bill-head h1 {
+    font-family: var(--font-display, serif);
+    font-size: 26pt;
+    margin: 0 0 4pt;
+  }
+
+  .print-bill-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6pt;
+    margin: 12pt 0;
+  }
+
+  .print-bill table {
+    border-collapse: collapse;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .print-bill th,
+  .print-bill td {
+    border-bottom: 1px solid #999;
+    padding: 5pt 4pt;
+    text-align: left;
+  }
+
+  .print-bill th {
+    border-bottom: 1.5px solid #000;
+    font-size: 10pt;
+    text-transform: uppercase;
+  }
+
+  .print-bill tfoot td {
+    border-top: 1.5px solid #000;
+    border-bottom: none;
+    font-weight: 700;
+  }
+
+  .print-bill .num {
+    text-align: right;
+  }
+
+  .print-bill-total {
+    font-size: 16pt;
+    margin-top: 14pt !important;
+    text-align: right;
+  }
+
+  .print-bill-foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40pt;
+  }
+
+  .print-bill-sign {
+    border-top: 1px solid #000;
+    min-width: 45mm;
+    padding-top: 4pt;
+    text-align: center;
+  }
+}

@@ -13,6 +13,10 @@ export const SITE = {
   whatsappDisplay: "+92 54 6502244",
   phones: ["+92 321 7759959", "+92 321 7744282"],
   founder: "Haji Ashraf Siddiqui",
+  /** As printed at the head of a counter bill. */
+  proprietor: "Haji Ashraf Siddiqui & Sons",
+  /** The shop's mobile numbers in the local form customers dial. Printed on bills. */
+  cellNumbers: ["0321-7759959", "0321-7744282"],
   address: "Sarafa Market, Mandi Bahauddin, Punjab, Pakistan",
   announcement: "Free insured delivery across Pakistan",
   /** The branded 1200x630 card shown when a link is shared. */

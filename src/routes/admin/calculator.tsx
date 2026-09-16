@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Loader2, Plus, RotateCcw, Save, Search, Trash2 } from "lucide-react";
 
+import { PrintBillButton } from "@/components/admin/PrintBill";
 import { Banner, Card, Chip, PageHeading } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,7 +90,7 @@ function CalculatorScreen() {
     buying: blankRows("buying"),
   }));
   const [saving, setSaving] = useState(false);
-  const [savedNote, setSavedNote] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<SavedCalculation | null>(null);
 
   const { data: published } = useQuery({
     queryKey: ["rates", "snapshot"],
@@ -354,7 +355,7 @@ function CalculatorScreen() {
         </Button>
         <Button
           onClick={() => {
-            setSavedNote(null);
+            setLastSaved(null);
             setSaving(true);
           }}
           disabled={counted.length === 0}
@@ -365,9 +366,14 @@ function CalculatorScreen() {
         </Button>
       </div>
 
-      {savedNote ? (
+      {lastSaved ? (
         <Banner tone="ok" className="mt-4">
-          {savedNote}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              Saved for {lastSaved.customer_name} on {stamp(lastSaved.created_at)}.
+            </span>
+            <PrintBillButton calc={lastSaved} />
+          </div>
         </Banner>
       ) : null}
 
@@ -409,7 +415,7 @@ function CalculatorScreen() {
         totals={totals}
         onSaved={(saved) => {
           setSaving(false);
-          setSavedNote(`Saved for ${saved.customer_name} on ${stamp(saved.created_at)}.`);
+          setLastSaved(saved);
         }}
       />
 
@@ -684,7 +690,8 @@ function SavedItem({
             </Banner>
           ) : null}
 
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-end gap-2">
+            <PrintBillButton calc={calc} />
             <Button
               variant="outline"
               size="sm"
