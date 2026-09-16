@@ -542,3 +542,122 @@
     display: none !important;
   }
 }
+
+/*
+ * A counter bill from the admin calculator (components/admin/PrintBill.tsx).
+ * It is only in the page while printing; on paper it is the only thing shown.
+ * Sized for the shop's 4 x 6 inch bill paper, so type is small and the table
+ * keeps to five columns, with each line's per-tola figures on a second row.
+ */
+@media screen {
+  .print-bill {
+    display: none;
+  }
+}
+
+@media print {
+  @page {
+    size: 4in 6in;
+    margin: 5mm;
+  }
+
+  body:has(> .print-bill) {
+    background: #fff !important;
+    margin: 0 !important;
+  }
+
+  body:has(> .print-bill) > :not(.print-bill) {
+    display: none !important;
+  }
+
+  .print-bill {
+    color: #000;
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 8pt;
+    line-height: 1.3;
+  }
+
+  .print-bill p {
+    margin: 0;
+  }
+
+  .print-bill-head {
+    border-bottom: 1.5px solid #000;
+    padding-bottom: 4pt;
+    text-align: center;
+  }
+
+  .print-bill-head h1 {
+    font-family: var(--font-display, serif);
+    font-size: 17pt;
+    font-weight: 600;
+    line-height: 1.1;
+    margin: 0 0 2pt;
+  }
+
+  .print-bill-meta {
+    margin: 5pt 0;
+  }
+
+  .print-bill table {
+    border-collapse: collapse;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .print-bill th,
+  .print-bill td {
+    padding: 2pt 2pt;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .print-bill th {
+    border-bottom: 1px solid #000;
+    font-size: 7pt;
+    text-transform: uppercase;
+  }
+
+  .print-bill tbody {
+    border-bottom: 0.5px solid #999;
+    break-inside: avoid;
+  }
+
+  .print-bill-sub td {
+    color: #333;
+    font-size: 7pt;
+    padding-top: 0;
+  }
+
+  .print-bill tfoot td {
+    border-top: 1px solid #000;
+    font-weight: 700;
+  }
+
+  .print-bill .num {
+    text-align: right;
+  }
+
+  .print-bill-total {
+    border-top: 1.5px solid #000;
+    font-size: 12pt;
+    margin-top: 4pt !important;
+    padding-top: 4pt;
+    text-align: right;
+  }
+
+  .print-bill-foot {
+    align-items: flex-end;
+    break-inside: avoid;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 22pt;
+  }
+
+  .print-bill-sign {
+    border-top: 1px solid #000;
+    min-width: 30mm;
+    padding-top: 2pt;
+    text-align: center;
+  }
+}
