@@ -13,7 +13,7 @@
  * Bump VERSION when offline.html or its icon changes, so installed copies
  * replace the old one.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `almadina-offline-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icon-192.png"];
