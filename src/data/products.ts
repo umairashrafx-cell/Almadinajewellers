@@ -15,6 +15,12 @@ export type Product = {
   metal: "gold" | "silver" | "diamond";
   karat: string;
   grossWeightG: number;
+  /**
+   * Metal plus polish: the grams the gold rate is charged on, and the weight
+   * shown wherever a piece is listed. Absent on a piece with no stored net
+   * weight, where the gross figure stands in.
+   */
+  pricedWeightG?: number;
   stones: string;
   pricePkr: number;
   salePricePkr?: number;

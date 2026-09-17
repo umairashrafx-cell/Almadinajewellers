@@ -5,6 +5,7 @@ import { Search, X } from "lucide-react";
 
 import { fetchAllProducts, searchProducts } from "@/lib/catalogue";
 import { formatGrams, formatPKR } from "@/lib/site";
+import { listedWeightG } from "@/lib/pricing";
 import { sizedImage } from "@/lib/images";
 
 const TRENDING = ["Bridal set", "Kara", "Jhumka", "Ayat pendant", "Solitaire", "Silver"];
@@ -148,7 +149,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         {product.name}
                       </p>
                       <p className="nums mt-0.5 truncate text-xs text-warmgrey">
-                        {product.karat} · {formatGrams(product.grossWeightG)} · {product.category}
+                        {product.karat} · {formatGrams(listedWeightG(product))} · {product.category}
                       </p>
                     </div>
                     <p className="nums shrink-0 text-sm font-semibold text-ink">

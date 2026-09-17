@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 import { fetchHomeRails } from "@/lib/catalogue";
 import { formatGrams, formatPKR } from "@/lib/site";
+import { listedWeightG } from "@/lib/pricing";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,7 +80,7 @@ export function SignatureBridal() {
                     {set.name}
                   </h3>
                   <p className="nums mt-2 text-xs text-champagne/70">
-                    {formatGrams(set.grossWeightG)} · {set.stones}
+                    {formatGrams(listedWeightG(set))} · {set.stones}
                   </p>
                   <p className="nums mt-3 text-sm font-semibold text-gold">
                     {formatPKR(set.salePricePkr ?? set.pricePkr)}

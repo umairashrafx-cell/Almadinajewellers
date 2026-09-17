@@ -6,6 +6,7 @@ import pieceIcon from "@/assets/rate-icons/piece.png";
 import silverIcon from "@/assets/rate-icons/silver.png";
 import type { ProductDetail } from "@/lib/catalogue";
 import { RATE_BOARD, formatRateDate, formatRateStamp, type RateSnapshot } from "@/lib/rates";
+import { listedWeightG } from "@/lib/pricing";
 import { SITE, formatGrams, formatPKR } from "@/lib/site";
 
 /**
@@ -1177,7 +1178,7 @@ export async function renderProductCard(product: ProductDetail, listedPkr: numbe
   nameLines.forEach((line, i) => ctx.fillText(line, mid, y + i * 62));
   y += (nameLines.length - 1) * 62;
 
-  const spec = [formatGrams(product.grossWeightG), product.stones].filter(Boolean).join(" · ");
+  const spec = [formatGrams(listedWeightG(product)), product.stones].filter(Boolean).join(" · ");
   ctx.fillStyle = LIGHT.greenSoft;
   ctx.font = `400 26px ${SANS}`;
   ctx.fillText(spec, mid, y + 50);

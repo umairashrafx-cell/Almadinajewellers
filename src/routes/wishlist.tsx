@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchProductsBySkus } from "@/lib/catalogue";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { SITE, formatGrams, formatPKR, productUrl, whatsappLink } from "@/lib/site";
+import { listedWeightG } from "@/lib/pricing";
 import type { Product } from "@/data/products";
 
 export const Route = createFileRoute("/wishlist")({
@@ -155,7 +156,7 @@ function EmptyWishlist() {
 function wishlistMessage(products: Product[]): string {
   const lines = products.map(
     (p) =>
-      `• ${p.name} (${p.sku}) — ${p.karat}, ${formatGrams(p.grossWeightG)}, ${formatPKR(
+      `• ${p.name} (${p.sku}) — ${p.karat}, ${formatGrams(listedWeightG(p))}, ${formatPKR(
         p.salePricePkr ?? p.pricePkr,
       )}\n  ${productUrl(p.slug)}`,
   );
