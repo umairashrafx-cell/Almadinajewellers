@@ -1098,21 +1098,36 @@ export async function renderEstimateCard(input: EstimateCardInput): Promise<Blob
 /**
  * One piece, as a picture.
  *
- * The photograph takes the top half and the price sits under it, because the
- * recipient is being shown a thing before being told a number.
+ * The photograph takes the top half, because the recipient is being shown a
+ * thing before being told a number. Everything under it is the cream and gold
+ * of the rate and estimate cards — lockup, name, weight, the price on a green
+ * panel in gold leaf, and the same footer band — so the three cards arrive in
+ * a chat as one shop rather than three.
  */
 export async function renderProductCard(product: ProductDetail, listedPkr: number): Promise<Blob> {
-  await ensureFonts();
+  const [, lockup] = await Promise.all([ensureFonts(), loadImage(brandLockup).catch(() => null)]);
   const { canvas, ctx } = newCanvas();
+  const mid = CARD_W / 2;
 
-  ctx.fillStyle = COLOUR.deep;
+  // Cream, warming towards the foot, as the other light cards.
+  const ground = ctx.createLinearGradient(0, 0, 0, CARD_H);
+  ground.addColorStop(0, LIGHT.ivory);
+  ground.addColorStop(0.6, LIGHT.cream);
+  ground.addColorStop(1, LIGHT.champagne);
+  ctx.fillStyle = ground;
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
   /*
-   * The photograph takes a shade over half. Any less and the piece stops being
-   * the subject; any more and the price crowds the footer.
+   * The photograph, and a gold rule where it ends.
+   *
+   * Cut straight rather than faded: on a cream ground a scrim would read as a
+   * smudge, where a line of gold reads as the edge of a frame.
    */
-  const photoH = 760;
+  ctx.font = `400 60px ${DISPLAY}`;
+  const nameLines = wrap(ctx, product.name, CARD_W - 220).slice(0, 2);
+  // A name that wraps takes a line off the photograph rather than pushing the
+  // tagline under the footer band.
+  const photoH = nameLines.length > 1 ? 600 : 690;
   const first = product.images[0];
   let drew = false;
 
@@ -1128,52 +1143,107 @@ export async function renderProductCard(product: ProductDetail, listedPkr: numbe
   }
 
   if (!drew) {
-    ctx.fillStyle = COLOUR.green;
+    ctx.fillStyle = LIGHT.green;
     ctx.fillRect(0, 0, CARD_W, photoH);
   }
 
-  // Carry the photograph into the green rather than cutting it with a hard edge.
-  const scrim = ctx.createLinearGradient(0, photoH - 240, 0, photoH);
-  scrim.addColorStop(0, "rgba(4,24,15,0)");
-  scrim.addColorStop(1, COLOUR.deep);
-  ctx.fillStyle = scrim;
-  ctx.fillRect(0, photoH - 240, CARD_W, 240);
+  ctx.fillStyle = goldLeaf(ctx, 0, photoH, CARD_W, photoH + 6);
+  ctx.fillRect(0, photoH - 6, CARD_W, 6);
 
-  // Karat badge, the way the storefront cards carry it.
-  ctx.fillStyle = "rgba(4,24,15,0.85)";
-  ctx.fillRect(0, 44, 150, 54);
-  ctx.fillStyle = COLOUR.champagne;
+  // Karat, on a gold pill the way the storefront cards carry it.
   ctx.font = `600 24px ${SANS}`;
-  tracked(ctx, product.karat, 75, 79, 3, "center");
+  const karatW = trackedWidth(ctx, product.karat, 3) + 56;
+  ctx.fillStyle = goldLeaf(ctx, 44, 44, 44 + karatW, 96);
+  roundedRect(ctx, 44, 44, karatW, 52, 26);
+  ctx.fill();
+  ctx.fillStyle = LIGHT.greenDeep;
+  tracked(ctx, product.karat, 44 + karatW / 2, 78, 3, "center");
 
-  ctx.textAlign = "center";
-  ctx.fillStyle = COLOUR.ivory;
-  ctx.font = `300 62px ${DISPLAY}`;
-
-  const lines = wrap(ctx, product.name, CARD_W - 200).slice(0, 2);
-  lines.forEach((line, i) => ctx.fillText(line, CARD_W / 2, photoH + 96 + i * 70));
-
-  const afterName = photoH + 96 + (lines.length - 1) * 70;
-
-  ctx.fillStyle = "rgba(232,217,181,0.8)";
-  ctx.font = `400 26px ${SANS}`;
-  const spec = [formatGrams(product.grossWeightG), product.stones].filter(Boolean).join(" · ");
-  ctx.fillText(spec, CARD_W / 2, afterName + 62);
-
-  ctx.fillStyle = COLOUR.gold;
-  ctx.font = `600 62px ${SANS}`;
-  ctx.fillText(formatPKR(listedPkr), CARD_W / 2, afterName + 170);
-
-  if (product.salePricePkr && product.salePricePkr < product.pricePkr) {
-    const was = formatPKR(product.pricePkr);
-    ctx.fillStyle = "rgba(232,217,181,0.6)";
-    ctx.font = `400 26px ${SANS}`;
-    ctx.fillText(was, CARD_W / 2, afterName + 216);
-
-    const w = ctx.measureText(was).width;
-    ctx.fillRect(CARD_W / 2 - w / 2, afterName + 207, w, 1);
+  // The lockup, small, between the photograph and the name.
+  let y = photoH + 30;
+  if (lockup) {
+    const lockupH = 112;
+    const lockupW = (lockup.width / lockup.height) * lockupH;
+    ctx.drawImage(lockup, mid - lockupW / 2, y, lockupW, lockupH);
+    y += lockupH + 30;
+  } else {
+    y += 24;
   }
 
-  drawFooter(ctx);
+  ctx.textAlign = "center";
+  ctx.fillStyle = LIGHT.green;
+  ctx.font = `400 ${nameLines.length > 1 ? 52 : 60}px ${DISPLAY}`;
+
+  nameLines.forEach((line, i) => ctx.fillText(line, mid, y + i * 62));
+  y += (nameLines.length - 1) * 62;
+
+  const spec = [formatGrams(product.grossWeightG), product.stones].filter(Boolean).join(" · ");
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `400 26px ${SANS}`;
+  ctx.fillText(spec, mid, y + 50);
+
+  // The price, on green in gold leaf, as the estimate card sets its figure.
+  const panelL = 96;
+  const panelR = CARD_W - 96;
+  const panelY = y + 88;
+  const panelH = 168;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(11,61,46,0.3)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = LIGHT.green;
+  roundedRect(ctx, panelL, panelY, panelR - panelL, panelH, 18);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = goldLeaf(ctx, panelL, panelY, panelR, panelY + panelH);
+  ctx.lineWidth = 3;
+  roundedRect(ctx, panelL, panelY, panelR - panelL, panelH, 18);
+  ctx.stroke();
+
+  const onSale = Boolean(product.salePricePkr && product.salePricePkr < product.pricePkr);
+
+  ctx.fillStyle = "rgba(242,231,212,0.9)";
+  ctx.font = `600 20px ${SANS}`;
+  tracked(ctx, onSale ? "SALE PRICE" : "PRICE TODAY", mid, panelY + 50, 6, "center");
+
+  const figure = formatPKR(listedPkr);
+  let size = 72;
+  ctx.font = `700 ${size}px ${SANS}`;
+  while (ctx.measureText(figure).width > panelR - panelL - 80 && size > 40) {
+    size -= 4;
+    ctx.font = `700 ${size}px ${SANS}`;
+  }
+  const figureW = ctx.measureText(figure).width;
+  ctx.textAlign = "center";
+  ctx.fillStyle = goldLeaf(ctx, mid - figureW / 2, panelY + 70, mid + figureW / 2, panelY + 134);
+  ctx.fillText(figure, mid, panelY + (onSale ? 120 : 128));
+
+  if (onSale) {
+    const was = formatPKR(product.pricePkr);
+    ctx.fillStyle = "rgba(242,231,212,0.7)";
+    ctx.font = `400 24px ${SANS}`;
+    ctx.fillText(was, mid, panelY + 156);
+
+    const w = ctx.measureText(was).width;
+    ctx.fillRect(mid - w / 2, panelY + 148, w, 1);
+  }
+
+  // Priced against the day, which is the shop's whole argument.
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `400 22px ${SANS}`;
+  ctx.fillText(
+    "Priced against today's gold rate · Weighed in front of you",
+    mid,
+    panelY + panelH + 42,
+  );
+
+  ctx.fillStyle = LIGHT.bronze;
+  ctx.font = `400 italic 34px ${DISPLAY}`;
+  ctx.fillText(SITE.tagline, mid, panelY + panelH + 92);
+  ctx.textAlign = "left";
+
+  drawFooterBand(ctx);
   return toJpeg(canvas);
 }
