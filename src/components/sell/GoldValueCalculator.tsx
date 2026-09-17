@@ -3,9 +3,11 @@ import { useId, useState } from "react";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
+  RATE_BOARD,
   SELL_PURITIES,
   buyingRateFor,
   metalValue,
+  rateFor,
   type RateSnapshot,
   type SellPurity,
   type WeightUnit,
@@ -30,6 +32,19 @@ const segment =
 
 const money = (n: number) => n.toLocaleString("en-US");
 
+/** The gold rows of the board: what a customer buying from the shop pays. */
+const BOARD_GOLD = RATE_BOARD.filter((row) => row.karat !== "999");
+
+/**
+ * Which side of the counter the estimate is for.
+ *
+ * "sell" is a customer selling to the shop, valued at the buying rate. "buy"
+ * is a customer buying from the shop, valued at the board's own rates, for
+ * the gold rate page, where a figure lower than the board above it would read
+ * as a mistake.
+ */
+export type CalculatorSide = "sell" | "buy";
+
 /**
  * What a seller's gold is worth at today's buying rate — an estimate, and
  * labelled as one.
@@ -42,15 +57,29 @@ const money = (n: number) => n.toLocaleString("en-US");
  * can see how the figure was reached can check it, and one who has checked it
  * arrives at the counter expecting that figure rather than a better one.
  */
-export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
+export function GoldValueCalculator({
+  snapshot,
+  side = "sell",
+}: {
+  snapshot: RateSnapshot;
+  side?: CalculatorSide;
+}) {
+  const selling = side === "sell";
   const [amount, setAmount] = useState("10");
   const [unit, setUnit] = useState<WeightUnit>("g");
-  // 20K first: it is what jewellery is bought at, so the estimate a seller
-  // sees before touching anything matches the buying rate above it.
-  const [purity, setPurity] = useState<SellPurity>("20K");
+  // Selling: 20K first, what jewellery is bought at, so the estimate a seller
+  // sees before touching anything matches the buying rate above it. Buying:
+  // 22K, jewellery, the row most customers come for.
+  const [purity, setPurity] = useState<string>(selling ? "20K" : "22K");
   const id = useId();
 
-  const rate = buyingRateFor(snapshot, purity);
+  const rate = selling
+    ? buyingRateFor(snapshot, purity as SellPurity)
+    : snapshot.date
+      ? rateFor(snapshot, purity)
+      : undefined;
+  const boardRow = BOARD_GOLD.find((row) => row.karat === purity);
+  const purityName = !selling && boardRow ? `${boardRow.name} (${purity})` : purity;
   const weight = Number.parseFloat(amount);
   const hasWeight = Number.isFinite(weight) && weight > 0;
   const result = hasWeight && rate ? metalValue(weight, unit, rate) : null;
@@ -61,11 +90,15 @@ export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
   // What the customer has worked out, so the shop answers the question they
   // actually have. Nothing identifying — a CNIC number has no place in a chat.
   const message = [
-    `Assalam-o-Alaikum ${SITE.name}. I would like to ask about selling my gold.`,
-    `Purity: ${purity}`,
+    selling
+      ? `Assalam-o-Alaikum ${SITE.name}. I would like to ask about selling my gold.`
+      : `Assalam-o-Alaikum ${SITE.name}. I would like to ask about buying gold.`,
+    `Purity: ${purityName}`,
     hasWeight ? `Weight: ${weightText} ${unitWord}` : null,
     result ? `Estimated value: ${formatPKR(result.value)}` : null,
-    "I understand the final value is confirmed after testing and weighing. Please guide me about the final valuation.",
+    selling
+      ? "I understand the final value is confirmed after testing and weighing. Please guide me about the final valuation."
+      : "I understand making charges and any stones are additional. Please confirm today's price.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -79,25 +112,46 @@ export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
       >
         <fieldset>
           <legend className={label}>Purity</legend>
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {SELL_PURITIES.map((p) => (
-              <label key={p} className="relative">
-                <input
-                  type="radio"
-                  name={`${id}-purity`}
-                  value={p}
-                  checked={purity === p}
-                  onChange={() => setPurity(p)}
-                  className="peer sr-only"
-                />
-                <span className={segment}>{p}</span>
-              </label>
-            ))}
-          </div>
+          {selling ? (
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {SELL_PURITIES.map((p) => (
+                <label key={p} className="relative">
+                  <input
+                    type="radio"
+                    name={`${id}-purity`}
+                    value={p}
+                    checked={purity === p}
+                    onChange={() => setPurity(p)}
+                    className="peer sr-only"
+                  />
+                  <span className={segment}>{p}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {BOARD_GOLD.map((row) => (
+                <label key={row.karat} className="relative">
+                  <input
+                    type="radio"
+                    name={`${id}-purity`}
+                    value={row.karat}
+                    checked={purity === row.karat}
+                    onChange={() => setPurity(row.karat)}
+                    className="peer sr-only"
+                  />
+                  <span className={cn(segment, "h-14 content-center gap-0.5 leading-tight")}>
+                    <span>{row.name}</span>
+                    <span className="nums text-xs font-medium opacity-80">{row.karat}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
-            Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is
-            bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the
-            counter establishes it.
+            {selling
+              ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
+              : "Each is valued at today's rate on the board above. This is the metal value only — making charges and any stones are additional."}
           </p>
         </fieldset>
 
@@ -152,7 +206,7 @@ export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
         {rate ? (
           <>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Today&rsquo;s applicable buying rate · {purity}
+              {selling ? "Today’s applicable buying rate" : "Today’s rate"} · {purityName}
             </p>
             <p className="nums mt-3 text-xl text-ivory">
               Rs. {money(rate.perGram)}{" "}
@@ -194,8 +248,8 @@ export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
           </>
         ) : (
           <p className="font-display text-2xl font-light leading-snug text-ivory">
-            Today&rsquo;s buying rate has not been published yet. Ask us on WhatsApp and we will
-            send you the figure.
+            Today&rsquo;s {selling ? "buying " : ""}rate has not been published yet. Ask us on
+            WhatsApp and we will send you the figure.
           </p>
         )}
 
@@ -207,7 +261,7 @@ export function GoldValueCalculator({ snapshot }: { snapshot: RateSnapshot }) {
             className="w-full"
           >
             <WhatsAppIcon className="h-4 w-4" />
-            Get My Quote on WhatsApp
+            {selling ? "Get My Quote on WhatsApp" : "Get a Price on WhatsApp"}
           </ActionLink>
         </div>
       </div>
