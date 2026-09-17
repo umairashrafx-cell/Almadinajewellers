@@ -1,12 +1,14 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { ActionLink } from "@/components/ui/ActionButton";
+import { CopyTextButton } from "@/components/ui/CopyTextButton";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
   BUY_PURITIES,
   RATE_BOARD,
   SELL_PURITIES,
   buyingRateFor,
+  formatRateDate,
   metalValue,
   sellingRateFor,
   type BuyPurity,
@@ -14,6 +16,7 @@ import {
   type SellPurity,
   type WeightUnit,
 } from "@/lib/rates";
+import { shareOnWhatsApp } from "@/lib/share";
 import { SITE, formatPKR, whatsappLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +51,24 @@ const boardName = (karat: string): string | undefined =>
  */
 export type CalculatorSide = "sell" | "buy";
 
+/** The page each side of the calculator lives on, for its share link. */
+const PAGE_PATH: Record<CalculatorSide, string> = {
+  sell: "/sell-your-gold",
+  buy: "/gold-rate-in-mandi-bahauddin-today",
+};
+
+/**
+ * A link that opens the calculator already filled in:
+ * /gold-rate-in-mandi-bahauddin-today?purity=22K&weight=10&unit=tola#calculator
+ *
+ * Built on the canonical origin, never window.location, so the server and the
+ * browser render the same href.
+ */
+function calculatorLink(side: CalculatorSide, purity: string, amount: string, unit: WeightUnit) {
+  const params = new URLSearchParams({ purity, weight: amount, unit });
+  return `${SITE.origin}${PAGE_PATH[side]}?${params.toString()}#calculator`;
+}
+
 /**
  * What a seller's gold is worth at today's buying rate — an estimate, and
  * labelled as one.
@@ -76,6 +97,31 @@ export function GoldValueCalculator({
   const [purity, setPurity] = useState<string>(selling ? "20K" : "22K");
   const id = useId();
 
+  // A shared link fills the calculator in. Read after hydration, so the server
+  // render (which never sees the query) and the first client render agree;
+  // anything that does not name a real option is ignored.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const purities: readonly string[] = selling ? SELL_PURITIES : BUY_PURITIES;
+    const sharedPurity = params.get("purity");
+    const sharedUnit = params.get("unit");
+    const sharedWeight = Number.parseFloat(params.get("weight") ?? "");
+    if (sharedPurity && purities.includes(sharedPurity)) setPurity(sharedPurity);
+    if (sharedUnit === "g" || sharedUnit === "tola") setUnit(sharedUnit);
+    if (Number.isFinite(sharedWeight) && sharedWeight > 0 && sharedWeight < 100000) {
+      setAmount(String(sharedWeight));
+    }
+    // The router restores scroll after hydration and can land above the
+    // section the #calculator in the link asked for, so go there once filled in.
+    if (params.has("purity") && window.location.hash === "#calculator") {
+      const frame = requestAnimationFrame(() =>
+        document.getElementById("calculator")?.scrollIntoView({ block: "start" }),
+      );
+      return () => cancelAnimationFrame(frame);
+    }
+    return undefined;
+  }, [selling]);
+
   const rate = selling
     ? buyingRateFor(snapshot, purity as SellPurity)
     : sellingRateFor(snapshot, purity as BuyPurity);
@@ -102,6 +148,22 @@ export function GoldValueCalculator({
       : "I understand making charges and any stones are additional. Please confirm today's price.",
   ]
     .filter(Boolean)
+    .join("\n");
+
+  const shareUrl = calculatorLink(side, purity, hasWeight ? String(weight) : amount, unit);
+  // For forwarding to anyone, not the shop: what was worked out, and the link
+  // that opens the calculator with the same figures in it.
+  const shareMessage = [
+    `*Gold value estimate · ${SITE.name}*`,
+    `${purityName} · ${weightText} ${unitWord}`,
+    result
+      ? `*${formatPKR(result.value)}* at ${selling ? "the buying rate" : "the rate"} of ${formatRateDate(snapshot.date)}`
+      : null,
+    "Metal value only, confirmed at the shop.",
+    "",
+    shareUrl,
+  ]
+    .filter((line) => line !== null)
     .join("\n");
 
   return (
@@ -266,6 +328,28 @@ export function GoldValueCalculator({
             <WhatsAppIcon className="h-4 w-4" />
             {selling ? "Get My Quote on WhatsApp" : "Get a Price on WhatsApp"}
           </ActionLink>
+
+          {result ? (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <ActionLink
+                variant="ghostLight"
+                href={shareOnWhatsApp(shareMessage)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3"
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+                Share
+              </ActionLink>
+              <CopyTextButton
+                text={shareUrl}
+                label="Copy link"
+                variant="ghostLight"
+                announce="Calculator link copied to the clipboard"
+                className="px-3"
+              />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
