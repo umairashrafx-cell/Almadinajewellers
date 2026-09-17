@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
@@ -13,9 +12,9 @@ import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { InternationalGold } from "@/components/rate/InternationalGold";
 import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
+import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
 
 import {
-  FALLBACK_SNAPSHOT,
   GOLD_KARATS,
   rateBoard,
   TOLA_IN_GRAMS,
@@ -24,17 +23,14 @@ import {
   formatRateDate,
   formatRateStamp,
   goldOnly,
-  metalValue,
   rateFor,
   type RateSnapshot,
-  type WeightUnit,
 } from "@/lib/rates";
-import { SITE, formatPKR, whatsappLink } from "@/lib/site";
+import { SITE, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { renderRateCard } from "@/lib/share-card";
 import { ShareCardButton } from "@/components/ui/ShareCardButton";
 import { CopyTextButton } from "@/components/ui/CopyTextButton";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
   // Loaded server-side: this page is the recurring-traffic magnet in this
@@ -191,111 +187,30 @@ function GoldRatePage() {
   );
 }
 
-/** Grams or tola in, estimated metal value out. */
+/**
+ * Grams or tola in, estimated metal value out.
+ *
+ * The sell page's calculator on the board's side of the counter: the same
+ * layout and arithmetic, valued at the rates published above rather than the
+ * buying rate.
+ */
 function Calculator({ snapshot }: { snapshot: RateSnapshot }) {
-  const [amount, setAmount] = useState("10");
-  const [unit, setUnit] = useState<WeightUnit>("g");
-  const [karat, setKarat] = useState<string>("22K");
-
-  const rate = rateFor(snapshot, karat) ?? rateFor(FALLBACK_SNAPSHOT, karat);
-
-  const result = useMemo(() => {
-    const parsed = Number.parseFloat(amount);
-    if (!Number.isFinite(parsed) || parsed <= 0 || !rate) return null;
-
-    // The same arithmetic as the sell page's calculator, from the same place.
-    return metalValue(parsed, unit, rate);
-  }, [amount, unit, rate]);
-
   return (
-    <section className="section-y bg-champagne/25">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <section
+      id="calculator"
+      className="section-y scroll-mt-24 bg-champagne/15 px-4 sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto max-w-6xl">
         <SectionHeading
-          eyebrow="Calculator"
+          strong
+          eyebrow="Gold value calculator"
           title="What is my gold worth?"
-          description="Enter a weight and choose a purity. This gives the metal value only — making charges and any stones are additional."
+          description="Enter a weight and choose a purity for the metal value at today's rate."
         />
 
-        <div className="mt-12 border border-gold/40 bg-ivory p-6 sm:p-8">
-          <div className="grid gap-6 sm:grid-cols-3">
-            <label className="sm:col-span-1">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
-                Weight
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="0.001"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="nums mt-2 w-full border border-gold/50 bg-transparent px-3 py-2.5 text-base text-ink focus-visible:border-gold focus-visible:outline-none"
-              />
-            </label>
+        <GoldValueCalculator snapshot={snapshot} side="buy" />
 
-            <div className="sm:col-span-1">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
-                Unit
-              </span>
-              <div className="mt-2 flex" role="group" aria-label="Weight unit">
-                {(["g", "tola"] as const).map((u) => (
-                  <button
-                    key={u}
-                    type="button"
-                    onClick={() => setUnit(u)}
-                    aria-pressed={unit === u}
-                    className={cn(
-                      "flex-1 border px-3 py-2.5 text-[11px] font-semibold uppercase tracking-widest transition-colors",
-                      unit === u
-                        ? "border-gold bg-gold text-primary"
-                        : "border-gold/50 text-ink hover:bg-champagne/40",
-                    )}
-                  >
-                    {u === "g" ? "Grams" : "Tola"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label className="sm:col-span-1">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
-                Purity
-              </span>
-              <select
-                value={karat}
-                onChange={(e) => setKarat(e.target.value)}
-                className="mt-2 w-full border border-gold/50 bg-transparent px-3 py-2.5 text-base text-ink focus-visible:border-gold focus-visible:outline-none"
-              >
-                {GOLD_KARATS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-8 border-t border-gold/30 pt-6">
-            {result && rate ? (
-              <>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
-                  Estimated gold value
-                </p>
-                <p className="nums mt-3 font-display text-4xl font-light tracking-wide text-primary">
-                  {formatPKR(result.value)}
-                </p>
-                <p className="nums mt-3 text-xs text-warmgrey">
-                  {result.grams.toFixed(3)} g · {result.tolas.toFixed(3)} tola · at Rs.{" "}
-                  {rate.perGram.toLocaleString("en-US")} per gram for {karat}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-warmgrey">Enter a weight above to see an estimate.</p>
-            )}
-          </div>
-        </div>
-
-        <p className="mt-6 text-xs leading-relaxed text-warmgrey">
+        <p className="mx-auto mt-6 max-w-3xl text-center text-[13px] leading-relaxed text-ink/80">
           This figure is the metal value at today's indicative rate. A finished piece also carries
           making charges for the workshop's labour, plus the value of any stones. For an exact quote
           on a specific piece, send us the design on WhatsApp.
