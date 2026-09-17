@@ -5,7 +5,7 @@ import pathorIcon from "@/assets/rate-icons/pathor.png";
 import pieceIcon from "@/assets/rate-icons/piece.png";
 import silverIcon from "@/assets/rate-icons/silver.png";
 import type { ProductDetail } from "@/lib/catalogue";
-import { RATE_BOARD, formatRateStamp, type RateSnapshot } from "@/lib/rates";
+import { RATE_BOARD, formatRateDate, formatRateStamp, type RateSnapshot } from "@/lib/rates";
 import { SITE, formatGrams, formatPKR } from "@/lib/site";
 
 /**
@@ -505,31 +505,14 @@ function iconPin(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: numbe
   ctx.fill();
 }
 
+/** Where the left column of a light card sits, beside the photograph. */
+const COLUMN = { L: 48, R: 748, mid: 398 } as const;
+
 /**
- * The day's board, as a picture.
- *
- * Cream and gold with a green title band, a medallion against each rate, and
- * the shop's own bridal gold revealed behind a gold curve down the right.
- *
- * Everything read is deep green on cream or cream on deep green. The gold is
- * structural — the frame, the curve, the medallions, the rules — which is the
- * only way to use it at this scale without the figures becoming a squint.
- *
- * Per tola is set large with per gram beneath, because tola is what the market
- * quotes and the figure a customer arrives already holding.
+ * The cream ground and the bridal photograph behind its gold curve, shared by
+ * every light card so they read as one family.
  */
-export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
-  const [, icons, lockup] = await Promise.all([
-    ensureFonts(),
-    loadMetalIcons(),
-    loadImage(brandLockup).catch(() => null),
-  ]);
-  const { canvas, ctx } = newCanvas();
-
-  const L = 48;
-  const R = 748;
-  const mid = (L + R) / 2;
-
+async function drawLightGround(ctx: CanvasRenderingContext2D): Promise<void> {
   // Cream, warming towards the foot.
   const ground = ctx.createLinearGradient(0, 0, 0, CARD_H);
   ground.addColorStop(0, LIGHT.ivory);
@@ -573,6 +556,11 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.strokeStyle = goldLeaf(ctx, 760, 0, 920, CARD_H);
   ctx.lineWidth = 7;
   ctx.stroke(sweep);
+}
+
+/** The brand lockup and the creed beneath it. */
+function drawLockup(ctx: CanvasRenderingContext2D, lockup: HTMLImageElement | null): void {
+  const { mid } = COLUMN;
 
   /*
    * The lockup, as artwork.
@@ -610,10 +598,21 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
       creedX += creedGap;
     }
   });
+}
 
-  // The title band.
-  const bandY = 318;
-  const bandH = 128;
+/**
+ * The green title band, its title set in three pieces with the middle word in
+ * gold leaf, and a tracked subtitle under it.
+ */
+function drawTitleBand(
+  ctx: CanvasRenderingContext2D,
+  bandY: number,
+  bandH: number,
+  title: [string, string, string],
+  subtitle: string,
+): void {
+  const { L, R } = COLUMN;
+  const [before, goldWord, after] = title;
 
   ctx.save();
   ctx.shadowColor = "rgba(11,61,46,0.28)";
@@ -639,40 +638,37 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
    */
   ctx.textAlign = "left";
   ctx.font = `300 58px ${DISPLAY}`;
-  const w1 = ctx.measureText("Today's ").width;
-  const w3 = ctx.measureText(" Rate").width;
+  const w1 = ctx.measureText(before).width;
+  const w3 = ctx.measureText(after).width;
   ctx.font = `600 58px ${DISPLAY}`;
-  const w2 = ctx.measureText("Gold").width;
+  const w2 = ctx.measureText(goldWord).width;
 
   const titleX = L + 130 + (R - L - 130 - (w1 + w2 + w3)) / 2;
   const titleY = bandY + 64;
 
   ctx.font = `300 58px ${DISPLAY}`;
   ctx.fillStyle = LIGHT.ivory;
-  ctx.fillText("Today's ", titleX, titleY);
+  ctx.fillText(before, titleX, titleY);
 
   ctx.font = `600 58px ${DISPLAY}`;
   ctx.fillStyle = goldLeaf(ctx, titleX + w1, titleY - 40, titleX + w1 + w2, titleY + 8);
-  ctx.fillText("Gold", titleX + w1, titleY);
+  ctx.fillText(goldWord, titleX + w1, titleY);
 
   ctx.font = `300 58px ${DISPLAY}`;
   ctx.fillStyle = LIGHT.ivory;
-  ctx.fillText(" Rate", titleX + w1 + w2, titleY);
+  ctx.fillText(after, titleX + w1 + w2, titleY);
 
   ctx.fillStyle = "rgba(250,247,242,0.92)";
   ctx.font = `500 26px ${SANS}`;
-  tracked(ctx, "MANDI BAHAUDDIN", L + 130 + (R - L - 130) / 2, bandY + 106, 6, "center");
+  tracked(ctx, subtitle, L + 130 + (R - L - 130) / 2, bandY + 106, 6, "center");
+}
 
-  /*
-   * The stamp, without its timezone. The website labels the zone because a
-   * reader in Dubai or Toronto would otherwise assume their own clock; a
-   * picture forwarded inside Pakistan does not need telling.
-   */
-  const stamp = formatRateStamp(snapshot).replace(/\s*PKT\s*$/, "");
+/** The gold pill under the band, with a calendar mark. */
+function drawPill(ctx: CanvasRenderingContext2D, pillY: number, stamp: string): void {
+  const { mid } = COLUMN;
 
   ctx.font = `500 24px ${SANS}`;
   const pillW = ctx.measureText(stamp).width + 108;
-  const pillY = bandY + bandH + 14;
 
   ctx.fillStyle = goldLeaf(ctx, mid - pillW / 2, pillY, mid + pillW / 2, pillY + 52);
   roundedRect(ctx, mid - pillW / 2, pillY, pillW, 52, 26);
@@ -683,6 +679,157 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   ctx.fillStyle = LIGHT.greenDeep;
   ctx.textAlign = "left";
   ctx.fillText(stamp, mid - pillW / 2 + 66, pillY + 34);
+}
+
+/** A gold rule with a diamond, the small print under it and the tagline. */
+function drawClosing(ctx: CanvasRenderingContext2D, y: number, note: string): void {
+  const { L, R, mid } = COLUMN;
+
+  const sep = ctx.createLinearGradient(L + 60, 0, R - 60, 0);
+  sep.addColorStop(0, "rgba(201,162,75,0)");
+  sep.addColorStop(0.5, "rgba(201,162,75,0.7)");
+  sep.addColorStop(1, "rgba(201,162,75,0)");
+  ctx.fillStyle = sep;
+  ctx.fillRect(L + 60, y, R - L - 120, 1.5);
+  ornament(ctx, mid, y, 11, LIGHT.gold);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `400 22px ${SANS}`;
+  ctx.fillText(note, mid, y + 44);
+
+  ctx.fillStyle = LIGHT.bronze;
+  ctx.font = `400 italic 38px ${DISPLAY}`;
+  ctx.fillText(SITE.tagline, mid, y + 98);
+}
+
+/** The three promises along the foot of a card. */
+function drawMarks(ctx: CanvasRenderingContext2D, markY: number): void {
+  const { L, R } = COLUMN;
+
+  /*
+   * Three marks the shop can stand behind.
+   *
+   * The design this follows says "100% pure gold", which would be untrue over
+   * a board whose own headline figure is 22k. These are the promises the rest
+   * of the site already makes.
+   */
+  const marks: {
+    icon: (c: CanvasRenderingContext2D, x: number, yy: number, s: number) => void;
+    lines: string[];
+  }[] = [
+    { icon: iconShield, lines: ["HALLMARKED", "GOLD"] },
+    { icon: iconGem, lines: [`SINCE ${SITE.founded}`] },
+    { icon: iconCycle, lines: ["LIFETIME", "BUY-BACK"] },
+  ];
+
+  const step = (R - L) / marks.length;
+
+  marks.forEach((m, i) => {
+    const bx = L + step * i + step / 2;
+
+    if (i > 0) {
+      ctx.fillStyle = "rgba(201,162,75,0.4)";
+      ctx.fillRect(L + step * i, markY - 24, 1, 48);
+    }
+
+    m.icon(ctx, bx - 58, markY, 15);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = LIGHT.green;
+    ctx.font = `700 17px ${SANS}`;
+    m.lines.forEach((line, li) => {
+      tracked(ctx, line, bx - 34, markY - 4 + li * 22, 1.5);
+    });
+  });
+}
+
+/** The deep green band across the foot: the web address and the shop's. */
+function drawFooterBand(ctx: CanvasRenderingContext2D): void {
+  /*
+   * The footer band: the address to type, and the address to walk to.
+   *
+   * Deep green across the foot, which anchors a card that is otherwise all
+   * cream, and gives the one line somebody has to read back the highest
+   * contrast on the whole picture.
+   */
+  const footY = CARD_H - 104;
+
+  ctx.fillStyle = LIGHT.green;
+  ctx.beginPath();
+  ctx.moveTo(0, footY + 26);
+  ctx.quadraticCurveTo(CARD_W * 0.4, footY - 16, CARD_W, footY + 4);
+  ctx.lineTo(CARD_W, CARD_H);
+  ctx.lineTo(0, CARD_H);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = goldLeaf(ctx, 0, footY, CARD_W, footY + 30);
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, footY + 26);
+  ctx.quadraticCurveTo(CARD_W * 0.4, footY - 16, CARD_W, footY + 4);
+  ctx.stroke();
+
+  const footTextY = CARD_H - 40;
+
+  iconGlobe(ctx, 70, footTextY - 8, 15);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = LIGHT.champagne;
+  ctx.font = `600 26px ${SANS}`;
+  // Taken from the canonical origin rather than typed again, so the card cannot
+  // drift from the address the rest of the site declares.
+  const urlText = SITE.origin.replace(/^https?:\/\//, "");
+  ctx.fillText(urlText, 98, footTextY);
+
+  const dividerX = 98 + ctx.measureText(urlText).width + 34;
+  ctx.fillStyle = "rgba(242,231,212,0.4)";
+  ctx.fillRect(dividerX, footTextY - 22, 1.5, 30);
+
+  iconPin(ctx, dividerX + 34, footTextY - 12, 14);
+
+  ctx.fillStyle = LIGHT.champagne;
+  ctx.font = `400 24px ${SANS}`;
+  ctx.fillText("Sarafa Market, Mandi Bahauddin", dividerX + 58, footTextY);
+}
+
+/**
+ * The day's board, as a picture.
+ *
+ * Cream and gold with a green title band, a medallion against each rate, and
+ * the shop's own bridal gold revealed behind a gold curve down the right.
+ *
+ * Everything read is deep green on cream or cream on deep green. The gold is
+ * structural — the frame, the curve, the medallions, the rules — which is the
+ * only way to use it at this scale without the figures becoming a squint.
+ *
+ * Per tola is set large with per gram beneath, because tola is what the market
+ * quotes and the figure a customer arrives already holding.
+ */
+export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
+  const [, icons, lockup] = await Promise.all([
+    ensureFonts(),
+    loadMetalIcons(),
+    loadImage(brandLockup).catch(() => null),
+  ]);
+  const { canvas, ctx } = newCanvas();
+  const { L, R, mid } = COLUMN;
+
+  await drawLightGround(ctx);
+  drawLockup(ctx, lockup);
+
+  const bandY = 318;
+  const bandH = 128;
+  drawTitleBand(ctx, bandY, bandH, ["Today's ", "Gold", " Rate"], "MANDI BAHAUDDIN");
+
+  /*
+   * The stamp, without its timezone. The website labels the zone because a
+   * reader in Dubai or Toronto would otherwise assume their own clock; a
+   * picture forwarded inside Pakistan does not need telling.
+   */
+  const pillY = bandY + bandH + 14;
+  drawPill(ctx, pillY, formatRateStamp(snapshot).replace(/\s*PKT\s*$/, ""));
 
   // The board, in the order the shop reads it out.
   const rows = RATE_BOARD.flatMap((entry) => {
@@ -754,106 +901,196 @@ export async function renderRateCard(snapshot: RateSnapshot): Promise<Blob> {
   });
 
   y += 6;
-  const sep = ctx.createLinearGradient(L + 60, 0, R - 60, 0);
-  sep.addColorStop(0, "rgba(201,162,75,0)");
-  sep.addColorStop(0.5, "rgba(201,162,75,0.7)");
-  sep.addColorStop(1, "rgba(201,162,75,0)");
-  ctx.fillStyle = sep;
-  ctx.fillRect(L + 60, y, R - L - 120, 1.5);
-  ornament(ctx, mid, y, 11, LIGHT.gold);
+  drawClosing(ctx, y, "Rates are indicative · Per tola, in Pakistani rupees");
+  drawMarks(ctx, y + 158);
+  drawFooterBand(ctx);
 
-  ctx.textAlign = "center";
-  ctx.fillStyle = LIGHT.greenSoft;
-  ctx.font = `400 22px ${SANS}`;
-  ctx.fillText("Rates are indicative · Per tola, in Pakistani rupees", mid, y + 44);
+  return toJpeg(canvas);
+}
 
-  ctx.fillStyle = LIGHT.bronze;
-  ctx.font = `400 italic 38px ${DISPLAY}`;
-  ctx.fillText(SITE.tagline, mid, y + 98);
+/** What the gold value calculator has worked out, ready to draw. */
+export type EstimateCardInput = {
+  /** "sell": the customer is selling to the shop; "buy": buying from it. */
+  side: "sell" | "buy";
+  /** "22K", used to pick the artwork. */
+  karat: string;
+  /** "Jewellery (22K)" or "21K". */
+  purityLabel: string;
+  /** "2.5 tola" or "10 grams". */
+  weightText: string;
+  /** The same weight in the other unit, "29.160 grams" or "0.857 tola". */
+  otherWeightText: string;
+  perTola: number;
+  perGram: number;
+  value: number;
+  /** "2.5 tola × Rs. 395,500 per tola". */
+  workings: string;
+  /** ISO date the rate was set. */
+  rateDate: string;
+};
 
-  /*
-   * Three marks the shop can stand behind.
-   *
-   * The design this follows says "100% pure gold", which would be untrue over
-   * a board whose own headline figure is 22k. These are the promises the rest
-   * of the site already makes.
-   */
-  const marks: {
-    icon: (c: CanvasRenderingContext2D, x: number, yy: number, s: number) => void;
-    lines: string[];
-  }[] = [
-    { icon: iconShield, lines: ["HALLMARKED", "GOLD"] },
-    { icon: iconGem, lines: [`SINCE ${SITE.founded}`] },
-    { icon: iconCycle, lines: ["LIFETIME", "BUY-BACK"] },
-  ];
+/** One row of the estimate card: a medallion, a label pair, a figure pair. */
+function estimateRow(
+  ctx: CanvasRenderingContext2D,
+  y: number,
+  mark: HTMLImageElement | undefined,
+  left: [string, string],
+  right: [string, string],
+): void {
+  const { L, R } = COLUMN;
+  const h = 98;
 
-  const markY = y + 158;
-  const step = (R - L) / marks.length;
-
-  marks.forEach((m, i) => {
-    const bx = L + step * i + step / 2;
-
-    if (i > 0) {
-      ctx.fillStyle = "rgba(201,162,75,0.4)";
-      ctx.fillRect(L + step * i, markY - 24, 1, 48);
-    }
-
-    m.icon(ctx, bx - 58, markY, 15);
-
-    ctx.textAlign = "left";
-    ctx.fillStyle = LIGHT.green;
-    ctx.font = `700 17px ${SANS}`;
-    m.lines.forEach((line, li) => {
-      tracked(ctx, line, bx - 34, markY - 4 + li * 22, 1.5);
-    });
-  });
-
-  /*
-   * The footer band: the address to type, and the address to walk to.
-   *
-   * Deep green across the foot, which anchors a card that is otherwise all
-   * cream, and gives the one line somebody has to read back the highest
-   * contrast on the whole picture.
-   */
-  const footY = CARD_H - 104;
-
-  ctx.fillStyle = LIGHT.green;
-  ctx.beginPath();
-  ctx.moveTo(0, footY + 26);
-  ctx.quadraticCurveTo(CARD_W * 0.4, footY - 16, CARD_W, footY + 4);
-  ctx.lineTo(CARD_W, CARD_H);
-  ctx.lineTo(0, CARD_H);
-  ctx.closePath();
+  const fill = ctx.createLinearGradient(L, y, R, y);
+  fill.addColorStop(0, "rgba(255,253,250,0.95)");
+  fill.addColorStop(1, "rgba(242,231,212,0.85)");
+  ctx.fillStyle = fill;
+  roundedRect(ctx, L, y, R - L, h, 14);
   ctx.fill();
 
-  ctx.strokeStyle = goldLeaf(ctx, 0, footY, CARD_W, footY + 30);
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(0, footY + 26);
-  ctx.quadraticCurveTo(CARD_W * 0.4, footY - 16, CARD_W, footY + 4);
+  ctx.strokeStyle = "rgba(201,162,75,0.42)";
+  ctx.lineWidth = 1.2;
+  roundedRect(ctx, L, y, R - L, h, 14);
   ctx.stroke();
 
-  const footTextY = CARD_H - 40;
+  const cy = y + h / 2;
+  medallion(ctx, L + 54, cy, 33);
 
-  iconGlobe(ctx, 70, footTextY - 8, 15);
+  if (mark) {
+    const box = 40;
+    const scale = Math.min(box / mark.width, box / mark.height);
+    const w = mark.width * scale;
+    const mh = mark.height * scale;
+    ctx.drawImage(mark, L + 54 - w / 2, cy - mh / 2, w, mh);
+  } else {
+    ornament(ctx, L + 54, cy, 16, LIGHT.gold);
+  }
 
   ctx.textAlign = "left";
-  ctx.fillStyle = LIGHT.champagne;
-  ctx.font = `600 26px ${SANS}`;
-  // Taken from the canonical origin rather than typed again, so the card cannot
-  // drift from the address the rest of the site declares.
-  const urlText = SITE.origin.replace(/^https?:\/\//, "");
-  ctx.fillText(urlText, 98, footTextY);
+  ctx.fillStyle = LIGHT.green;
+  ctx.font = `400 38px ${DISPLAY}`;
+  ctx.fillText(left[0], L + 106, cy - 4);
 
-  const dividerX = 98 + ctx.measureText(urlText).width + 34;
-  ctx.fillStyle = "rgba(242,231,212,0.4)";
-  ctx.fillRect(dividerX, footTextY - 22, 1.5, 30);
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `500 22px ${SANS}`;
+  tracked(ctx, left[1].toUpperCase(), L + 106, cy + 30, 2);
 
-  iconPin(ctx, dividerX + 34, footTextY - 12, 14);
+  ctx.textAlign = "right";
+  ctx.fillStyle = LIGHT.green;
+  ctx.font = `700 44px ${SANS}`;
+  ctx.fillText(right[0], R - 26, cy + 2);
 
-  ctx.fillStyle = LIGHT.champagne;
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `400 22px ${SANS}`;
+  ctx.fillText(right[1], R - 26, cy + 34);
+  ctx.textAlign = "left";
+}
+
+/**
+ * A worked-out estimate from the gold value calculator, as a picture.
+ *
+ * The rate card's family: the same cream ground, bridal photograph, lockup,
+ * title band, promises and footer, so an estimate forwarded beside the day's
+ * rate reads as the same shop. Two rows say what was weighed and at what rate;
+ * the figure itself sits on a green panel in gold leaf, with the sum under it
+ * so whoever receives it can check the arithmetic.
+ */
+export async function renderEstimateCard(input: EstimateCardInput): Promise<Blob> {
+  const [, icons, lockup] = await Promise.all([
+    ensureFonts(),
+    loadMetalIcons(),
+    loadImage(brandLockup).catch(() => null),
+  ]);
+  const { canvas, ctx } = newCanvas();
+  const { L, R, mid } = COLUMN;
+
+  await drawLightGround(ctx);
+  drawLockup(ctx, lockup);
+
+  const bandY = 318;
+  const bandH = 128;
+  drawTitleBand(ctx, bandY, bandH, ["", "Gold", " Value Estimate"], "MANDI BAHAUDDIN");
+
+  const pillY = bandY + bandH + 14;
+  const rateName = input.side === "sell" ? "Buying rate" : "Rate";
+  drawPill(ctx, pillY, `${rateName} of ${formatRateDate(input.rateDate)}`);
+
+  // Artwork for the purities the board has it for; a diamond for the rest.
+  const mark = icons[input.karat];
+  let y = pillY + 74;
+
+  estimateRow(
+    ctx,
+    y,
+    mark,
+    [input.purityLabel, "Purity"],
+    [input.weightText, input.otherWeightText],
+  );
+  y += 112;
+
+  estimateRow(
+    ctx,
+    y,
+    undefined,
+    [`${input.karat} rate`, input.side === "sell" ? "We buy at" : "Per tola"],
+    [
+      `Rs. ${input.perTola.toLocaleString("en-US")}`,
+      `Rs. ${input.perGram.toLocaleString("en-US")} per gram`,
+    ],
+  );
+  y += 124;
+
+  // The figure, on green in gold leaf.
+  const panelH = 224;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(11,61,46,0.3)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = LIGHT.green;
+  roundedRect(ctx, L, y, R - L, panelH, 18);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = goldLeaf(ctx, L, y, R, y + panelH);
+  ctx.lineWidth = 3;
+  roundedRect(ctx, L, y, R - L, panelH, 18);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(242,231,212,0.9)";
+  ctx.font = `600 20px ${SANS}`;
+  tracked(ctx, "ESTIMATED GOLD VALUE", mid, y + 54, 6, "center");
+
+  ornament(ctx, mid - 222, y + 47, 8, LIGHT.gold);
+  ornament(ctx, mid + 222, y + 47, 8, LIGHT.gold);
+
+  const figure = formatPKR(input.value);
+  let size = 80;
+  ctx.font = `700 ${size}px ${SANS}`;
+  while (ctx.measureText(figure).width > R - L - 80 && size > 44) {
+    size -= 4;
+    ctx.font = `700 ${size}px ${SANS}`;
+  }
+  const figureW = ctx.measureText(figure).width;
+  ctx.textAlign = "center";
+  ctx.fillStyle = goldLeaf(ctx, mid - figureW / 2, y + 80, mid + figureW / 2, y + 150);
+  ctx.fillText(figure, mid, y + 142);
+
+  ctx.fillStyle = "rgba(242,231,212,0.85)";
   ctx.font = `400 24px ${SANS}`;
-  ctx.fillText("Sarafa Market, Mandi Bahauddin", dividerX + 58, footTextY);
+  ctx.fillText(input.workings, mid, y + 190);
+  ctx.textAlign = "left";
+
+  y += panelH + 34;
+
+  drawClosing(
+    ctx,
+    y,
+    input.side === "sell"
+      ? "An estimate · Final value confirmed after testing and weighing"
+      : "Metal value only · Making charges and stones are extra",
+  );
+  drawMarks(ctx, y + 158);
+  drawFooterBand(ctx);
 
   return toJpeg(canvas);
 }

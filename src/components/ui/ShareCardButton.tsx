@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, ImageDown, Loader2 } from "lucide-react";
 
+import { TileIcon, shareTile } from "@/components/ui/ShareTile";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,6 +26,8 @@ type Props = {
   filename: string;
   className?: string | undefined;
   children?: React.ReactNode;
+  /** Draw as a square tile, for a row of ways to share. */
+  tile?: boolean;
 };
 
 export function ShareCardButton({
@@ -34,6 +37,7 @@ export function ShareCardButton({
   filename,
   className,
   children = "Share as picture",
+  tile = false,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -76,25 +80,39 @@ export function ShareCardButton({
     }
   }
 
+  const icon = busy ? (
+    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+  ) : downloaded ? (
+    <Download className="h-4 w-4" aria-hidden="true" />
+  ) : (
+    <ImageDown className="h-4 w-4" aria-hidden="true" />
+  );
+
   return (
-    <span className="inline-flex flex-col items-start gap-1">
+    <span className={cn("inline-flex flex-col items-start gap-1", tile && "w-full items-stretch")}>
       <button
         type="button"
         onClick={() => void onClick()}
         disabled={busy}
         className={cn(
-          "inline-flex min-h-11 items-center justify-center gap-2 rounded-[2px] px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest transition-colors duration-300 disabled:opacity-70",
+          tile
+            ? shareTile
+            : "inline-flex min-h-11 items-center justify-center gap-2 rounded-[2px] px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest transition-colors duration-300 disabled:opacity-70",
           className,
         )}
       >
-        {busy ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        ) : downloaded ? (
-          <Download className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <ImageDown className="h-4 w-4" aria-hidden="true" />
-        )}
-        {busy ? "Making the picture…" : downloaded ? "Saved to your device" : children}
+        {tile ? <TileIcon>{icon}</TileIcon> : icon}
+        {tile
+          ? busy
+            ? "Making…"
+            : downloaded
+              ? "Saved"
+              : children
+          : busy
+            ? "Making the picture…"
+            : downloaded
+              ? "Saved to your device"
+              : children}
       </button>
 
       {failure ? (

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { ActionButton } from "@/components/ui/ActionButton";
+import { TileIcon, shareTile } from "@/components/ui/ShareTile";
+import { cn } from "@/lib/utils";
 
 /**
  * Copies a piece of text and says so.
@@ -20,6 +22,7 @@ export function CopyTextButton({
   className,
   variant = "outline",
   announce = "Rates copied to the clipboard",
+  tile = false,
 }: {
   text: string;
   label: string;
@@ -27,6 +30,8 @@ export function CopyTextButton({
   variant?: "outline" | "ghostLight";
   /** What a screen reader hears once the copy has worked. */
   announce?: string;
+  /** Draw as a square tile, beside the other ways to share. */
+  tile?: boolean;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const reset = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -59,13 +64,28 @@ export function CopyTextButton({
     reset.current = setTimeout(() => setState("idle"), 2500);
   };
 
+  const icon =
+    state === "copied" ? (
+      <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+    ) : (
+      <Copy className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
+    );
+
+  if (tile) {
+    return (
+      <button type="button" onClick={copy} className={cn(shareTile, className)}>
+        <TileIcon>{icon}</TileIcon>
+        {state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : label}
+        <span className="sr-only" aria-live="polite">
+          {state === "copied" ? announce : state === "failed" ? "Could not copy" : ""}
+        </span>
+      </button>
+    );
+  }
+
   return (
     <ActionButton type="button" variant={variant} onClick={copy} className={className}>
-      {state === "copied" ? (
-        <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-      ) : (
-        <Copy className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
-      )}
+      {icon}
       {state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : label}
       <span className="sr-only" aria-live="polite">
         {state === "copied" ? announce : state === "failed" ? "Could not copy" : ""}
