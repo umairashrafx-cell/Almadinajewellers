@@ -2,6 +2,8 @@ import { useEffect, useId, useState } from "react";
 
 import { ActionLink } from "@/components/ui/ActionButton";
 import { CopyTextButton } from "@/components/ui/CopyTextButton";
+import { ShareCardButton } from "@/components/ui/ShareCardButton";
+import { TileIcon, shareTile } from "@/components/ui/ShareTile";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
   BUY_PURITIES,
@@ -16,6 +18,7 @@ import {
   type SellPurity,
   type WeightUnit,
 } from "@/lib/rates";
+import { renderEstimateCard } from "@/lib/share-card";
 import { shareOnWhatsApp } from "@/lib/share";
 import { SITE, formatPKR, whatsappLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -151,6 +154,12 @@ export function GoldValueCalculator({
     .join("\n");
 
   const shareUrl = calculatorLink(side, purity, hasWeight ? String(weight) : amount, unit);
+  // The sum, written out the same way under the figure and on the picture.
+  const workings = rate
+    ? `${weightText} ${unit === "g" ? "g" : "tola"} × Rs. ${money(
+        unit === "g" ? rate.perGram : rate.perTola,
+      )} per ${unit === "g" ? "gram" : "tola"}`
+    : "";
   // For forwarding to anyone, not the shop: what was worked out, and the link
   // that opens the calculator with the same figures in it.
   const shareMessage = [
@@ -329,25 +338,66 @@ export function GoldValueCalculator({
             {selling ? "Get My Quote on WhatsApp" : "Get a Price on WhatsApp"}
           </ActionLink>
 
-          {result ? (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <ActionLink
-                variant="ghostLight"
-                href={shareOnWhatsApp(shareMessage)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3"
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-                Share
-              </ActionLink>
-              <CopyTextButton
-                text={shareUrl}
-                label="Copy link"
-                variant="ghostLight"
-                announce="Calculator link copied to the clipboard"
-                className="px-3"
-              />
+          {result && rate ? (
+            <div className="mt-8 border-t border-gold/25 pt-6">
+              <p className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
+                <span
+                  aria-hidden="true"
+                  className="h-px flex-1 bg-gradient-to-r from-transparent to-gold/45"
+                />
+                Share this estimate
+                <span
+                  aria-hidden="true"
+                  className="h-px flex-1 bg-gradient-to-l from-transparent to-gold/45"
+                />
+              </p>
+
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+                <a
+                  href={shareOnWhatsApp(shareMessage)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={shareTile}
+                >
+                  <TileIcon>
+                    <WhatsAppIcon className="h-4 w-4" />
+                  </TileIcon>
+                  As text
+                </a>
+
+                <ShareCardButton
+                  tile
+                  render={() =>
+                    renderEstimateCard({
+                      side,
+                      karat: purity,
+                      purityLabel: purityName,
+                      weightText: `${weightText} ${unitWord}`,
+                      otherWeightText:
+                        unit === "g"
+                          ? `${result.tolas.toFixed(3)} tola`
+                          : `${result.grams.toFixed(3)} grams`,
+                      perTola: rate.perTola,
+                      perGram: rate.perGram,
+                      value: result.value,
+                      workings,
+                      rateDate: snapshot.date,
+                    })
+                  }
+                  title="Gold value estimate"
+                  text={`${SITE.name} · gold value estimate\n${shareUrl}`}
+                  filename={`al-madina-gold-estimate-${purity}-${snapshot.date}.jpg`}
+                >
+                  As picture
+                </ShareCardButton>
+
+                <CopyTextButton
+                  tile
+                  text={shareUrl}
+                  label="Copy link"
+                  announce="Calculator link copied to the clipboard"
+                />
+              </div>
             </div>
           ) : null}
         </div>
