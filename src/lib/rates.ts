@@ -358,6 +358,41 @@ export function buyingRateFor(
 }
 
 /**
+ * The purities a buyer can pick in the gold rate page's calculator: the
+ * board's three gold rows, then the lower purities older and lighter
+ * jewellery is made in.
+ */
+export const BUY_PURITIES = ["24K", "23.65K", "22K", "21K", "20K", "18K"] as const;
+export type BuyPurity = (typeof BUY_PURITIES)[number];
+
+/**
+ * The rate a buyer pays for gold of a given purity.
+ *
+ * The board's own rows (24K piece, 23.65K pathor, 22K jewellery) are returned
+ * exactly as published. 21K, 20K and 18K have no selling rate of their own, so
+ * they are the 24K rate in proportion to their gold content, rounded to the
+ * nearest hundred per tola: the same arithmetic buyingRateFor uses. The
+ * published 20K row is deliberately not used here: that is the buying rate.
+ *
+ * Nothing is returned for the fallback snapshot, for the same reason as
+ * buyingRateFor.
+ */
+export function sellingRateFor(
+  snapshot: RateSnapshot | undefined,
+  purity: BuyPurity,
+): MetalRate | undefined {
+  if (!snapshot?.date) return undefined;
+
+  if (RATE_BOARD.some((row) => row.karat === purity)) return rateFor(snapshot, purity);
+
+  const fine = rateFor(snapshot, "24K");
+  if (!fine) return undefined;
+
+  const perTola = roundRateToHundred((fine.perTola * Number.parseFloat(purity)) / 24);
+  return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
+}
+
+/**
  * The shop's own clock. Pinned rather than left to the runtime for two reasons:
  * the server renders in UTC and the browser in the visitor's zone, and an
  * unpinned format would differ between them and trip a hydration mismatch; and

@@ -18,10 +18,15 @@ export function CopyTextButton({
   text,
   label,
   className,
+  variant = "outline",
+  announce = "Rates copied to the clipboard",
 }: {
   text: string;
   label: string;
   className?: string;
+  variant?: "outline" | "ghostLight";
+  /** What a screen reader hears once the copy has worked. */
+  announce?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const reset = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -55,7 +60,7 @@ export function CopyTextButton({
   };
 
   return (
-    <ActionButton type="button" variant="outline" onClick={copy} className={className}>
+    <ActionButton type="button" variant={variant} onClick={copy} className={className}>
       {state === "copied" ? (
         <Check className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
       ) : (
@@ -63,11 +68,7 @@ export function CopyTextButton({
       )}
       {state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : label}
       <span className="sr-only" aria-live="polite">
-        {state === "copied"
-          ? "Rates copied to the clipboard"
-          : state === "failed"
-            ? "Could not copy"
-            : ""}
+        {state === "copied" ? announce : state === "failed" ? "Could not copy" : ""}
       </span>
     </ActionButton>
   );
