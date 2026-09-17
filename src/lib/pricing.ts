@@ -35,6 +35,19 @@ export type PriceParts = {
 const TOLA_G = 11.6638;
 
 /**
+ * The weight to show for a piece: metal plus polish where it is known.
+ *
+ * A listing has room for one figure, and this is the one the price was built
+ * from — the same "gold charged at rate" the piece's own page spells out.
+ * Gross includes the stones, which are not gold and are not priced by weight,
+ * so quoting it beside a gold price invites the arithmetic to be checked
+ * against the wrong number.
+ */
+export function listedWeightG(product: { grossWeightG: number; pricedWeightG?: number }): number {
+  return product.pricedWeightG ?? product.grossWeightG;
+}
+
+/**
  * The weight the gold rate is charged on: metal plus polish.
  *
  * Polish is gold laid on the piece in finishing, so it is weighed and paid for

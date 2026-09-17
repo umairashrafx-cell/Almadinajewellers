@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 const untypedDb = supabase as unknown as SupabaseClient;
 import { fetchRateSnapshot, type RateSnapshot } from "@/lib/rates";
-import { livePriceFor, liveSalePrice } from "@/lib/pricing";
+import { livePriceFor, liveSalePrice, pricedWeightFor } from "@/lib/pricing";
 
 /**
  * Bundled placeholder art, keyed by the short strings ("bridal", "rings") that
@@ -162,6 +162,10 @@ export function mapProduct(
     metal: row.metal as Product["metal"],
     karat: row.karat,
     grossWeightG: Number(row.gross_weight_g),
+    pricedWeightG: pricedWeightFor(
+      Number(row.net_weight_g ?? row.gross_weight_g),
+      row.polish_g_per_tola,
+    ),
     stones: row.stones,
     pricePkr,
     // tsconfig sets exactOptionalPropertyTypes, so an optional field must be

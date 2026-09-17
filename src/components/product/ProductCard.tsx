@@ -4,6 +4,7 @@ import type { Product } from "@/data/products";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { CARD_SIZES, CARD_WIDTHS, responsiveImage } from "@/lib/images";
 import { formatGrams, formatPKR, productEnquiryLink } from "@/lib/site";
+import { listedWeightG } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 /**
@@ -107,7 +108,7 @@ export function ProductCard({ product }: { product: Product }) {
           </Link>
         </h3>
         <p className="nums mt-1 text-xs text-warmgrey">
-          {formatGrams(product.grossWeightG)} · {product.stones}
+          {formatGrams(listedWeightG(product))} · {product.stones}
         </p>
         <p className="nums mt-3 flex items-baseline gap-2 text-sm font-semibold text-ink">
           {formatPKR(product.salePricePkr ?? product.pricePkr)}

@@ -27,6 +27,7 @@ import {
 } from "@/lib/orders";
 import { useCart } from "@/hooks/use-cart";
 import { SITE, formatGrams, formatPKR } from "@/lib/site";
+import { listedWeightG } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { sizedImage } from "@/lib/images";
 
@@ -165,7 +166,7 @@ function CartPage() {
                         </Link>
                         <p className="nums mt-1 text-xs text-warmgrey">
                           {line.product.sku} · {line.product.karat} ·{" "}
-                          {formatGrams(line.product.grossWeightG)}
+                          {formatGrams(listedWeightG(line.product))}
                         </p>
 
                         <div className="mt-4 flex flex-wrap items-center gap-4">

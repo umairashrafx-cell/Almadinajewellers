@@ -1,4 +1,5 @@
 import type { ProductDetail } from "@/lib/catalogue";
+import { listedWeightG } from "@/lib/pricing";
 import { formatRateDate, rateFor, rateStampParts, type RateSnapshot } from "@/lib/rates";
 import { SITE, formatGrams, formatPKR, productUrl } from "@/lib/site";
 
@@ -50,7 +51,7 @@ export function productShareMessage(product: ProductDetail, listedPkr: number): 
     `*${product.name}*`,
     `${SITE.name} · ${SITE.address.split(",")[1]?.trim() ?? "Mandi Bahauddin"}`,
     "",
-    `${product.karat} ${product.metal} · ${formatGrams(product.grossWeightG)}`,
+    `${product.karat} ${product.metal} · ${formatGrams(listedWeightG(product))}`,
   ];
 
   if (product.stones) lines.push(product.stones);
