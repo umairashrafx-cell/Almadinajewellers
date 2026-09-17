@@ -3,11 +3,13 @@ import { useId, useState } from "react";
 import { ActionLink } from "@/components/ui/ActionButton";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
+  BUY_PURITIES,
   RATE_BOARD,
   SELL_PURITIES,
   buyingRateFor,
   metalValue,
-  rateFor,
+  sellingRateFor,
+  type BuyPurity,
   type RateSnapshot,
   type SellPurity,
   type WeightUnit,
@@ -32,8 +34,9 @@ const segment =
 
 const money = (n: number) => n.toLocaleString("en-US");
 
-/** The gold rows of the board: what a customer buying from the shop pays. */
-const BOARD_GOLD = RATE_BOARD.filter((row) => row.karat !== "999");
+/** The board's name for a purity it lists (Piece, Pathor, Jewellery). */
+const boardName = (karat: string): string | undefined =>
+  RATE_BOARD.find((row) => row.karat === karat)?.name;
 
 /**
  * Which side of the counter the estimate is for.
@@ -75,11 +78,9 @@ export function GoldValueCalculator({
 
   const rate = selling
     ? buyingRateFor(snapshot, purity as SellPurity)
-    : snapshot.date
-      ? rateFor(snapshot, purity)
-      : undefined;
-  const boardRow = BOARD_GOLD.find((row) => row.karat === purity);
-  const purityName = !selling && boardRow ? `${boardRow.name} (${purity})` : purity;
+    : sellingRateFor(snapshot, purity as BuyPurity);
+  const name = selling ? undefined : boardName(purity);
+  const purityName = name ? `${name} (${purity})` : purity;
   const weight = Number.parseFloat(amount);
   const hasWeight = Number.isFinite(weight) && weight > 0;
   const result = hasWeight && rate ? metalValue(weight, unit, rate) : null;
@@ -130,19 +131,21 @@ export function GoldValueCalculator({
             </div>
           ) : (
             <div className="mt-3 grid grid-cols-3 gap-2">
-              {BOARD_GOLD.map((row) => (
-                <label key={row.karat} className="relative">
+              {BUY_PURITIES.map((p) => (
+                <label key={p} className="relative">
                   <input
                     type="radio"
                     name={`${id}-purity`}
-                    value={row.karat}
-                    checked={purity === row.karat}
-                    onChange={() => setPurity(row.karat)}
+                    value={p}
+                    checked={purity === p}
+                    onChange={() => setPurity(p)}
                     className="peer sr-only"
                   />
                   <span className={cn(segment, "h-14 content-center gap-0.5 leading-tight")}>
-                    <span>{row.name}</span>
-                    <span className="nums text-xs font-medium opacity-80">{row.karat}</span>
+                    <span className="nums">{boardName(p) ?? p}</span>
+                    <span className="nums text-xs font-medium opacity-80">
+                      {boardName(p) ? p : "Gold"}
+                    </span>
                   </span>
                 </label>
               ))}
@@ -151,7 +154,7 @@ export function GoldValueCalculator({
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
             {selling
               ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
-              : "Each is valued at today's rate on the board above. This is the metal value only — making charges and any stones are additional."}
+              : "Piece, Pathor and Jewellery are today's rates on the board above. 21K, 20K and 18K are the 24K rate in proportion to their gold content. This is the metal value only — making charges and any stones are additional."}
           </p>
         </fieldset>
 
