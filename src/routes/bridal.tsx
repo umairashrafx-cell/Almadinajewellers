@@ -31,6 +31,15 @@ import { SITE, whatsappLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/bridal")({
+  /*
+   * The bridal sets, so they are in the server's HTML.
+   *
+   * Bridal is the most valuable thing the shop sells and this page is the one
+   * built for it, but with the sets fetched in the browser the page carried no
+   * links to a single one of them. A failure here leaves the rail to the client
+   * query rather than taking down the page, which is mostly written content.
+   */
+  loader: () => fetchCollection("bridal-sets").catch(() => null),
   head: () => {
     const title = `Bridal Jewellery & Consultations — ${SITE.name}`;
     const description =
@@ -51,10 +60,14 @@ export const Route = createFileRoute("/bridal")({
 });
 
 function BridalPage() {
+  // Seeded by the loader, so the rail renders with the document.
+  const loaded = Route.useLoaderData();
+
   const { data, isPending } = useQuery({
     queryKey: ["collection", "bridal-sets"],
     queryFn: () => fetchCollection("bridal-sets"),
     staleTime: 5 * 60 * 1000,
+    initialData: loaded ?? undefined,
   });
 
   const sets = data?.products ?? [];

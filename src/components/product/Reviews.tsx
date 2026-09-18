@@ -29,10 +29,13 @@ import { cn } from "@/lib/utils";
  */
 export function Reviews({
   sku,
+  productId,
   productName,
   initial,
 }: {
   sku: string;
+  /** The `@id` the page's Product node uses, so the rating attaches to it. */
+  productId: string;
   productName: string;
   /** Loaded with the page, so the list and its rating are in the server HTML. */
   initial: Review[];
@@ -83,7 +86,7 @@ export function Reviews({
         <ReviewForm sku={sku} productName={productName} hasReviews={reviews.length > 0} />
       </div>
 
-      {summary ? <ReviewSchema sku={sku} reviews={reviews} /> : null}
+      {summary ? <ReviewSchema sku={sku} productId={productId} reviews={reviews} /> : null}
     </section>
   );
 }
@@ -338,14 +341,29 @@ function FieldError({ message }: { message?: string | undefined }) {
  *
  * It sits inside the reviews section rather than beside the Product schema so
  * that the data it describes and the data it is built from cannot drift apart.
+ *
+ * It carries the same `@id` as that Product node. Structured data is merged on
+ * `@id`, and without one these two nodes read as two different products — the
+ * rating would land on a Product with no name, price or photograph instead of
+ * on the piece the reviews are about, and the rich result they were collected
+ * for would not appear.
  */
-function ReviewSchema({ sku, reviews }: { sku: string; reviews: Review[] }) {
+function ReviewSchema({
+  sku,
+  productId,
+  reviews,
+}: {
+  sku: string;
+  productId: string;
+  reviews: Review[];
+}) {
   const summary = summarise(reviews);
   if (!summary) return null;
 
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": productId,
     sku,
     aggregateRating: {
       "@type": "AggregateRating",

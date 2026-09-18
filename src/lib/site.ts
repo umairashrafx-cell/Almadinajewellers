@@ -161,6 +161,19 @@ export function productUrl(slug: string) {
   return `${SITE.origin}/products/${slug}`;
 }
 
+/**
+ * The piece's identity in structured data.
+ *
+ * A product page carries its Product node and, once anyone has reviewed the
+ * piece, a second one holding the rating. Structured data is merged on `@id`,
+ * so without a shared one those read as two different products and the rating
+ * lands on the one with no name, price or photograph — which is not the one the
+ * reviews were collected for. Both nodes are built from this.
+ */
+export function productSchemaId(slug: string) {
+  return `${productUrl(slug)}#product`;
+}
+
 /** Pre-filled product enquiry message. */
 export function productEnquiryLink(name: string, sku: string, url?: string) {
   // Note: pass the page URL explicitly. Reading window here would break SSR hydration.

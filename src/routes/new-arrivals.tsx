@@ -15,6 +15,14 @@ import { fetchNewArrivals } from "@/lib/catalogue";
 import { SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/new-arrivals")({
+  /*
+   * The newest pieces, so they are in the server's HTML.
+   *
+   * This is the page a returning customer checks and the one most likely to be
+   * crawled often, which makes it the worst page on the site to have shipped as
+   * an empty grid of skeletons.
+   */
+  loader: () => fetchNewArrivals().catch(() => null),
   head: () => {
     const title = `New Arrivals — ${SITE.name}`;
     const description =
@@ -35,10 +43,14 @@ export const Route = createFileRoute("/new-arrivals")({
 });
 
 function NewArrivalsPage() {
+  // Seeded by the loader, so the grid renders with the document.
+  const loaded = Route.useLoaderData();
+
   const { data, isPending, isError } = useQuery({
     queryKey: ["new-arrivals"],
     queryFn: fetchNewArrivals,
     staleTime: 5 * 60 * 1000,
+    initialData: loaded ?? undefined,
   });
 
   const products = data ?? [];
@@ -81,7 +93,12 @@ function NewArrivalsPage() {
               : `${products.length} ${products.length === 1 ? "piece" : "pieces"}`}
           </p>
 
-          {isError ? (
+          {/*
+            Only when the failure left us with nothing. The pieces arrive with
+            the document now, so a later refetch fault should not replace a grid
+            the visitor is reading with an apology for not loading it.
+          */}
+          {isError && products.length === 0 ? (
             <div className="py-24 text-center">
               <h2 className="font-display text-2xl font-light text-primary">These didn't load</h2>
               <p className="mt-3 text-sm text-warmgrey">Please refresh and try again.</p>

@@ -17,6 +17,14 @@ const description =
   "Bridal sets, gold bangles, rings, earrings, lockets and 925 silver essentials. Hallmarked, weighed and priced against the day's gold rate.";
 
 export const Route = createFileRoute("/collections/")({
+  /*
+   * The categories, so the six collection links are in the server's HTML.
+   *
+   * This page is the catalogue's front door; fetched in the browser it served
+   * a grid of six skeletons to anything that does not run JavaScript, which is
+   * a hub page with no links out of it.
+   */
+  loader: () => fetchCategories(),
   head: () => ({
     meta: [
       { title },
@@ -32,9 +40,14 @@ export const Route = createFileRoute("/collections/")({
 });
 
 function CollectionsIndex() {
+  // Seeded from the loader, so the first render is the real grid rather than
+  // six skeletons. The query still refreshes it in the background.
+  const loaded = Route.useLoaderData();
+
   const { data, isPending } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
+    initialData: loaded,
   });
 
   return (
