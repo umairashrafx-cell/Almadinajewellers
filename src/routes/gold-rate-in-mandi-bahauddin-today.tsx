@@ -32,6 +32,8 @@ import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { renderRateCard } from "@/lib/share-card";
 import { ShareCardButton } from "@/components/ui/ShareCardButton";
 import { CopyTextButton } from "@/components/ui/CopyTextButton";
+import { RomanUrduAnswers } from "@/components/page/RomanUrduAnswers";
+import { RATE_ANSWERS } from "@/lib/roman-urdu";
 
 export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
   /*
@@ -200,6 +202,7 @@ function GoldRatePage() {
 
         <Calculator snapshot={snapshot} />
         <RateHistory initial={history} />
+        <RomanUrduAnswers answers={RATE_ANSWERS} />
       </main>
 
       <Footer />
