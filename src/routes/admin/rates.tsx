@@ -79,9 +79,11 @@ function RatesScreen() {
    * is not touched: it is a different metal with its own market, not a fraction
    * of the gold rate.
    *
-   * Pathor and the buying rate come off Piece by purity, at 23.65 and 20 parts
-   * of twenty-four. Jewellery does not: it is eleven twelfths of the Pathor
-   * rate, which is the shop's own rule and not a purity fraction of Piece.
+   * Pathor comes off Piece by purity, at 23.65 parts of twenty-four. Jewellery
+   * does not: it is eleven twelfths of the Pathor rate, which is the shop's own
+   * rule and not a purity fraction of Piece. The buying rate follows Pathor
+   * too, at 20 parts of twenty-four — the same basis the sell page's
+   * calculator values a seller's gold on.
    *
    * Each figure is rounded down to the hundred before the next one is taken
    * from it, so Jewellery divides the Pathor rate that is actually on the
@@ -101,7 +103,7 @@ function RatesScreen() {
       ...current,
       "23.65K": String(pathor),
       "22K": String(roundRateToHundred((pathor / 12) * 11)),
-      [BUY_KARAT]: String(roundRateToHundred((anchor * 20) / 24)),
+      [BUY_KARAT]: String(roundRateToHundred((pathor * 20) / 24)),
     }));
     setStatus(null);
   }
