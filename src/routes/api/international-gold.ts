@@ -76,7 +76,14 @@ async function quote(url: string): Promise<{ price: number; at: number }> {
 const TTL_MS = 5 * 60 * 1000;
 let cached: { at: number; value: InternationalGold } | null = null;
 
-async function read(): Promise<InternationalGold> {
+/**
+ * The current quote, from the short cache when it is still warm.
+ *
+ * Exported so the gold-rate page can read it directly while rendering on the
+ * server, rather than asking its own HTTP endpoint for it. The handler below
+ * still serves the browser, which refreshes the panel through the trading day.
+ */
+export async function readInternationalGold(): Promise<InternationalGold> {
   if (cached && Date.now() - cached.at < TTL_MS) return cached.value;
 
   const [gold, fx] = await Promise.all([quote(GOLD), quote(USD_PKR)]);
@@ -100,7 +107,7 @@ export const Route = createFileRoute("/api/international-gold")({
     handlers: {
       GET: async () => {
         try {
-          const value = await read();
+          const value = await readInternationalGold();
 
           return new Response(JSON.stringify(value), {
             headers: {

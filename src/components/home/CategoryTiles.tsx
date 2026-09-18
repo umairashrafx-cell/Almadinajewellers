@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
-import { categoryTree, fetchCategories } from "@/lib/catalogue";
+import { categoryTree, fetchCategories, type Category } from "@/lib/catalogue";
 import { categories as fallbackCategories } from "@/data/products";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/ui/Reveal";
@@ -15,11 +15,14 @@ import { CARD_SIZES, CARD_WIDTHS, responsiveImage } from "@/lib/images";
  * this is the front door, and the four kinds of necklace set are a decision to
  * make on the Necklace Set page rather than on the way to it.
  */
-export function CategoryTiles() {
+export function CategoryTiles({ initial }: { initial?: Category[] | undefined }) {
   const { data } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
     staleTime: 5 * 60 * 1000,
+    // From the homepage loader, so these six links are in the document rather
+    // than standing on the bundled fallback list until the query lands.
+    initialData: initial,
   });
 
   const tiles = categoryTree(

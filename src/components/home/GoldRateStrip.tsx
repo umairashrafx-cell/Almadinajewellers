@@ -11,6 +11,7 @@ import {
   formatRateStamp,
   goldOnly,
   type MetalRate,
+  type RateSnapshot,
 } from "@/lib/rates";
 
 /**
@@ -26,12 +27,19 @@ import {
  * page is that our prices are checkable. The karat labels are fixed, so they
  * stay, and only the numbers load in.
  */
-export function GoldRateStrip() {
+export function GoldRateStrip({ initial }: { initial?: RateSnapshot | undefined }) {
   const { data, isPending, isError } = useQuery({
     queryKey: ["gold-rates"],
     queryFn: fetchRateSnapshot,
     // Rates change once a day; no need to refetch on every mount.
     staleTime: 5 * 60 * 1000,
+    /*
+     * Optional, because /hallmarking renders this band too and loads nothing
+     * for it. Where a loader does supply the snapshot the figures are real
+     * from the first paint rather than skeletons — which is the behaviour the
+     * comment above asks for, now that it can be had without guessing.
+     */
+    initialData: initial,
   });
 
   const snapshot = data ?? FALLBACK_SNAPSHOT;

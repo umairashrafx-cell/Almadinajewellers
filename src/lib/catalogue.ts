@@ -378,7 +378,10 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
  * everyday — the most accessible gold, price low to high, for the visitor the
  *            bridal rail just priced out.
  */
-export async function fetchHomeRails(): Promise<{ bridal: Product[]; everyday: Product[] }> {
+/** The two homepage rails, named so the loader and the sections can share it. */
+export type HomeRails = { bridal: Product[]; everyday: Product[] };
+
+export async function fetchHomeRails(): Promise<HomeRails> {
   const [snapshot, bridalResult, everydayResult] = await Promise.all([
     safeRateSnapshot(),
     untypedDb

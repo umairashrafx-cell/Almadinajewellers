@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { fetchHomeRails } from "@/lib/catalogue";
+import { fetchHomeRails, type HomeRails } from "@/lib/catalogue";
 import { formatPKR } from "@/lib/site";
 import { ProductCard } from "@/components/product/ProductCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -8,11 +8,13 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Accessible price points: 2 / 3 / 4 column responsive grid. */
-export function EverydayGold() {
+export function EverydayGold({ initial }: { initial?: HomeRails | undefined }) {
   const { data, isPending } = useQuery({
     queryKey: ["home-rails"],
     queryFn: fetchHomeRails,
     staleTime: 5 * 60 * 1000,
+    // From the homepage loader, so the pieces are linked in the document.
+    initialData: initial,
   });
 
   const products = data?.everyday ?? [];

@@ -26,6 +26,7 @@ import {
   rateFor,
   type RateSnapshot,
 } from "@/lib/rates";
+import { loadInternationalGold } from "@/lib/international-gold";
 import { SITE, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { renderRateCard } from "@/lib/share-card";
@@ -33,13 +34,33 @@ import { ShareCardButton } from "@/components/ui/ShareCardButton";
 import { CopyTextButton } from "@/components/ui/CopyTextButton";
 
 export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
-  // Loaded server-side: this page is the recurring-traffic magnet in this
-  // market, so the rates have to be in the HTML, not fetched after paint.
-  loader: () => fetchRateSnapshot(),
+  /*
+   * Loaded server-side: this page is the recurring-traffic magnet in this
+   * market, so the rates have to be in the HTML, not fetched after paint.
+   *
+   * The history and the international figure are here for the same reason the
+   * board is. This page competes with national rate aggregators that publish a
+   * derived number for every city; what it has that they do not is the shop's
+   * own counter rate and a dated record of it. Both of those were fetched in
+   * the browser, so the page that reached a crawler was the half of it that
+   * looks like everybody else's.
+   *
+   * Neither is allowed to fail the page. The board is the part that matters,
+   * and it is already in hand by the time these settle.
+   */
+  loader: async () => {
+    const [snapshot, history, international] = await Promise.all([
+      fetchRateSnapshot(),
+      fetchRateHistory(10).catch(() => []),
+      loadInternationalGold(),
+    ]);
+    return { snapshot, history, international };
+  },
   head: ({ loaderData }) => {
-    const gold = loaderData ? goldOnly(loaderData) : [];
+    const snapshot = loaderData?.snapshot;
+    const gold = snapshot ? goldOnly(snapshot) : [];
     const k22 = gold.find((r) => r.karat === "22K");
-    const stamp = loaderData?.date ? formatRateDate(loaderData.date) : "today";
+    const stamp = snapshot?.date ? formatRateDate(snapshot.date) : "today";
 
     const title = `Gold Rate in Mandi Bahauddin — Piece, Pathor, Jewellery & Silver · ${SITE.name}`;
     const description = k22
@@ -63,7 +84,7 @@ export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
 });
 
 function GoldRatePage() {
-  const snapshot = Route.useLoaderData();
+  const { snapshot, history, international } = Route.useLoaderData();
   const gold = goldOnly(snapshot);
   const board = rateBoard(snapshot);
   // One message behind Copy and WhatsApp, so the two can never differ.
@@ -112,7 +133,7 @@ function GoldRatePage() {
           than lower down because the comparison is the argument: the board
           above is not a number the shop invented.
         */}
-        <InternationalGold />
+        <InternationalGold initial={international} />
 
         {/* Rate table */}
         <section className="section-y mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -178,7 +199,7 @@ function GoldRatePage() {
         </section>
 
         <Calculator snapshot={snapshot} />
-        <RateHistory />
+        <RateHistory initial={history} />
       </main>
 
       <Footer />
@@ -220,12 +241,20 @@ function Calculator({ snapshot }: { snapshot: RateSnapshot }) {
   );
 }
 
-/** Recent published days. Renders nothing until a second day exists. */
-function RateHistory() {
+/**
+ * Recent published days. Renders nothing until a second day exists.
+ *
+ * Seeded from the loader, so the dated record is in the server's HTML. It is
+ * the part of this page the rate aggregators cannot reproduce — they publish
+ * today derived from a national figure, not what this counter charged on each
+ * of the last ten mornings — and it was the part a crawler never saw.
+ */
+function RateHistory({ initial }: { initial: RateSnapshot[] }) {
   const { data } = useQuery({
     queryKey: ["gold-rate-history"],
     queryFn: () => fetchRateHistory(10),
     staleTime: 5 * 60 * 1000,
+    initialData: initial,
   });
 
   const history = (data ?? []).filter((s) => s.rates.length > 0);
