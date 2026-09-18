@@ -28,6 +28,7 @@ import {
   absoluteUrl,
   formatGrams,
   productShareImage,
+  productSchemaId,
   shareImageUrl,
   formatPKR,
   productEnquiryLink,
@@ -261,7 +262,12 @@ function ProductDetailPage() {
         </div>
 
         <div className="border-t border-gold/20">
-          <Reviews sku={product.sku} productName={product.name} initial={reviews} />
+          <Reviews
+            sku={product.sku}
+            productId={productSchemaId(product.slug)}
+            productName={product.name}
+            initial={reviews}
+          />
         </div>
 
         {related.length > 0 && (
@@ -604,6 +610,9 @@ function ProductSchema({ product, url }: { product: ProductDetail; url: string }
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
+    // Shared with the rating node the reviews section renders, so the two are
+    // read as one piece rather than two. See productSchemaId.
+    "@id": productSchemaId(product.slug),
     name: product.name,
     sku: product.sku,
     // Google will not show a product rich result without an image.

@@ -27,10 +27,17 @@ const usd = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-export function InternationalGold() {
-  const { data, isPending, isError } = useQuery({
+export function InternationalGold({ initial }: { initial?: Quote | null | undefined }) {
+  const { data, isError } = useQuery({
     queryKey: ["international-gold"],
     queryFn: fetchQuote,
+    /*
+     * Read on the server and handed down, so the comparison is in the document
+     * rather than appearing a moment later. Left undefined when the upstream
+     * was unavailable at render time, which puts the panel back on the query
+     * and its own loading state rather than asserting a price nobody checked.
+     */
+    initialData: initial ?? undefined,
     // The upstream moves through the trading day; asking more often than the
     // server caches would only be asking the same cache again.
     staleTime: 5 * 60 * 1000,
@@ -38,7 +45,10 @@ export function InternationalGold() {
     retry: 1,
   });
 
-  if (isError) return null;
+  // Gone only when there is nothing to show. A refetch that fails later should
+  // leave the figure the page was served with rather than removing the panel
+  // out from under someone reading it.
+  if (isError && !data) return null;
 
   return (
     <section className="border-y border-gold/20 bg-primary-deep">
@@ -54,7 +64,7 @@ export function InternationalGold() {
             </p>
           </div>
 
-          {isPending ? (
+          {!data ? (
             <div className="flex gap-10">
               <div className="h-16 w-40 animate-pulse rounded bg-ivory/10" />
               <div className="h-16 w-40 animate-pulse rounded bg-ivory/10" />

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
-import { fetchHomeRails } from "@/lib/catalogue";
+import { fetchHomeRails, type HomeRails } from "@/lib/catalogue";
 import { formatGrams, formatPKR } from "@/lib/site";
 import { listedWeightG } from "@/lib/pricing";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -10,11 +10,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { responsiveImage } from "@/lib/images";
 
 /** Horizontal-scroll carousel of flagship bridal sets, heaviest first. */
-export function SignatureBridal() {
+export function SignatureBridal({ initial }: { initial?: HomeRails | undefined }) {
   const { data, isPending } = useQuery({
     queryKey: ["home-rails"],
     queryFn: fetchHomeRails,
     staleTime: 5 * 60 * 1000,
+    // From the homepage loader, so the sets are linked in the document.
+    initialData: initial,
   });
 
   const sets = data?.bridal ?? [];

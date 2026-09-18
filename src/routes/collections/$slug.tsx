@@ -47,17 +47,31 @@ function titleFromSlug(slug: string) {
 
 export const Route = createFileRoute("/collections/$slug")({
   /*
-   * Only the category, not the products.
+   * The category and the pieces in it.
    *
-   * Enough to answer "does this collection exist?" before anything renders,
+   * The category answers "does this collection exist?" before anything renders,
    * which is what lets an invented URL 404 instead of returning 200 with a
-   * title invented from the slug. The pieces themselves stay in a client query,
-   * because filtering and sorting happen there anyway.
+   * title invented from the slug.
+   *
+   * The pieces are here because filtering and sorting happening on the client
+   * is not a reason to fetch them there. Loading them in a client query left
+   * the server's HTML with no product links and no ItemList at all, so the
+   * catalogue was reachable only through the sitemap and a collection looked
+   * like an empty page to anything that does not run JavaScript.
    */
   loader: async ({ params }) => {
-    const found = await fetchCategoryWithChildren(params.slug);
+    const [found, collection] = await Promise.all([
+      fetchCategoryWithChildren(params.slug),
+      /*
+       * Whether the collection exists is still `found`'s answer, because it is
+       * the one that returns null rather than throwing. This call only supplies
+       * the pieces, so a failure here costs the server-rendered grid and
+       * nothing else — the client query below then fetches them as it used to.
+       */
+      fetchCollection(params.slug).catch(() => null),
+    ]);
     if (!found) throw notFound();
-    return found;
+    return { ...found, collection };
   },
   head: ({ loaderData, params }) => {
     /*
@@ -91,24 +105,55 @@ export const Route = createFileRoute("/collections/$slug")({
 
 function CollectionPage() {
   const { slug } = Route.useParams();
+  // The loader proved this collection exists and gave us its real name, so the
+  // heading no longer has to be guessed from the slug while the list loads.
+  const { category: loaded, children: loadedChildren, parent, collection } = Route.useLoaderData();
 
+  /*
+   * The loader's pieces seed the query, so the grid is in the server's HTML.
+   *
+   * Filtering and sorting still happen here, on the client, against the same
+   * in-memory set as before — `initialData` only decides what the first render
+   * draws. Without it the first paint was eight skeletons, which is also all a
+   * crawler that does not run JavaScript ever saw, leaving every product page
+   * reachable only through the sitemap.
+   */
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["collection", slug],
     queryFn: () => fetchCollection(slug),
+    initialData: collection ?? undefined,
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
   const bounds = useMemo(() => boundsOf(products), [products]);
 
-  const [filters, setFilters] = useState<Filters>(() => emptyFilters(boundsOf([])));
+  /*
+   * Bounded from the loader's pieces, not from an empty list.
+   *
+   * `boundsOf([])` is a price range of 0 to 0, and `passes` rejects everything
+   * priced above it — so seeding the query without seeding these would render
+   * the grid empty on the server and fix nothing.
+   */
+  const [filters, setFilters] = useState<Filters>(() =>
+    emptyFilters(boundsOf(collection?.products ?? [])),
+  );
   const [sort, setSort] = useState<SortKey>("featured");
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Price/weight sliders can only be bounded once the data arrives.
+  /*
+   * Re-bound the sliders when the refetch actually changes the range.
+   *
+   * Keyed on the range rather than the array: prices are rebuilt from the day's
+   * gold rate, so the background refetch hands back a new array most of the
+   * time, and resetting on identity would clear a filter the visitor had just
+   * set.
+   */
+  const boundsKey = `${bounds.price[0]}:${bounds.price[1]}:${bounds.weight[0]}:${bounds.weight[1]}`;
   useEffect(() => {
-    if (products.length > 0) setFilters(emptyFilters(boundsOf(products)));
-  }, [products]);
+    if (products.length > 0) setFilters(emptyFilters(bounds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundsKey]);
 
   const results = useMemo(() => {
     const matched = products.filter((p) => passes(p, filters));
@@ -121,9 +166,6 @@ function CollectionPage() {
   }, [filters, sort]);
 
   const shown = results.slice(0, visible);
-  // The loader proved this collection exists and gave us its real name, so the
-  // heading no longer has to be guessed from the slug while the list loads.
-  const { category: loaded, children: loadedChildren, parent } = Route.useLoaderData();
   const category = data?.category ?? loaded;
   const heading = category.name;
   const blurb = CATEGORY_BLURBS[slug];
@@ -299,7 +341,13 @@ function CollectionPage() {
               </div>
 
               {/* Grid */}
-              {isError ? (
+              {/*
+                A failed refetch only takes the page over when it has left us
+                with nothing to show. The pieces now arrive with the document,
+                so a later network fault should not replace a grid the visitor
+                is already reading with an error about loading it.
+              */}
+              {isError && products.length === 0 ? (
                 <ErrorState message={(error as Error)?.message} />
               ) : isPending ? (
                 <GridSkeleton />
@@ -429,11 +477,13 @@ function ErrorState({ message }: { message?: string }) {
 /**
  * The pieces on this page, as an ordered list.
  *
- * Unlike the breadcrumb above it, this depends on data fetched in the browser,
- * so it appears on the second pass rather than in the server's HTML. That is
- * worth having anyway — it is what lets a collection appear as a list of named
- * products rather than one undifferentiated page — but it is why the page's
- * title, description and canonical are not built this way.
+ * This is what lets a collection appear as a list of named products rather than
+ * one undifferentiated page. It is built from the same data the grid draws, so
+ * now that the loader supplies that, the list ships in the server's HTML with
+ * the products it describes rather than appearing on a second pass.
+ *
+ * It lists the pieces currently shown, so a filtered view describes itself
+ * honestly rather than claiming the whole collection.
  */
 function CollectionItemList({ heading, products }: { heading: string; products: Product[] }) {
   if (products.length === 0) return null;
