@@ -92,11 +92,12 @@ export function productShareMessage(product: ProductDetail, listedPkr: number): 
  * the WhatsApp share on the rate page, so the two can never say different
  * things.
  *
- * Every figure is the board's headline rate per tola, stated once underneath
- * rather than beside each line. The figures, the date and the time all come
- * from the published snapshot; none is typed here. A metal the shop has not
- * published today is left out rather than shown as a placeholder, and so is
- * the time on the rare snapshot that carries only a date.
+ * Every figure is the board's headline rate per tola, written with an arrow
+ * from its name, with the unit stated once underneath rather than beside each
+ * line. The figures, the date and the time all come from the published
+ * snapshot; none is typed here. A metal the shop has not published today is
+ * left out rather than shown as a placeholder, and so is the time on the rare
+ * snapshot that carries only a date.
  *
  * The figures are bold in WhatsApp's own markup, a single asterisk either
  * side. Doubled asterisks are not WhatsApp formatting: they arrive as visible
@@ -123,10 +124,8 @@ export function rateShareMessage(snapshot: RateSnapshot): string {
     // "10:38 PM" in the message, as the shop writes it; the page keeps its own stamp.
     ...(stamp ? [`🕐 Updated: ${stamp.time.toUpperCase()} PKT`] : []),
     "",
-    ...rows.flatMap(([label, value]) => (value ? [`${label} : ${value}`] : [])),
+    ...rows.flatMap(([label, value]) => (value ? [`${label} → ${value}`] : [])),
     "",
     "Per Tola | PKR",
-    "",
-    "Prices may vary. Final rates are confirmed at the time of purchase.",
   ].join("\n");
 }
