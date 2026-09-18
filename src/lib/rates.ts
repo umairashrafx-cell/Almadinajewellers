@@ -326,16 +326,17 @@ export type SellPurity = (typeof SELL_PURITIES)[number];
 /**
  * The rate for gold of a given purity, valued at its actual purity.
  *
- * Where the shop publishes a rate for the purity itself — 24K, 22K and the
- * 20K buying rate — that figure is returned untouched, so 24K means the 24K
- * rate on the board and 20K lands exactly on the buying rate at the top of the
- * sell page. The shop's 22K is its own figure rather than 22/24 of 24K: it is
- * derived through pathor, and scaling would quote a seller more than the shop
- * sells 22K jewellery for.
+ * The board's own rows — 24K piece and 22K jewellery — are returned as
+ * published. Everything else, the 20K buying row included, is the **pathor**
+ * rate in proportion to its gold content, rounded to the nearest hundred per
+ * tola.
  *
- * Purities with no published rate, 21K and 18K, are the 24K rate in
- * proportion to their gold content, rounded to the nearest hundred per tola —
- * the arithmetic the admin itself uses to derive 20K from 24K.
+ * Pathor rather than the piece rate because that is the basis the shop's own
+ * jewellery price is built on: 23.65 x 22/24 lands on the published 22K to the
+ * hundred. The published 20K row is derived the same way in the admin, so this
+ * agrees with it; deriving here rather than reading it keeps one rule for every
+ * purity, and keeps this calculator and the rate page's quoting the same figure
+ * for the same purity.
  *
  * Nothing is returned for the fallback snapshot. Its figures exist so a rate
  * band never renders empty; an estimate built on them would quote a customer
@@ -347,13 +348,15 @@ export function buyingRateFor(
 ): MetalRate | undefined {
   if (!snapshot?.date) return undefined;
 
-  const published = rateFor(snapshot, purity);
-  if (published) return { ...published, karat: purity };
+  if (RATE_BOARD.some((row) => row.karat === purity)) {
+    const published = rateFor(snapshot, purity);
+    if (published) return { ...published, karat: purity };
+  }
 
-  const fine = rateFor(snapshot, "24K");
-  if (!fine) return undefined;
+  const base = rateFor(snapshot, "23.65K") ?? rateFor(snapshot, "24K");
+  if (!base) return undefined;
 
-  const perTola = roundRateToHundred((fine.perTola * Number.parseFloat(purity)) / 24);
+  const perTola = roundRateToHundred((base.perTola * Number.parseFloat(purity)) / 24);
   return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
 }
 
