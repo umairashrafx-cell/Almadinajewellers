@@ -7,7 +7,6 @@ import { TileIcon, shareTile } from "@/components/ui/ShareTile";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
   BUY_PURITIES,
-  RATE_BOARD,
   SELL_PURITIES,
   buyingRateFor,
   formatRateDate,
@@ -39,10 +38,6 @@ const segment =
   "grid h-11 cursor-pointer select-none place-items-center rounded-[2px] border border-gold/55 bg-white text-sm font-semibold tracking-wide text-ink transition-colors hover:border-gold hover:bg-champagne/30 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-ivory peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold";
 
 const money = (n: number) => n.toLocaleString("en-US");
-
-/** The board's name for a purity it lists (Piece, Pathor, Jewellery). */
-const boardName = (karat: string): string | undefined =>
-  RATE_BOARD.find((row) => row.karat === karat)?.name;
 
 /**
  * Which side of the counter the estimate is for.
@@ -128,8 +123,7 @@ export function GoldValueCalculator({
   const rate = selling
     ? buyingRateFor(snapshot, purity as SellPurity)
     : sellingRateFor(snapshot, purity as BuyPurity);
-  const name = selling ? undefined : boardName(purity);
-  const purityName = name ? `${name} (${purity})` : purity;
+  const purityName = purity;
   const weight = Number.parseFloat(amount);
   const hasWeight = Number.isFinite(weight) && weight > 0;
   const result = hasWeight && rate ? metalValue(weight, unit, rate) : null;
@@ -201,7 +195,7 @@ export function GoldValueCalculator({
               ))}
             </div>
           ) : (
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-5 gap-2">
               {BUY_PURITIES.map((p) => (
                 <label key={p} className="relative">
                   <input
@@ -212,12 +206,7 @@ export function GoldValueCalculator({
                     onChange={() => setPurity(p)}
                     className="peer sr-only"
                   />
-                  <span className={cn(segment, "h-14 content-center gap-0.5 leading-tight")}>
-                    <span className="nums">{boardName(p) ?? p}</span>
-                    <span className="nums text-xs font-medium opacity-80">
-                      {boardName(p) ? p : "Gold"}
-                    </span>
-                  </span>
+                  <span className={cn(segment, "nums")}>{p}</span>
                 </label>
               ))}
             </div>
@@ -225,7 +214,7 @@ export function GoldValueCalculator({
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
             {selling
               ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
-              : "Piece, Pathor and Jewellery are today's rates on the board above. 21K, 20K and 18K are the 24K rate in proportion to their gold content. This is the metal value only — making charges and any stones are additional."}
+              : "Every purity is priced from today's pathor rate in proportion to its gold content, the way the shop's own 22K rate is reached. This is the metal value only — making charges and any stones are additional."}
           </p>
         </fieldset>
 

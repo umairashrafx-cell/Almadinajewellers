@@ -357,22 +357,24 @@ export function buyingRateFor(
   return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
 }
 
-/**
- * The purities a buyer can pick in the gold rate page's calculator: the
- * board's three gold rows, then the lower purities older and lighter
- * jewellery is made in.
- */
-export const BUY_PURITIES = ["24K", "23.65K", "22K", "21K", "20K", "18K"] as const;
+/** The purities a buyer can price in the gold rate page's calculator. */
+export const BUY_PURITIES = ["24K", "22K", "21K", "20K", "18K"] as const;
 export type BuyPurity = (typeof BUY_PURITIES)[number];
 
 /**
- * The rate a buyer pays for gold of a given purity.
+ * The rate a buyer pays for gold of a given purity, worked from pathor.
  *
- * The board's own rows (24K piece, 23.65K pathor, 22K jewellery) are returned
- * exactly as published. 21K, 20K and 18K have no selling rate of their own, so
- * they are the 24K rate in proportion to their gold content, rounded to the
- * nearest hundred per tola: the same arithmetic buyingRateFor uses. The
- * published 20K row is deliberately not used here: that is the buying rate.
+ * The shop prices jewellery off its pathor rate rather than off the 24K piece
+ * rate: pathor is taken as the whole, and every purity is that figure in
+ * proportion to its karat, rounded to the nearest hundred per tola. That is
+ * not an assumption made here — it is how the board's own 22K is reached, and
+ * 23.65 x 22/24 lands on the published jewellery rate to the hundred. Pricing
+ * 21K, 20K and 18K off the piece rate instead would quote a customer more than
+ * the shop's own 22K implies.
+ *
+ * So 24K here is the pathor figure, and the 23.65K row is not offered
+ * separately: it would be the same number under a second name. The piece rate
+ * stays on the board above, where it is what bullion costs.
  *
  * Nothing is returned for the fallback snapshot, for the same reason as
  * buyingRateFor.
@@ -383,12 +385,11 @@ export function sellingRateFor(
 ): MetalRate | undefined {
   if (!snapshot?.date) return undefined;
 
-  if (RATE_BOARD.some((row) => row.karat === purity)) return rateFor(snapshot, purity);
+  // Pathor is the basis; the piece rate stands in only if pathor is unpublished.
+  const base = rateFor(snapshot, "23.65K") ?? rateFor(snapshot, "24K");
+  if (!base) return undefined;
 
-  const fine = rateFor(snapshot, "24K");
-  if (!fine) return undefined;
-
-  const perTola = roundRateToHundred((fine.perTola * Number.parseFloat(purity)) / 24);
+  const perTola = roundRateToHundred((base.perTola * Number.parseFloat(purity)) / 24);
   return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
 }
 
