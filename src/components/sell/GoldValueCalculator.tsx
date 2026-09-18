@@ -195,7 +195,7 @@ export function GoldValueCalculator({
               ))}
             </div>
           ) : (
-            <div className="mt-3 grid grid-cols-5 gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               {BUY_PURITIES.map((p) => (
                 <label key={p} className="relative">
                   <input
@@ -214,7 +214,7 @@ export function GoldValueCalculator({
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
             {selling
               ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
-              : "Every purity is priced from today's pathor rate in proportion to its gold content, the way the shop's own 22K rate is reached. This is the metal value only — making charges and any stones are additional."}
+              : "24K, 23.65K and 22K are today's rates from the board above. 21K, 20K and 18K are worked from the pathor rate in proportion to their gold content. This is the metal value only — making charges and any stones are additional."}
           </p>
         </fieldset>
 
