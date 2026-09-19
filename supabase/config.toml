@@ -1,4 +1,11 @@
-project_id = "eggxtwvwtuguwjusmuyb"
+# The Supabase project this repo belongs to: "Al-Madina-Jewellers".
+#
+# This read eggxtwvwtuguwjusmuyb until now, which is a different project left
+# over from the original scaffold. It went unnoticed because supabase/.temp/
+# holds a link to the real ref, and .temp wins for anyone who has already run
+# `supabase link` — so every existing machine worked while the file was wrong.
+# A fresh clone has no .temp, and would have linked to the wrong project.
+project_id = "uldsqxymxjwhifrmonis"
 
 # The notifier is called by a database trigger, not by a signed-in user.
 #
