@@ -605,6 +605,29 @@ function Details({ product }: { product: ProductDetail }) {
   );
 }
 
+/**
+ * The morning after the rate was struck, which is when this price stops holding.
+ *
+ * priceValidUntil is the date after which the offer no longer stands, not the
+ * date it was made. Stamping it with the rate's own day would publish an offer
+ * that expires the moment it is read — and on any morning the shop has not yet
+ * posted a rate, a date already in the past, which reads as a stale price
+ * rather than a current one.
+ *
+ * A price here is rebuilt from the day's rate, so it holds until the next rate
+ * replaces it: the following morning. That is the honest upper bound.
+ *
+ * Worked in UTC from the date string alone, never the local clock, so the
+ * server and the browser produce the same answer and hydration does not
+ * mismatch — the same rule SITE.origin exists for.
+ */
+function priceHoldsUntil(rateDate: string): string | undefined {
+  const day = new Date(`${rateDate}T00:00:00Z`);
+  if (Number.isNaN(day.getTime())) return undefined;
+  day.setUTCDate(day.getUTCDate() + 1);
+  return day.toISOString().slice(0, 10);
+}
+
 /** JSON-LD Product schema. Rendered in the component so it is server-rendered. */
 function ProductSchema({
   product,
@@ -654,11 +677,13 @@ function ProductSchema({
       /*
        * Prices here are rebuilt from the day's gold rate, so an offer with no
        * expiry is a price that claims to stand indefinitely and stops being
-       * believed. This says how long it actually holds: the rate day it was
-       * struck at. Omitted when the rate query failed, because a guessed date
-       * is worse than none.
+       * believed. This says how long it actually holds. Omitted when the rate
+       * query failed, because a guessed date is worse than none.
        */
-      ...(rateDate ? { priceValidUntil: rateDate } : {}),
+      ...(() => {
+        const until = rateDate ? priceHoldsUntil(rateDate) : undefined;
+        return until ? { priceValidUntil: until } : {};
+      })(),
       /*
        * "Free of charge across Pakistan, on every order, regardless of value"
        * — /policies. Stated here so the shipping cost is known before the
