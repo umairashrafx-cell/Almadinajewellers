@@ -1,1 +1,15 @@
 project_id = "eggxtwvwtuguwjusmuyb"
+
+# The notifier is called by a database trigger, not by a signed-in user.
+#
+# pg_net posts from notify_new_enquiry() with the shared secret in an
+# x-notify-secret header and no Authorization header, because a trigger has no
+# JWT to send and no business minting one. With verify_jwt left at its default
+# the Supabase gateway rejects that call with 401 before the function runs, the
+# trigger's exception handler swallows it, and notifications silently never
+# arrive — which is a hard failure to diagnose from the outside.
+#
+# The function is not left unauthenticated: it checks NOTIFY_SECRET itself and
+# answers 403 when the header does not match. Set that secret.
+[functions.notify-enquiry]
+verify_jwt = false
