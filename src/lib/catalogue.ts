@@ -539,6 +539,16 @@ export type ProductPage = {
   product: ProductDetail;
   categoryName: string;
   related: Product[];
+  /**
+   * The date the rate this page's prices were struck at was published.
+   *
+   * Carried out of the loader rather than read from the clock in the component,
+   * because the Product schema's priceValidUntil has to be identical in the
+   * server's HTML and after hydration — the same reason SITE.origin exists.
+   * Absent when the rate query failed and stored prices were used, in which
+   * case the schema omits the field rather than guessing a date.
+   */
+  rateDate?: string | undefined;
 };
 
 /**
@@ -655,6 +665,8 @@ export async function fetchProductPage(slug: string): Promise<ProductPage | null
     related: (relatedResult.data ?? []).map((r) =>
       mapProduct(r as ProductRow, categoryName, snapshot),
     ),
+    // exactOptionalPropertyTypes: omit rather than set undefined.
+    ...(snapshot?.date ? { rateDate: snapshot.date } : {}),
   };
 }
 
