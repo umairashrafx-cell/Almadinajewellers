@@ -4,6 +4,8 @@ import { BadgeCheck, Receipt, RefreshCcw, Scale } from "lucide-react";
 import { GoldRateStrip } from "@/components/home/GoldRateStrip";
 import { CtaBand } from "@/components/page/CtaBand";
 import { FaqSection } from "@/components/page/Faq";
+import { RomanUrduAnswers } from "@/components/page/RomanUrduAnswers";
+import { PURITY_ANSWERS } from "@/lib/roman-urdu";
 import { PageHero } from "@/components/page/PageHero";
 import { PageShell } from "@/components/page/PageShell";
 import { StepList, type StepItem } from "@/components/page/StepList";
@@ -187,6 +189,8 @@ function HallmarkingPage() {
       <GoldRateStrip />
 
       <FaqSection topics={[faqTopic("purity"), faqTopic("pricing")]} name="hallmarking-faq" />
+
+      <RomanUrduAnswers answers={PURITY_ANSWERS} />
 
       <CtaBand
         eyebrow="See it for yourself"

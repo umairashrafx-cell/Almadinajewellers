@@ -51,6 +51,8 @@ import {
   rateFor,
   type RateSnapshot,
 } from "@/lib/rates";
+import { RomanUrduAnswers } from "@/components/page/RomanUrduAnswers";
+import { SELL_ANSWERS } from "@/lib/roman-urdu";
 import { SITE, STORES, directionsUrl, placeUrl, reviewUrl, whatsappLink } from "@/lib/site";
 import { STORE_SCHEMA_ID, storeSchemaNode } from "@/lib/store-schema";
 
@@ -861,6 +863,8 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
             </p>
           </div>
         </section>
+
+        <RomanUrduAnswers answers={SELL_ANSWERS} />
       </main>
 
       <Footer />
