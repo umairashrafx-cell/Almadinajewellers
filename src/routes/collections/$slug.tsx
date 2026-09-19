@@ -77,9 +77,27 @@ export const Route = createFileRoute("/collections/$slug")({
    * like an empty page to anything that does not run JavaScript.
    */
   loader: async ({ params }) => {
+    /*
+     * Redirect only once the corrected collection is actually there.
+     *
+     * The rename happens in the database, and this file deploys on its own
+     * schedule — so for as long as the migration has not run, the old slug is
+     * still the real one and the new slug is nothing. Redirecting on sight
+     * would turn a working page into a permanent redirect to a 404, which is
+     * worse than the typo it is fixing and is the kind of mistake a search
+     * engine remembers.
+     *
+     * Checking costs one query, and only on a request for the old address.
+     * Once the migration has run this starts redirecting by itself, and if it
+     * is ever rolled back the page comes back rather than staying broken.
+     */
     const corrected = RENAMED_COLLECTIONS[params.slug];
     if (corrected) {
-      throw redirect({ to: "/collections/$slug", params: { slug: corrected }, statusCode: 301 });
+      // A database fault here should leave the old page working, not error it.
+      const target = await fetchCategoryWithChildren(corrected).catch(() => null);
+      if (target) {
+        throw redirect({ to: "/collections/$slug", params: { slug: corrected }, statusCode: 301 });
+      }
     }
 
     const [found, collection] = await Promise.all([
