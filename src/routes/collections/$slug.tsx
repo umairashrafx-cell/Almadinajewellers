@@ -87,10 +87,36 @@ export const Route = createFileRoute("/collections/$slug")({
     const name = loaderData.category.name;
     const title = `${name} — Al-Madina Jewellers`;
     const description = `Browse ${name.toLowerCase()} at Al-Madina Jewellers. Hallmarked gold, certified diamond and 925 silver with weight and stone detail on every piece. Enquire on WhatsApp.`;
+
+    /*
+     * An empty collection is a good page to arrive at and a bad page to index.
+     *
+     * sitemap.xml already leaves these out — a collection joins it the morning
+     * something is filed under it — but the sitemap is not the only way in.
+     * These pages are in the header navigation, so they are crawled anyway, and
+     * seven near-empty pages on a site with fourteen products is most of what a
+     * crawler sees. This applies the sitemap's own test to the robots tag so
+     * the two agree.
+     *
+     * `collection` is null when the query failed rather than when the
+     * collection is empty, and those must not be treated alike: a database
+     * hiccup would otherwise deindex a stocked collection. So this asks for a
+     * list that is present and empty, and says nothing when there is no answer.
+     *
+     * The parent case is already handled — fetchCollection rolls up the
+     * children, so Necklace Set counts the pieces in Chokar, Mala, Short and
+     * Ghani rather than the nothing filed against the parent itself.
+     */
+    const known = loaderData.collection?.products;
+    const empty = known != null && known.length === 0;
+
     return {
       meta: [
         { title },
         { name: "description", content: description },
+        // follow, not nofollow: the pieces linked from a collection that fills
+        // up later should still be found through it.
+        ...(empty ? [{ name: "robots", content: "noindex, follow" }] : []),
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
