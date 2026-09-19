@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
 
@@ -45,6 +45,23 @@ function titleFromSlug(slug: string) {
     .join(" ");
 }
 
+/**
+ * Collections whose slug has been corrected, and where the old address goes.
+ *
+ * 301 rather than 404: the old URL may be in a customer's WhatsApp history or
+ * someone's bookmarks, and a permanent redirect is also what tells a search
+ * engine to carry the old address's standing over to the new one rather than
+ * treating it as a new page. Kept as a map because the next renamed collection
+ * belongs on the line below rather than in another branch.
+ *
+ * Delete an entry only once the old URL has stopped being requested — this is
+ * cheap to keep and expensive to remove early.
+ */
+const RENAMED_COLLECTIONS: Record<string, string> = {
+  // Transposed letters. See the children_rings_slug migration.
+  "childern-rings": "children-rings",
+};
+
 export const Route = createFileRoute("/collections/$slug")({
   /*
    * The category and the pieces in it.
@@ -60,6 +77,11 @@ export const Route = createFileRoute("/collections/$slug")({
    * like an empty page to anything that does not run JavaScript.
    */
   loader: async ({ params }) => {
+    const corrected = RENAMED_COLLECTIONS[params.slug];
+    if (corrected) {
+      throw redirect({ to: "/collections/$slug", params: { slug: corrected }, statusCode: 301 });
+    }
+
     const [found, collection] = await Promise.all([
       fetchCategoryWithChildren(params.slug),
       /*
