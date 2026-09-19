@@ -110,7 +110,7 @@ export const Route = createFileRoute("/products/$slug")({
 });
 
 function ProductDetailPage() {
-  const { product, categoryName, related, reviews } = Route.useLoaderData();
+  const { product, categoryName, related, reviews, rateDate } = Route.useLoaderData();
   const { has, toggle } = useWishlist();
 
   const url = productUrl(product.slug);
@@ -123,7 +123,7 @@ function ProductDetailPage() {
       <AnnouncementBar />
       <Header />
 
-      <ProductSchema product={product} url={url} />
+      <ProductSchema product={product} url={url} rateDate={rateDate} />
       <BreadcrumbSchema
         trail={[
           { name: categoryName, path: `/collections/${product.categorySlug}` },
@@ -605,8 +605,39 @@ function Details({ product }: { product: ProductDetail }) {
   );
 }
 
+/**
+ * The morning after the rate was struck, which is when this price stops holding.
+ *
+ * priceValidUntil is the date after which the offer no longer stands, not the
+ * date it was made. Stamping it with the rate's own day would publish an offer
+ * that expires the moment it is read — and on any morning the shop has not yet
+ * posted a rate, a date already in the past, which reads as a stale price
+ * rather than a current one.
+ *
+ * A price here is rebuilt from the day's rate, so it holds until the next rate
+ * replaces it: the following morning. That is the honest upper bound.
+ *
+ * Worked in UTC from the date string alone, never the local clock, so the
+ * server and the browser produce the same answer and hydration does not
+ * mismatch — the same rule SITE.origin exists for.
+ */
+function priceHoldsUntil(rateDate: string): string | undefined {
+  const day = new Date(`${rateDate}T00:00:00Z`);
+  if (Number.isNaN(day.getTime())) return undefined;
+  day.setUTCDate(day.getUTCDate() + 1);
+  return day.toISOString().slice(0, 10);
+}
+
 /** JSON-LD Product schema. Rendered in the component so it is server-rendered. */
-function ProductSchema({ product, url }: { product: ProductDetail; url: string }) {
+function ProductSchema({
+  product,
+  url,
+  rateDate,
+}: {
+  product: ProductDetail;
+  url: string;
+  rateDate?: string | undefined;
+}) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -629,8 +660,47 @@ function ProductSchema({ product, url }: { product: ProductDetail; url: string }
       priceCurrency: "PKR",
       price: product.salePricePkr ?? product.pricePkr,
       availability: "https://schema.org/InStock",
-      // Catalogue-and-enquiry: the sale is completed in store or over WhatsApp.
-      availableDeliveryMethod: "https://schema.org/OnSitePickup",
+      /*
+       * Both, because the shop does both.
+       *
+       * This said OnSitePickup alone, which told a shopping engine the piece
+       * could only be collected in Sarafa Market — while the announcement bar,
+       * /delivery-payment and /policies all promise free insured delivery
+       * anywhere in Pakistan. The markup contradicted the page it sat on, and
+       * the out-of-town buyer the delivery service exists for was the one it
+       * turned away.
+       */
+      availableDeliveryMethod: [
+        "https://schema.org/OnSitePickup",
+        "https://schema.org/ParcelService",
+      ],
+      /*
+       * Prices here are rebuilt from the day's gold rate, so an offer with no
+       * expiry is a price that claims to stand indefinitely and stops being
+       * believed. This says how long it actually holds. Omitted when the rate
+       * query failed, because a guessed date is worse than none.
+       */
+      ...(() => {
+        const until = rateDate ? priceHoldsUntil(rateDate) : undefined;
+        return until ? { priceValidUntil: until } : {};
+      })(),
+      /*
+       * "Free of charge across Pakistan, on every order, regardless of value"
+       * — /policies. Stated here so the shipping cost is known before the
+       * customer has to ask, which is what the promise is for.
+       */
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: { "@type": "MonetaryAmount", value: 0, currency: "PKR" },
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: "PK" },
+      },
+      /*
+       * hasMerchantReturnPolicy is deliberately absent. The shop's buy-back is
+       * a purchase at the day's 20K rate, not a refund, and payment is settled
+       * on delivery rather than up front — so every returnPolicyCategory in the
+       * vocabulary would describe terms this shop does not offer. Adding one to
+       * satisfy a rich-result checklist would be a false claim.
+       */
       seller: { "@type": "JewelryStore", name: SITE.name, telephone: SITE.phones[0] },
     },
   };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, ChevronRight } from "lucide-react";
 
@@ -45,6 +45,23 @@ function titleFromSlug(slug: string) {
     .join(" ");
 }
 
+/**
+ * Collections whose slug has been corrected, and where the old address goes.
+ *
+ * 301 rather than 404: the old URL may be in a customer's WhatsApp history or
+ * someone's bookmarks, and a permanent redirect is also what tells a search
+ * engine to carry the old address's standing over to the new one rather than
+ * treating it as a new page. Kept as a map because the next renamed collection
+ * belongs on the line below rather than in another branch.
+ *
+ * Delete an entry only once the old URL has stopped being requested — this is
+ * cheap to keep and expensive to remove early.
+ */
+const RENAMED_COLLECTIONS: Record<string, string> = {
+  // Transposed letters. See the children_rings_slug migration.
+  "childern-rings": "children-rings",
+};
+
 export const Route = createFileRoute("/collections/$slug")({
   /*
    * The category and the pieces in it.
@@ -60,6 +77,29 @@ export const Route = createFileRoute("/collections/$slug")({
    * like an empty page to anything that does not run JavaScript.
    */
   loader: async ({ params }) => {
+    /*
+     * Redirect only once the corrected collection is actually there.
+     *
+     * The rename happens in the database, and this file deploys on its own
+     * schedule — so for as long as the migration has not run, the old slug is
+     * still the real one and the new slug is nothing. Redirecting on sight
+     * would turn a working page into a permanent redirect to a 404, which is
+     * worse than the typo it is fixing and is the kind of mistake a search
+     * engine remembers.
+     *
+     * Checking costs one query, and only on a request for the old address.
+     * Once the migration has run this starts redirecting by itself, and if it
+     * is ever rolled back the page comes back rather than staying broken.
+     */
+    const corrected = RENAMED_COLLECTIONS[params.slug];
+    if (corrected) {
+      // A database fault here should leave the old page working, not error it.
+      const target = await fetchCategoryWithChildren(corrected).catch(() => null);
+      if (target) {
+        throw redirect({ to: "/collections/$slug", params: { slug: corrected }, statusCode: 301 });
+      }
+    }
+
     const [found, collection] = await Promise.all([
       fetchCategoryWithChildren(params.slug),
       /*
@@ -87,10 +127,36 @@ export const Route = createFileRoute("/collections/$slug")({
     const name = loaderData.category.name;
     const title = `${name} — Al-Madina Jewellers`;
     const description = `Browse ${name.toLowerCase()} at Al-Madina Jewellers. Hallmarked gold, certified diamond and 925 silver with weight and stone detail on every piece. Enquire on WhatsApp.`;
+
+    /*
+     * An empty collection is a good page to arrive at and a bad page to index.
+     *
+     * sitemap.xml already leaves these out — a collection joins it the morning
+     * something is filed under it — but the sitemap is not the only way in.
+     * These pages are in the header navigation, so they are crawled anyway, and
+     * seven near-empty pages on a site with fourteen products is most of what a
+     * crawler sees. This applies the sitemap's own test to the robots tag so
+     * the two agree.
+     *
+     * `collection` is null when the query failed rather than when the
+     * collection is empty, and those must not be treated alike: a database
+     * hiccup would otherwise deindex a stocked collection. So this asks for a
+     * list that is present and empty, and says nothing when there is no answer.
+     *
+     * The parent case is already handled — fetchCollection rolls up the
+     * children, so Necklace Set counts the pieces in Chokar, Mala, Short and
+     * Ghani rather than the nothing filed against the parent itself.
+     */
+    const known = loaderData.collection?.products;
+    const empty = known != null && known.length === 0;
+
     return {
       meta: [
         { title },
         { name: "description", content: description },
+        // follow, not nofollow: the pieces linked from a collection that fills
+        // up later should still be found through it.
+        ...(empty ? [{ name: "robots", content: "noindex, follow" }] : []),
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
