@@ -12,9 +12,7 @@ import {
   formatRateDate,
   metalValue,
   sellingRateFor,
-  type BuyPurity,
   type RateSnapshot,
-  type SellPurity,
   type WeightUnit,
 } from "@/lib/rates";
 import { renderEstimateCard } from "@/lib/share-card";
@@ -26,6 +24,26 @@ const UNITS: { value: WeightUnit; label: string }[] = [
   { value: "g", label: "Grams" },
   { value: "tola", label: "Tola" },
 ];
+
+/* A radio value rather than a real karat, so it can never be priced by mistake. */
+const CUSTOM_PURITY = "custom";
+
+/**
+ * Turn the contents of the Custom purity box into the same label the rate
+ * helpers consume. A number input keeps the UI simple, while this still
+ * protects a share link or a future caller from asking for 25K gold.
+ */
+function customKarat(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!/^\d+(?:\.\d+)?$/.test(trimmed)) return undefined;
+
+  const karat = Number.parseFloat(trimmed);
+  // The range the field itself advertises, so a shared link cannot smuggle in a
+  // purity the box would have refused.
+  if (!Number.isFinite(karat) || karat < 0.1 || karat > 24) return undefined;
+
+  return `${karat}K`;
+}
 
 const label = "text-xs font-semibold uppercase tracking-[0.2em] text-ink/80";
 
@@ -92,7 +110,8 @@ export function GoldValueCalculator({
   // Selling: 20K first, what jewellery is bought at, so the estimate a seller
   // sees before touching anything matches the buying rate above it. Buying:
   // 22K, jewellery, the row most customers come for.
-  const [purity, setPurity] = useState<string>(selling ? "20K" : "22K");
+  const [selectedPurity, setSelectedPurity] = useState<string>(selling ? "20K" : "22K");
+  const [customPurity, setCustomPurity] = useState("");
   const id = useId();
 
   // A shared link fills the calculator in. Read after hydration, so the server
@@ -104,7 +123,15 @@ export function GoldValueCalculator({
     const sharedPurity = params.get("purity");
     const sharedUnit = params.get("unit");
     const sharedWeight = Number.parseFloat(params.get("weight") ?? "");
-    if (sharedPurity && purities.includes(sharedPurity)) setPurity(sharedPurity);
+    if (sharedPurity && purities.includes(sharedPurity)) {
+      setSelectedPurity(sharedPurity);
+    } else if (sharedPurity) {
+      const sharedCustom = customKarat(sharedPurity.replace(/k$/i, ""));
+      if (sharedCustom) {
+        setSelectedPurity(CUSTOM_PURITY);
+        setCustomPurity(sharedCustom.slice(0, -1));
+      }
+    }
     if (sharedUnit === "g" || sharedUnit === "tola") setUnit(sharedUnit);
     if (Number.isFinite(sharedWeight) && sharedWeight > 0 && sharedWeight < 100000) {
       setAmount(String(sharedWeight));
@@ -120,10 +147,17 @@ export function GoldValueCalculator({
     return undefined;
   }, [selling]);
 
-  const rate = selling
-    ? buyingRateFor(snapshot, purity as SellPurity)
-    : sellingRateFor(snapshot, purity as BuyPurity);
-  const purityName = purity;
+  const usingCustomPurity = selectedPurity === CUSTOM_PURITY;
+  const selectedCustomKarat = customKarat(customPurity);
+  const purity = usingCustomPurity ? selectedCustomKarat : selectedPurity;
+  const purityName = purity ?? selectedPurity;
+  const customPurityInvalid =
+    usingCustomPurity && customPurity.trim().length > 0 && !selectedCustomKarat;
+  const rate = purity
+    ? selling
+      ? buyingRateFor(snapshot, purity)
+      : sellingRateFor(snapshot, purity)
+    : undefined;
   const weight = Number.parseFloat(amount);
   const hasWeight = Number.isFinite(weight) && weight > 0;
   const result = hasWeight && rate ? metalValue(weight, unit, rate) : null;
@@ -137,7 +171,7 @@ export function GoldValueCalculator({
     selling
       ? `Assalam-o-Alaikum ${SITE.name}. I would like to ask about selling my gold.`
       : `Assalam-o-Alaikum ${SITE.name}. I would like to ask about buying gold.`,
-    `Purity: ${purityName}`,
+    purity ? `Purity: ${purity}` : null,
     hasWeight ? `Weight: ${weightText} ${unitWord}` : null,
     result ? `Estimated value: ${formatPKR(result.value)}` : null,
     selling
@@ -147,7 +181,7 @@ export function GoldValueCalculator({
     .filter(Boolean)
     .join("\n");
 
-  const shareUrl = calculatorLink(side, purity, hasWeight ? String(weight) : amount, unit);
+  const shareUrl = calculatorLink(side, purityName, hasWeight ? String(weight) : amount, unit);
   // The sum, written out the same way under the figure and on the picture.
   const workings = rate
     ? `${weightText} ${unit === "g" ? "g" : "tola"} × Rs. ${money(
@@ -178,43 +212,90 @@ export function GoldValueCalculator({
       >
         <fieldset>
           <legend className={label}>Purity</legend>
-          {selling ? (
-            <div className="mt-3 grid grid-cols-5 gap-2">
-              {SELL_PURITIES.map((p) => (
-                <label key={p} className="relative">
-                  <input
-                    type="radio"
-                    name={`${id}-purity`}
-                    value={p}
-                    checked={purity === p}
-                    onChange={() => setPurity(p)}
-                    className="peer sr-only"
-                  />
-                  <span className={segment}>{p}</span>
-                </label>
-              ))}
+          <div className={cn("mt-3 grid gap-2", selling ? "grid-cols-5" : "grid-cols-3")}>
+            {(selling ? SELL_PURITIES : BUY_PURITIES).map((p) => (
+              <label key={p} className="relative">
+                <input
+                  type="radio"
+                  name={`${id}-purity`}
+                  value={p}
+                  checked={selectedPurity === p}
+                  onChange={() => setSelectedPurity(p)}
+                  className="peer sr-only"
+                />
+                <span className={cn(segment, "nums")}>{p}</span>
+              </label>
+            ))}
+          </div>
+
+          {/*
+            The same columns as the presets, so Custom lines up as one more
+            button in the set. It takes two of the five narrow sell-side
+            columns, where one is too narrow for the word on a phone.
+          */}
+          <div className={cn("mt-2 grid gap-2", selling ? "grid-cols-5" : "grid-cols-3")}>
+            <label className={cn("relative", selling && "col-span-2")}>
+              <input
+                type="radio"
+                name={`${id}-purity`}
+                value={CUSTOM_PURITY}
+                checked={usingCustomPurity}
+                onChange={() => setSelectedPurity(CUSTOM_PURITY)}
+                className="peer sr-only"
+              />
+              <span className={segment}>Custom</span>
+            </label>
+
+            <div className={cn("relative", selling ? "col-span-3" : "col-span-2")}>
+              <label htmlFor={`${id}-custom-purity`} className="sr-only">
+                Custom purity in karats
+              </label>
+              {/*
+                Typing here picks Custom; merely focusing does not. Someone
+                tabbing through to Weight passes this box, and that should not
+                quietly drop the purity they chose above.
+              */}
+              <input
+                id={`${id}-custom-purity`}
+                type="number"
+                inputMode="decimal"
+                min="0.1"
+                max="24"
+                step="0.01"
+                value={customPurity}
+                onChange={(event) => {
+                  setCustomPurity(event.target.value);
+                  setSelectedPurity(CUSTOM_PURITY);
+                }}
+                aria-invalid={customPurityInvalid || undefined}
+                aria-describedby={`${id}-custom-purity-help`}
+                placeholder="Karat, e.g. 19.5"
+                className={cn(
+                  "nums h-11 w-full rounded-[2px] border bg-white px-4 pr-12 text-sm text-ink transition-colors placeholder:text-ink/45 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
+                  usingCustomPurity ? "border-primary" : "border-gold/55",
+                  customPurityInvalid && "border-destructive",
+                )}
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-sm font-semibold text-ink/70">
+                K
+              </span>
             </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {BUY_PURITIES.map((p) => (
-                <label key={p} className="relative">
-                  <input
-                    type="radio"
-                    name={`${id}-purity`}
-                    value={p}
-                    checked={purity === p}
-                    onChange={() => setPurity(p)}
-                    className="peer sr-only"
-                  />
-                  <span className={cn(segment, "nums")}>{p}</span>
-                </label>
-              ))}
-            </div>
-          )}
+          </div>
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
             {selling
               ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
               : "24K, 23.65K and 22K are today's rates from the board above. 21K, 20K and 18K are worked from the pathor rate in proportion to their gold content. This is the metal value only — making charges and any stones are additional."}
+          </p>
+          <p
+            id={`${id}-custom-purity-help`}
+            className={cn(
+              "mt-2 text-[13px] leading-relaxed",
+              customPurityInvalid ? "text-destructive" : "text-ink/60",
+            )}
+          >
+            {customPurityInvalid
+              ? "Enter a purity from 0.1K to 24K."
+              : "Need a different hallmark? Choose Custom and enter any purity from 0.1K to 24K. Its estimate is worked from today’s Pathor rate."}
           </p>
         </fieldset>
 
@@ -311,8 +392,9 @@ export function GoldValueCalculator({
           </>
         ) : (
           <p className="font-display text-2xl font-light leading-snug text-ivory">
-            Today&rsquo;s {selling ? "buying " : ""}rate has not been published yet. Ask us on
-            WhatsApp and we will send you the figure.
+            {usingCustomPurity && !selectedCustomKarat
+              ? "Enter a custom purity from 0.1K to 24K and we will work out today’s rate."
+              : `Today’s ${selling ? "buying " : ""}rate has not been published yet. Ask us on WhatsApp and we will send you the figure.`}
           </p>
         )}
 
@@ -359,7 +441,7 @@ export function GoldValueCalculator({
                   render={() =>
                     renderEstimateCard({
                       side,
-                      karat: purity,
+                      karat: purityName,
                       purityLabel: purityName,
                       weightText: `${weightText} ${unitWord}`,
                       otherWeightText:
@@ -375,7 +457,7 @@ export function GoldValueCalculator({
                   }
                   title="Gold value estimate"
                   text={`${SITE.name} · gold value estimate\n${shareUrl}`}
-                  filename={`al-madina-gold-estimate-${purity}-${snapshot.date}.jpg`}
+                  filename={`al-madina-gold-estimate-${purityName}-${snapshot.date}.jpg`}
                 >
                   As picture
                 </ShareCardButton>
