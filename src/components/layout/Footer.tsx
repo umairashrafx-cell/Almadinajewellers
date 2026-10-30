@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
 import automa8Wordmark from "@/assets/brand/automa8-wordmark.svg";
 import adminIcon from "@/assets/icons/admin.png";
+import { GooglePlayIcon } from "@/components/ui/GooglePlayIcon";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
 
@@ -211,6 +212,30 @@ export function Footer() {
                 </a>
               </li>
             </ul>
+
+            {/*
+              The app, for the customer who comes back for the rate rather than
+              for a piece. Styled as this footer's own button rather than with
+              Google's badge artwork, which is fixed artwork they ask not be
+              redrawn; the words say plainly where it goes.
+            */}
+            <a
+              href={SITE.playStore}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hide-in-app group mt-6 inline-flex items-center gap-3 rounded-[2px] border border-gold/45 bg-gold/10 px-4 py-2.5 transition-colors hover:border-gold hover:bg-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+            >
+              <GooglePlayIcon className="h-6 w-6 shrink-0 text-gold transition-colors group-hover:text-primary" />
+              <span className="leading-tight">
+                <span className="block text-[10px] uppercase tracking-[0.2em] text-champagne/70 transition-colors group-hover:text-primary/80">
+                  Get it on
+                </span>
+                <span className="block text-sm font-semibold text-champagne transition-colors group-hover:text-primary">
+                  Google Play
+                </span>
+              </span>
+            </a>
+
             <p className="mt-6 text-xs leading-relaxed text-champagne/60">
               Every piece is hallmarked and weighed in front of you. Payment is arranged in store or
               on confirmed delivery.

@@ -25,6 +25,11 @@ export const SITE = {
   instagram: "https://www.instagram.com/almadina.jewellers",
   tiktok: "https://www.tiktok.com/@almadinaj",
   facebook: "https://www.facebook.com/madinajewellerz",
+  /**
+   * The shop's own Android app. Every link to it carries hide-in-app: inside
+   * the app, a button offering to install the app is a dead end.
+   */
+  playStore: "https://play.google.com/store/apps/details?id=com.almadinajeweller.app",
 };
 
 /**
