@@ -1,8 +1,11 @@
 # Google Play listing — Al-Madina Jewellers
 
-Everything to paste or upload in the Play Console. The app is a Trusted Web
-Activity: it opens https://www.almadinajeweller.com full-screen, so any change
-to the website appears in the app without a new release.
+Everything to paste or upload in the Play Console. The app opens
+https://www.almadinajeweller.com full-screen, so any change to the website
+appears in the app without a new release. It is a Capacitor app — see
+[`../README.md`](../README.md) for how it is built — and it replaces the
+Trusted Web Activity that was on Play before it, keeping the same package name,
+the same upload key, and therefore the same listing, installs and reviews.
 
 Keep this file in step with the site. If a form gains a field or analytics is
 switched on, update `/privacy-policy` **and** the Data safety answers below —
@@ -135,31 +138,51 @@ environment, reverse all of that.
 
 ---
 
-## Signing fingerprints in assetlinks.json
+## Signing fingerprints
+
+Both are public certificate hashes, and both are listed in
+`public/.well-known/assetlinks.json` on the website.
 
 | Key                             | SHA-256                                                                                           | Signs                                            |
 | ------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | App signing key (Google)        | `32:AC:93:C3:9C:79:45:0D:FC:AA:67:33:FC:1C:CB:CB:80:06:1D:F7:E3:A6:A0:4E:0B:D8:69:A2:4F:08:56:57` | Every copy installed from Google Play            |
-| Upload key (`android.keystore`) | `2B:4B:2D:70:7B:1A:A8:7E:FF:B3:5A:0B:92:8D:BF:1B:BD:59:65:F6:C1:4D:39:06:D9:2D:FD:52:54:C6:FA:EB` | The APK built locally and sideloaded for testing |
+| Upload key (`android.keystore`) | `2B:4B:2D:70:7B:1A:A8:7E:FF:B3:5A:0B:92:8D:BF:1B:BD:59:65:F6:C1:4D:39:06:D9:2D:FD:52:54:C6:FA:EB` | What you sign a release with before uploading it |
 
-Both are public certificate hashes. If Google ever rotates the app signing key, copy the new snippet from _Protected with Play → App signing → Digital Asset Links JSON_.
+The upload key is the one that matters for every release from now on: Play takes
+an update to this listing only from the key the first one was signed with. If
+Google ever rotates the app signing key, copy the new snippet from _Protected
+with Play → App signing → Digital Asset Links JSON_.
+
+`assetlinks.json` itself is no longer what makes the app open without an address
+bar — a Capacitor app has no address bar to hide. It stays because the Trusted
+Web Activity is still installed on phones that have not updated yet, and because
+it is what Play's link verification reads.
 
 ## Release checklist
 
-1. Website PR merged and live (service worker, offline page, manifest, privacy
-   policy).
-2. `bubblewrap init --manifest https://www.almadinajeweller.com/site.webmanifest`
-   with package name `com.almadinajeweller.app`. Back up the keystore and its
-   passwords.
-3. `bubblewrap build` → upload `app-release-bundle.aab` to **Internal testing**,
-   with Play App Signing on.
-   `public/.well-known/assetlinks.json` already lists the **upload key**
-   (`2B:4B:…:FA:EB`), so the APK you build and sideload opens with no address
-   bar. Copies installed from Play are signed by Google's key instead, so:
-4. Copy the **App signing key certificate SHA-256** from
-   _Setup → App signing_ → add it to `public/.well-known/assetlinks.json` alongside the upload key →
-   merge → confirm the app opens with no address bar.
+1. Website PR merged and live. The app reads the live site, so anything the
+   release depends on has to be there first.
+2. Read the live **versionCode** off the Play Console and raise the one in
+   `mobile/android/app/build.gradle` above it.
+3. `cd mobile && bun run release`, with `android/keystore.properties` pointing
+   at the upload keystore (see [`../README.md`](../README.md)).
+4. Upload `mobile/android/app/build/outputs/bundle/release/app-release.aab` to
+   **Internal testing**, with Play App Signing on. Install it from the test
+   track on a real phone and check it against the list below before promoting
+   it.
 5. Complete App content and Data safety from this file; upload the listing
    assets.
 6. Personal developer account: closed test with 12+ testers for 14 days, then
    apply for production. Organisation account: promote to production.
+
+## What to check on the phone before promoting
+
+- The app opens on the website, full-screen, with no address bar.
+- The header and footer show **no** admin link and **no** "get the app"
+  buttons — that is the user-agent handshake in `src/routes/__root.tsx`.
+- The back button walks back through the site and then leaves the app, rather
+  than landing on a blank screen.
+- WhatsApp, Instagram, Play and the map links open outside the app.
+- In aeroplane mode the app shows the shop's own "you are offline" screen with
+  the phone numbers, not a browser error page.
+- Nothing is hidden behind the status bar at the top of the screen.
