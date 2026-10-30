@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The shop's colours, as the website names them in styles.css: Madina green,
+  the deeper green behind it, and gold.
+-->
+<resources>
+    <color name="colorPrimary">#0B3D2E</color>
+    <color name="colorPrimaryDark">#04180F</color>
+    <color name="colorAccent">#C9A24B</color>
+</resources>

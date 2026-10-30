@@ -6,8 +6,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  // supabase/functions runs on Deno, not the browser/Vite toolchain.
-  { ignores: ["dist", ".output", ".vinxi", "supabase/functions"] },
+  // supabase/functions runs on Deno, and mobile/ is the Android app with its
+  // own package.json — neither belongs to the browser/Vite toolchain.
+  { ignores: ["dist", ".output", ".vinxi", "supabase/functions", "mobile"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

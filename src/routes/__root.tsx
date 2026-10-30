@@ -250,13 +250,22 @@ function SiteSchema() {
 /**
  * Marks the page as running inside the Android app, before first paint.
  *
- * The app (a Trusted Web Activity) opens the site with a referrer of
- * android-app://com.almadinajeweller.app. That referrer is only present on the
- * first page, so it is remembered for the session. Anything with the
- * hide-in-app class — the staff admin link — is then hidden by CSS, with no
- * flash, because this runs before the body is drawn.
+ * Two apps to recognise, because both are in people's hands at once. The
+ * Capacitor app says who it is in its user agent — "AlMadinaApp", set in
+ * mobile/capacitor.config.ts — on every request it makes. The Trusted Web
+ * Activity it replaces said so with a referrer of
+ * android-app://com.almadinajeweller.app, on the first page only, which is why
+ * that answer is remembered for the session; copies of it stay installed until
+ * their owners update.
+ *
+ * Anything with the hide-in-app class — the staff admin link, and the buttons
+ * offering to install the app — is then hidden by CSS, with no flash, because
+ * this runs before the body is drawn.
+ *
+ * The user agent is read here rather than on the server: a page that rendered
+ * differently for the app would be a page the CDN could serve to everyone.
  */
-const IN_APP_SCRIPT = `try{var k="amj:in-app";if(document.referrer.indexOf("android-app://com.almadinajeweller.app")===0){sessionStorage.setItem(k,"1")}if(sessionStorage.getItem(k)==="1"){document.documentElement.setAttribute("data-in-app","")}}catch(e){}`;
+const IN_APP_SCRIPT = `try{var k="amj:in-app",a=(navigator.userAgent||"").indexOf("AlMadinaApp")>=0||document.referrer.indexOf("android-app://com.almadinajeweller.app")===0;try{if(a){sessionStorage.setItem(k,"1")}else{a=sessionStorage.getItem(k)==="1"}}catch(e){}if(a){document.documentElement.setAttribute("data-in-app","")}}catch(e){}`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (

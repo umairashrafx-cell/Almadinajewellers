@@ -1,0 +1,21 @@
+{
+  "name": "al-madina-mobile",
+  "private": true,
+  "type": "module",
+  "description": "The shop's Android app. Deliberately separate from the website's package.json so the Vercel build never installs any of this.",
+  "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
+    "sync": "cap sync android",
+    "debug": "cap sync android && cd android && gradlew.bat assembleDebug",
+    "release": "cap sync android && cd android && gradlew.bat bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "sharp": "^0.34.4",
+    "typescript": "^5.8.3"
+  }
+}
