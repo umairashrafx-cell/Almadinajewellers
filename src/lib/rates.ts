@@ -324,6 +324,26 @@ export const SELL_PURITIES = ["24K", "22K", "21K", "20K", "18K"] as const;
 export type SellPurity = (typeof SELL_PURITIES)[number];
 
 /**
+ * Accept a karat label only when it names a real, measurable gold purity.
+ *
+ * The rate calculator has preset buttons, but a hallmark can also read 19.5K
+ * or another in-between value. Keeping this validation beside the rate maths
+ * means a malformed value can never become an invented quote just because a
+ * future screen calls buyingRateFor or sellingRateFor directly.
+ */
+function normaliseGoldPurity(purity: string): { karat: string; value: number } | undefined {
+  const match = /^(\d+(?:\.\d+)?)K$/i.exec(purity.trim());
+  if (!match?.[1]) return undefined;
+
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value) || value <= 0 || value > 24) return undefined;
+
+  // The canonical form lets 23.650K use the published 23.65K row rather than
+  // being re-derived from Pathor with a rounding difference.
+  return { karat: `${value}K`, value };
+}
+
+/**
  * The rate for gold of a given purity, valued at its actual purity.
  *
  * The board's own rows — 24K piece and 22K jewellery — are returned as
@@ -336,7 +356,9 @@ export type SellPurity = (typeof SELL_PURITIES)[number];
  * hundred. The published 20K row is derived the same way in the admin, so this
  * agrees with it; deriving here rather than reading it keeps one rule for every
  * purity, and keeps this calculator and the rate page's quoting the same figure
- * for the same purity.
+ * for the same purity. A hallmark the preset buttons do not list, 19.5K say,
+ * is priced by that same rule; a label that is not a gold purity at all, like
+ * silver's 999 or a 25K that cannot exist, is refused rather than priced.
  *
  * Nothing is returned for the fallback snapshot. Its figures exist so a rate
  * band never renders empty; an estimate built on them would quote a customer
@@ -344,20 +366,23 @@ export type SellPurity = (typeof SELL_PURITIES)[number];
  */
 export function buyingRateFor(
   snapshot: RateSnapshot | undefined,
-  purity: SellPurity,
+  purity: string,
 ): MetalRate | undefined {
   if (!snapshot?.date) return undefined;
 
-  if (RATE_BOARD.some((row) => row.karat === purity)) {
-    const published = rateFor(snapshot, purity);
-    if (published) return { ...published, karat: purity };
+  const selected = normaliseGoldPurity(purity);
+  if (!selected) return undefined;
+
+  if (RATE_BOARD.some((row) => row.karat === selected.karat)) {
+    const published = rateFor(snapshot, selected.karat);
+    if (published) return { ...published, karat: selected.karat };
   }
 
   const base = rateFor(snapshot, "23.65K") ?? rateFor(snapshot, "24K");
   if (!base) return undefined;
 
-  const perTola = roundRateToHundred((base.perTola * Number.parseFloat(purity)) / 24);
-  return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
+  const perTola = roundRateToHundred((base.perTola * selected.value) / 24);
+  return { karat: selected.karat, perTola, perGram: perGramFromTola(perTola) };
 }
 
 /** The purities a buyer can price in the gold rate page's calculator. */
@@ -371,29 +396,35 @@ export type BuyPurity = (typeof BUY_PURITIES)[number];
  * returned exactly as published; those are prices the shop set, not figures to
  * be derived.
  *
- * 21K, 20K and 18K have no published rate, and are worked from **pathor**
- * rather than from the piece rate: that is the shop's own arithmetic, since
- * 23.65 x 22/24 lands on the published jewellery rate to the hundred. Scaling
- * the piece rate instead would quote a customer more than the shop's own 22K
- * implies. Rounded to the nearest hundred per tola, as the admin rounds.
+ * 21K, 20K, 18K and any other hallmark a customer brings in have no published
+ * rate, and are worked from **pathor** rather than from the piece rate: that
+ * is the shop's own arithmetic, since 23.65 x 22/24 lands on the published
+ * jewellery rate to the hundred. Scaling the piece rate instead would quote a
+ * customer more than the shop's own 22K implies. Rounded to the nearest
+ * hundred per tola, as the admin rounds.
  *
  * Nothing is returned for the fallback snapshot, for the same reason as
  * buyingRateFor.
  */
 export function sellingRateFor(
   snapshot: RateSnapshot | undefined,
-  purity: BuyPurity,
+  purity: string,
 ): MetalRate | undefined {
   if (!snapshot?.date) return undefined;
 
-  if (RATE_BOARD.some((row) => row.karat === purity)) return rateFor(snapshot, purity);
+  const selected = normaliseGoldPurity(purity);
+  if (!selected) return undefined;
+
+  if (RATE_BOARD.some((row) => row.karat === selected.karat)) {
+    return rateFor(snapshot, selected.karat);
+  }
 
   // Pathor is the basis; the piece rate stands in only if pathor is unpublished.
   const base = rateFor(snapshot, "23.65K") ?? rateFor(snapshot, "24K");
   if (!base) return undefined;
 
-  const perTola = roundRateToHundred((base.perTola * Number.parseFloat(purity)) / 24);
-  return { karat: purity, perTola, perGram: perGramFromTola(perTola) };
+  const perTola = roundRateToHundred((base.perTola * selected.value) / 24);
+  return { karat: selected.karat, perTola, perGram: perGramFromTola(perTola) };
 }
 
 /**
