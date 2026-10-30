@@ -27,7 +27,12 @@ mobile/
 ```
 
 `mobile/` keeps its own `package.json` on purpose. Nothing here is a dependency
-of the website, and the Vercel build never installs any of it.
+of the website, and the Vercel build never installs any of it. The one exception
+is deliberate: the website depends on `@capacitor/core` and
+`@capacitor/push-notifications` for their JavaScript, because the screens that
+talk to the phone are website screens. Those two versions must stay in step with
+the ones here, or the bridge and the plugin disagree about what they are talking
+to.
 
 ## What you need
 
@@ -101,13 +106,44 @@ an app you are already reading this in.
 Change that string in one place and it has to change in the other, or those
 links come back inside the app.
 
+## Notifications
+
+One message a day: the morning the shop publishes its rates. The app's part is
+small — `@capacitor/push-notifications` and the manifest entries that say what a
+notification looks like before the app is open. Everything a customer touches is
+on the website side, because the website is what the app shows:
+`src/lib/push.ts` and the card on the gold rate page. The sending side is the
+`gold_rates` trigger in `supabase/migrations/20261030090000_rate_alerts.sql` and
+the Edge Function it calls.
+
+To make it work, once:
+
+1. A **Firebase project** with an Android app registered as
+   `com.almadinajeweller.app`. Its SHA-1 is not needed for messaging.
+2. Download **`google-services.json`** and put it in `mobile/android/app/`.
+   Gradle applies the Google services plugin when that file is there and skips
+   it when it is not, so the app builds either way — it simply cannot receive a
+   notification without it.
+3. From the same project, **Project settings → Service accounts → Generate new
+   private key**. That JSON is a credential: it goes to Supabase, never into
+   this repository.
+
+   ```sh
+   supabase secrets set FCM_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"
+   supabase functions deploy notify-enquiry
+   ```
+
+The three agreed names, which have to match on both sides: the channel `rates`,
+the path `/gold-rate-in-mandi-bahauddin-today`, and the notification icon
+`ic_stat_rate`.
+
 ## When the website's icons change
 
 ```sh
 bun run icons
 ```
 
-Regenerates the launcher icon, the adaptive icon and the splash from
-`public/icon-512.png` and `public/icon-maskable-512.png`, so the app, the
-installed website and the Play listing cannot drift apart. The generated files
-are committed with the project.
+Regenerates the launcher icon, the adaptive icon, the splash and the white
+notification silhouette from `public/icon-512.png` and
+`public/icon-maskable-512.png`, so the app, the installed website and the Play
+listing cannot drift apart. The generated files are committed with the project.

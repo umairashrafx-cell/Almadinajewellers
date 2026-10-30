@@ -57,7 +57,8 @@ const SECTIONS: Section[] = [
         <p>
           {SITE.name} is a family jewellery shop at {store?.address ?? SITE.address}. This policy
           covers our website, {SITE.origin.replace("https://", "")}, and our Android app, which
-          shows the same website. When it says “we”, it means the shop.
+          shows the same website and can send you the day&rsquo;s gold rate if you ask it to. When
+          it says “we”, it means the shop.
         </p>
       </>
     ),
@@ -99,6 +100,13 @@ const SECTIONS: Section[] = [
           <li>
             <strong>Newsletter</strong> — your email address, if you sign up on the home page. We
             use it only to send that newsletter.
+          </li>
+          <li>
+            <strong>Rate alerts in the app</strong> — if you turn them on, our Android app gives us
+            a notification token for your phone. The token is issued by Google, it says nothing
+            about who you are, and it is the only thing we keep: no name, no number, nothing about
+            what you looked at. We use it for one message a day, when the shop sets its board. Turn
+            the alerts off in the app and we delete it.
           </li>
         </ul>
         <p>
@@ -172,6 +180,12 @@ const SECTIONS: Section[] = [
             phone number or anything you type into a form.
           </li>
           <li>
+            <strong>Firebase Cloud Messaging.</strong> Google&rsquo;s notification service, used by
+            our Android app and only once you turn rate alerts on. It issues the token for your
+            phone and carries the message to it, under Google&rsquo;s own privacy policy. It is not
+            used on this website, and it is never sent anything you have typed into a form.
+          </li>
+          <li>
             <strong>Turning these off.</strong> Both can be blocked in your browser or phone
             settings — private browsing, a tracker blocker, or the &ldquo;do not track&rdquo; and
             ad-personalisation settings in your Google and Meta accounts. Nothing on this website
@@ -202,6 +216,11 @@ const SECTIONS: Section[] = [
           newsletter list. Contact us by phone, on WhatsApp or through our contact page, tell us the
           name and phone number you used, and we will do it. We may ask you to confirm the request
           from that phone number before deleting anything.
+        </p>
+        <p>
+          Rate alerts are yours to switch off in the app, on the gold rate page, which deletes your
+          phone&rsquo;s notification token from our records at once. Uninstalling the app has the
+          same effect the next time we try to send to it.
         </p>
         <p>
           You do not need an account to use our website or app, so there is no account to delete.
