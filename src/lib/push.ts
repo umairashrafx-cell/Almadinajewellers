@@ -208,13 +208,25 @@ export async function enableRateAlerts(): Promise<AlertState> {
 export async function disableRateAlerts(): Promise<AlertState> {
   if (!(await inApp())) return "unsupported";
 
-  const token = recalled(TOKEN_KEY);
-  if (token) {
-    const { error } = await untyped.rpc("forget_push_device", { p_token: token });
-    if (error) {
-      console.error("push: could not forget this device", error);
-      return "on";
-    }
+  /*
+   * The stored token is the usual answer, but it is not the one that matters:
+   * what stops the notifications is the row on the shop's side. If this phone
+   * has forgotten its token — storage cleared, or a write that silently failed
+   * when it was turned on — asking Firebase again gives back the same one, and
+   * it can still be deleted. Saying "off" while the row lives on would leave
+   * somebody with notifications they have no way to stop.
+   */
+  const token = recalled(TOKEN_KEY) ?? (await registrationToken());
+
+  if (!token) {
+    console.error("push: no token to forget, so the subscription is still live");
+    return "on";
+  }
+
+  const { error } = await untyped.rpc("forget_push_device", { p_token: token });
+  if (error) {
+    console.error("push: could not forget this device", error);
+    return "on";
   }
 
   try {
@@ -236,13 +248,19 @@ export async function disableRateAlerts(): Promise<AlertState> {
  * Firebase reissues tokens — after a restore to a new phone, or when it simply
  * decides to — and the old one stops delivering without telling anybody. The
  * upsert behind register_push_device is what makes the new one replace it.
+ *
+ * It registers every time, not only when the token has changed. A row can go
+ * missing for reasons this phone cannot see — a restored backup, a notifier
+ * that pruned it wrongly — and a phone that only spoke up when its token
+ * changed would wait for ever, showing a card that says it is subscribed. The
+ * upsert costs one call a launch and moves last_seen_at either way.
  */
 export async function refreshRegistration(): Promise<void> {
   if (recalled(WANTED_KEY) !== "yes") return;
   if ((await alertState()) !== "on") return;
 
   const token = await registrationToken();
-  if (!token || token === recalled(TOKEN_KEY)) return;
+  if (!token) return;
 
   const { error } = await untyped.rpc("register_push_device", {
     p_token: token,

@@ -64,9 +64,27 @@ function pkcs8(pem: string): Uint8Array {
  */
 let cached: { token: string; expiresAt: number } | null = null;
 
+/*
+ * The one being bought right now, if one is. The morning's send goes out in
+ * batches of eight at a time, and on the first batch the cache is empty for
+ * all eight of them — so without this they would each sign their own assertion
+ * and ask Google for their own token, seven of which are thrown away a moment
+ * later. Waiting on the promise, not the token, makes that one request.
+ */
+let buying: Promise<string> | null = null;
+
 export async function accessToken(account: ServiceAccount): Promise<string> {
   if (cached && cached.expiresAt > Date.now() + 60_000) return cached.token;
+  if (buying) return buying;
 
+  buying = mint(account).finally(() => {
+    buying = null;
+  });
+
+  return buying;
+}
+
+async function mint(account: ServiceAccount): Promise<string> {
   const tokenUri = account.token_uri ?? "https://oauth2.googleapis.com/token";
   const issued = Math.floor(Date.now() / 1000);
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
@@ -168,14 +186,43 @@ export async function send(
   if (response.ok) return "sent";
 
   const text = await response.text();
+  const code = errorCode(text);
 
   /*
-   * 404 is UNREGISTERED: the app is gone from that phone. 403 is
-   * SENDER_ID_MISMATCH: the token belongs to a different Firebase project,
-   * which this one will never be able to reach. Both mean stop trying.
+   * Only the two answers that are about this token: UNREGISTERED, the app is
+   * gone from that phone; SENDER_ID_MISMATCH, the token belongs to another
+   * Firebase project and this one will never reach it.
+   *
+   * Read from the error body rather than the status code, because the status
+   * codes are shared with answers about us. A 403 is also what Google says
+   * when the service account is wrong or Cloud Messaging is not enabled — and
+   * that answer comes back for every phone at once, so trusting the code alone
+   * would turn one setup mistake into an emptied subscriber list. The same
+   * goes for INVALID_ARGUMENT, which means either a bad token or a message we
+   * built wrongly, and is not worth deleting anyone over.
    */
-  if (response.status === 404 || response.status === 403) return "dead";
+  if (code === "UNREGISTERED" || code === "SENDER_ID_MISMATCH") return "dead";
+  if (response.status === 404 && !code) return "dead";
 
   console.error(`fcm: send failed with ${response.status}: ${text}`);
   return "failed";
+}
+
+/**
+ * The FcmError code from an error body, which is what says whose fault it is.
+ *
+ * Google answers with { error: { status, details: [{ errorCode }] } }. The
+ * detail is the specific one; error.status is the general one, and stands in
+ * when there is no detail.
+ */
+function errorCode(text: string): string | undefined {
+  try {
+    const body = JSON.parse(text) as {
+      error?: { status?: string; details?: Array<{ errorCode?: string }> };
+    };
+    const detailed = body.error?.details?.find((detail) => detail.errorCode);
+    return detailed?.errorCode ?? body.error?.status;
+  } catch {
+    return undefined;
+  }
 }

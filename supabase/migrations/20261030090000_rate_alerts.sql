@@ -154,18 +154,28 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  INSERT INTO public.rate_alerts_sent (rate_date) VALUES (v_date) ON CONFLICT DO NOTHING;
-  -- Already sent today. A correction to the board is not a second morning.
-  IF NOT FOUND THEN
-    RETURN NULL;
-  END IF;
-
+  /*
+   * The notifier first, the day's mark second.
+   *
+   * Marking the day before knowing there is anywhere to send would spend it on
+   * nothing: the shop publishes a morning before app_config is configured —
+   * which is the state this migration ships in — the day is written down as
+   * told, and when the configuration arrives that afternoon the correction
+   * they save finds the day already done and stays quiet. Checked first, that
+   * morning is simply not marked, and the next save that day announces it.
+   */
   SELECT value INTO function_url FROM public.app_config WHERE key = 'notify_function_url';
   IF function_url IS NULL OR function_url = '' THEN
     RETURN NULL;
   END IF;
 
   SELECT value INTO shared_secret FROM public.app_config WHERE key = 'notify_secret';
+
+  INSERT INTO public.rate_alerts_sent (rate_date) VALUES (v_date) ON CONFLICT DO NOTHING;
+  -- Already sent today. A correction to the board is not a second morning.
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
 
   /*
    * The figures as published, read back from the table rather than worked out

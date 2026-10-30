@@ -283,32 +283,72 @@ export function summariseRates(record: RateRecord): { title: string; body: strin
   };
 }
 
-/** The tokens we hold, read with the service role — the table is shut to anon. */
+/**
+ * The tokens we hold, read with the service role — the table is shut to anon.
+ *
+ * A page at a time, because the REST API caps what one request may return
+ * (a thousand rows unless the project says otherwise). Asking for everything
+ * in one go does not fail when there are more than that: it answers with the
+ * first page and says nothing, which would quietly leave every customer past
+ * the cap untold. Ordered by id so the pages cannot overlap or skip.
+ */
 async function listDeviceTokens(url: string, key: string): Promise<string[]> {
-  const response = await fetch(`${url}/rest/v1/push_devices?select=token`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-  });
+  const PAGE = 1000;
+  // A hundred pages is a hundred thousand phones. Past that something is
+  // wrong, and a loop that cannot end is worse than a short list.
+  const LIMIT = 100;
 
-  if (!response.ok) {
-    throw new Error(`could not read push_devices: ${response.status} ${await response.text()}`);
+  const tokens: string[] = [];
+
+  for (let page = 0; page < LIMIT; page += 1) {
+    const response = await fetch(
+      `${url}/rest/v1/push_devices?select=token&order=id&limit=${PAGE}&offset=${page * PAGE}`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+    );
+
+    if (!response.ok) {
+      throw new Error(`could not read push_devices: ${response.status} ${await response.text()}`);
+    }
+
+    const rows = (await response.json()) as Array<{ token?: string }>;
+    for (const row of rows) if (row.token) tokens.push(row.token);
+
+    // A short page is the last page — including a page shortened by the cap,
+    // since the next one then comes back empty.
+    if (rows.length < PAGE) return tokens;
   }
 
-  const rows = (await response.json()) as Array<{ token?: string }>;
-  return rows.map((row) => row.token).filter((token): token is string => Boolean(token));
+  console.error("notify-enquiry: stopped reading push_devices after 100 pages.");
+  return tokens;
 }
 
-/** Forgets the phones Google says are gone, so tomorrow's send is smaller. */
+/**
+ * Forgets the phones Google says are gone, so tomorrow's send is smaller.
+ *
+ * In chunks, because the tokens go in the query string: an FCM token is about
+ * a hundred and sixty characters, and once quoted and escaped it is nearer a
+ * hundred and seventy, so a few hundred of them in one request is a URL no
+ * gateway will accept — and the prune would fail every morning on exactly the
+ * backlog it exists to clear. Twenty keeps each request under four kilobytes,
+ * comfortably inside the eight that servers commonly allow.
+ */
 async function forgetDeviceTokens(url: string, key: string, tokens: string[]) {
-  if (tokens.length === 0) return;
+  const CHUNK = 20;
 
-  const list = tokens.map((token) => `"${token}"`).join(",");
-  const response = await fetch(
-    `${url}/rest/v1/push_devices?token=in.(${encodeURIComponent(list)})`,
-    { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } },
-  );
+  for (let i = 0; i < tokens.length; i += CHUNK) {
+    const list = tokens
+      .slice(i, i + CHUNK)
+      .map((token) => `"${token}"`)
+      .join(",");
 
-  if (!response.ok) {
-    console.error(`notify-enquiry: could not forget dead tokens: ${response.status}`);
+    const response = await fetch(
+      `${url}/rest/v1/push_devices?token=in.(${encodeURIComponent(list)})`,
+      { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } },
+    );
+
+    if (!response.ok) {
+      console.error(`notify-enquiry: could not forget dead tokens: ${response.status}`);
+    }
   }
 }
 
