@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "827735031472",
+    "project_id": "al-madina-jewellers",
+    "storage_bucket": "al-madina-jewellers.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827735031472:android:241917e9b67eae774cc575",
+        "android_client_info": {
+          "package_name": "com.almadinajeweller.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2exqogmOfvahBx3OWV7JEmth7eOIg5oY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
