@@ -9,7 +9,7 @@
     "build": "vite build --config app/vite.config.ts",
     "sync": "bun run build && cap sync android",
     "debug": "bun run sync && cd android && gradlew.bat assembleDebug",
-    "release": "bun run sync && cd android && gradlew.bat bundleRelease"
+    "release": "bun run sync && cd android && gradlew.bat clean bundleRelease"
   },
   "dependencies": {
     "@capacitor/android": "8.6.0",

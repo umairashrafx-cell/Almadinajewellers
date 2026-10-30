@@ -46,8 +46,14 @@ Al-Madina Jewellers has sold and bought gold in Sarafa Market, Mandi Bahauddin, 
 TODAY'S GOLD RATE
 • The rates the shop publishes each day for 24K, 23.65K and 22K gold and for silver, per tola and per gram
 • The time the rates were last updated
+• A notification each morning, if you want one, as soon as the board is set
 • A calculator that turns a weight in grams or tola into a value
 • Share the day's rates on WhatsApp, as text or as a picture
+
+WORKS WITHOUT A SIGNAL
+• The rate board, the calculator and your saved pieces open whether or not you have a connection
+• Each one tells you when the figures were last taken, so you always know what you are reading
+• The rest of the shop — the catalogue, the forms — needs a connection as usual
 
 JEWELLERY
 • Browse bridal sets, bangles, rings, earrings, lockets and chains, and silver
@@ -75,6 +81,20 @@ Weighed Honestly, Made Beautifully.
 **Website:** https://www.almadinajeweller.com
 **Privacy policy:** https://www.almadinajeweller.com/privacy-policy
 **Email:** a contact email is required by Play; use the shop's email address.
+
+---
+
+## What's new (500 characters max)
+
+Pasted into the release notes for version 2.0:
+
+```
+The app is rebuilt. The gold rate board, the value calculator and your saved
+pieces now open without a connection, and each tells you when its figures were
+taken. Turn on rate alerts and the shop tells you every morning, as soon as the
+day's board is set — one notification a day, nothing else. Everything else, the
+catalogue and the forms, works as it always has.
+```
 
 ---
 
@@ -172,15 +192,30 @@ it is what Play's link verification reads.
 1. Website PR merged and live. The app reads the live site, so anything the
    release depends on has to be there first.
 2. Read the live **versionCode** off the Play Console and raise the one in
-   `mobile/android/app/build.gradle` above it.
+   `mobile/android/app/build.gradle` above it. As of 30 October 2026 production
+   is on **2** (released 5 October 2026), so the repository is set to 3. There
+   is also an empty **draft release** sitting in the production track from
+   before — discard it, or upload into it, rather than leaving both.
 3. `cd mobile && bun run release`, with `android/keystore.properties` pointing
    at the upload keystore (see [`../README.md`](../README.md)).
 4. Upload `mobile/android/app/build/outputs/bundle/release/app-release.aab` to
    **Internal testing**, with Play App Signing on. Install it from the test
    track on a real phone and check it against the list below before promoting
    it.
-5. Complete App content and Data safety from this file; upload the listing
-   assets.
+5. Complete App content and Data safety from this file; paste the release
+   notes; upload the listing assets.
+
+   **The phone screenshots are out of date.** All six show the website, which
+   is what the app used to be. Take fresh ones on the test device — Android's
+   own screenshot is the right size — of the rate board, the calculator and
+   the saved pieces, and keep the website ones that still hold (bridal, custom
+   order, stores).
+
+   Play has two open recommendations against the current build, both about
+   edge-to-edge display. The Capacitor build targets SDK 36 and lets Capacitor
+   inset the WebView, which is what they ask for; check they clear once it is
+   live.
+
 6. Personal developer account: closed test with 12+ testers for 14 days, then
    apply for production. Organisation account: promote to production.
 

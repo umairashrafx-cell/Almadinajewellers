@@ -86,6 +86,12 @@ localStorage and the screens behave; only notifications need a real phone.
 bun run release    # android/app/build/outputs/bundle/release/app-release.aab
 ```
 
+That one cleans first, which costs a couple of minutes and is worth it: an
+incremental build reuses the merged manifest, so a `versionCode` raised in
+`build.gradle` can quietly fail to reach the bundle. Check it before uploading
+either way — `aapt2 dump badging` on the debug APK prints what was actually
+built.
+
 That is the bundle Play takes. **It must be signed with the same upload key the
 TWA was signed with** (SHA-256 `2B:4B:…:FA:EB`) or Play refuses it: an app's
 upload key is how Play knows an update is really from the shop. Put the key

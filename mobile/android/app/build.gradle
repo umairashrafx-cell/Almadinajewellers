@@ -32,12 +32,14 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
-         * Play takes an update only if versionCode is higher than the live
-         * one. The Trusted Web Activity's number is in the Play Console, not in
-         * this repository; confirm it before building a release and raise this
-         * above it. versionName is what a customer sees: the second app.
+         * Play takes an update only if versionCode is higher than the live one.
+         * Production is on 2, released 5 October 2026 — the Trusted Web
+         * Activity — so this is 3. Read the live number off the Play Console
+         * again before any later release rather than trusting this comment.
+         *
+         * versionName is what a customer sees: the second app.
          */
-        versionCode 10
+        versionCode 3
         versionName "2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
