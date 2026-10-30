@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      No viewport-fit=cover, deliberately. Capacitor reads this tag: without it
+      the WebView is inset by the status and gesture bars instead of drawn
+      behind them, which is what the website expects and what keeps the header
+      clear of the clock.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B3D2E" />
+    <title>Al-Madina Jewellers</title>
+
+    <!--
+      The shop's typefaces, from the same place the website gets them. With no
+      connection they simply do not arrive and the screens fall back to the
+      phone's own faces — the figures are still the figures.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@400;500;600&family=Montserrat:wght@500&display=swap"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
