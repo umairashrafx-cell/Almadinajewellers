@@ -19,6 +19,7 @@ import {
 import logoOnDark from "@/assets/brand/logo-horizontal-on-dark.svg";
 import logoOnLight from "@/assets/brand/logo-horizontal-on-light.svg";
 import { SearchOverlay } from "@/components/layout/SearchOverlay";
+import { GooglePlayIcon } from "@/components/ui/GooglePlayIcon";
 import { GoldBarsIcon, RingIcon } from "@/components/ui/JewelleryIcons";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { useCart } from "@/hooks/use-cart";
@@ -301,6 +302,22 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
             <WhatsAppIcon className="h-[25px] w-[25px]" />
           </a>
 
+          {/*
+            The Android app. Hidden below 768px, where the row has no space for
+            a sixth target — the drawer carries it there, as it does the
+            wishlist.
+          */}
+          <a
+            href={SITE.playStore}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Get our app on Google Play"
+            title="Get our app on Google Play"
+            className={cn(ICON_BUTTON, iconTone, "hide-in-app hidden min-[768px]:grid")}
+          >
+            <GooglePlayIcon className="h-[22px] w-[22px]" />
+          </a>
+
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
@@ -367,6 +384,21 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
                 </span>
               )}
             </Link>
+            {/* Below 768px this is the only way to the app; above it, the icon. */}
+            <a
+              href={SITE.playStore}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMenuOpen(false)}
+              className={cn(
+                PILL,
+                PILL_IVORY,
+                "hide-in-app h-14 justify-start gap-3 px-4 text-[13px] tracking-[1.4px] min-[768px]:hidden",
+              )}
+            >
+              <GooglePlayIcon className="h-5 w-5 shrink-0 text-lux-gold-deep transition-colors group-hover/pill:text-lux-ink" />
+              Get the App
+            </a>
           </nav>
         </div>
       )}
