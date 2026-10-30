@@ -7,18 +7,27 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * app's identity: the package name and the upload key must not change, or the
  * listing's installs and reviews cannot be carried over.
  *
- * The app shows the website, as the TWA did. What Capacitor buys is a native
- * process around it — notifications first, and screens of the shop's own later.
+ * It opens on the shop's own screens — the board, the calculator, the saved
+ * pieces — and hands over to the website for everything else, which is still
+ * where the catalogue and the forms live. What Capacitor bought was the
+ * process around it: first the morning rate notification, then those screens.
  */
 const config: CapacitorConfig = {
   appId: "com.almadinajeweller.app",
   appName: "Al-Madina Jewellers",
 
   /**
-   * The bundled first screen (www/index.html), which hands over to the live
-   * site. Not server.url: Capacitor documents that setting as not meant for
-   * production, and an app with no page of its own has nothing to show when the
-   * phone is offline. www/index.html explains the rest.
+   * The app's own screens, built from app/ into www/ by `bun run build`.
+   *
+   * The rate board, the calculator and the saved pieces are bundled in the
+   * APK: they open with no connection and they are built from the website's
+   * own source, so the figures can never disagree with the site's. Everything
+   * else — the catalogue, the forms, the shop itself — is the live website,
+   * opened in this same WebView.
+   *
+   * Not server.url, which would point the whole app at the website: Capacitor
+   * documents that setting as not meant for production, and an app with no
+   * page of its own has nothing to show when the phone is offline.
    */
   webDir: "www",
 
@@ -31,6 +40,10 @@ const config: CapacitorConfig = {
      * Both hosts: the apex redirects to www, and the redirect has to be allowed
      * to follow or a link to the bare domain would bounce a customer out into
      * the browser.
+     *
+     * This is also what the Shop tab relies on. It is an ordinary navigation
+     * from the bundled screens to the website, which means Android's back
+     * button brings a customer home to them.
      */
     allowNavigation: ["www.almadinajeweller.com", "almadinajeweller.com"],
   },

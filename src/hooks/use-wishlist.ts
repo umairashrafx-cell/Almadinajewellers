@@ -25,6 +25,36 @@ function read(): string[] {
   }
 }
 
+/**
+ * A copy for the Android app's own screens.
+ *
+ * Those screens are bundled in the app and served from https://localhost,
+ * while this page is served from the website — different origins, so they
+ * cannot read each other's localStorage however the app got there. Capacitor's
+ * Preferences belongs to the app rather than to an origin, which makes it the
+ * one place both halves can see.
+ *
+ * Fire and forget, and loaded only inside the app: in a browser the import
+ * never happens and nothing here costs anything. The list above stays the
+ * original; this is the copy the Saved screen reads.
+ */
+function mirror(next: string[]) {
+  if (typeof window === "undefined") return;
+
+  void (async () => {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (!Capacitor.isNativePlatform()) return;
+
+      const { Preferences } = await import("@capacitor/preferences");
+      await Preferences.set({ key: KEY, value: JSON.stringify(next) });
+    } catch {
+      // The wishlist itself is saved. A copy that did not arrive only means
+      // the app's Saved screen is one piece behind until the next change.
+    }
+  })();
+}
+
 function write(next: string[]) {
   skus = next;
   try {
@@ -32,6 +62,7 @@ function write(next: string[]) {
   } catch {
     // Nothing to do; the in-memory list still works for this session.
   }
+  mirror(next);
   listeners.forEach((l) => l());
 }
 
@@ -41,6 +72,9 @@ function subscribe(listener: () => void) {
   if (!hydrated) {
     hydrated = true;
     skus = read();
+    // A list saved before the app had screens of its own still has to reach
+    // them, so the first read mirrors what it found.
+    mirror(skus);
   }
   listeners.add(listener);
 

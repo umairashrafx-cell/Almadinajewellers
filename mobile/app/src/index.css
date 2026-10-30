@@ -1,0 +1,21 @@
+/*
+ * The website's design system, unchanged, plus this app's own screens as a
+ * second place for Tailwind to look. The site's styles.css declares
+ * `source(none)`, so every folder that uses a utility class has to be named —
+ * `@source "../src"` there covers the shared components, and the line below
+ * covers the screens in this folder.
+ */
+@import "../../../src/styles.css";
+@source "./";
+
+/*
+ * The app opens on its own screens rather than a page of the website, so the
+ * shell paints the Madina green itself; without this the WebView's own white
+ * shows for the instant before React mounts.
+ */
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--color-ivory, #faf7f2);
+}

@@ -1,8 +1,9 @@
 # Google Play listing — Al-Madina Jewellers
 
-Everything to paste or upload in the Play Console. The app opens
-https://www.almadinajeweller.com full-screen, so any change to the website
-appears in the app without a new release. It is a Capacitor app — see
+Everything to paste or upload in the Play Console. The app opens on its own
+rate board, calculator and saved pieces, and shows
+https://www.almadinajeweller.com for everything else — so any change to the
+website still appears in the app without a new release. It is a Capacitor app — see
 [`../README.md`](../README.md) for how it is built — and it replaces the
 Trusted Web Activity that was on Play before it, keeping the same package name,
 the same upload key, and therefore the same listing, installs and reviews.
@@ -185,14 +186,21 @@ it is what Play's link verification reads.
 
 ## What to check on the phone before promoting
 
-- The app opens on the website, full-screen, with no address bar.
+- The app opens on its own rate board, with the tab bar at the foot, and no
+  address bar anywhere.
+- The Shop button opens the catalogue in the app, and the back button comes
+  home to the board rather than leaving the app.
+- In aeroplane mode the board, the calculator and the saved pieces still open,
+  each saying the figures were kept on the phone.
+- A piece saved on the website appears on the Saved screen, priced at the
+  day's rate.
 - The header and footer show **no** admin link and **no** "get the app"
   buttons — that is the user-agent handshake in `src/routes/__root.tsx`.
 - The back button walks back through the site and then leaves the app, rather
   than landing on a blank screen.
 - WhatsApp, Instagram, Play and the map links open outside the app.
-- In aeroplane mode the app shows the shop's own "you are offline" screen with
-  the phone numbers, not a browser error page.
+- With no connection at all on a fresh install, the rate screen offers the
+  shop's phone numbers rather than a browser error page.
 - Nothing is hidden behind the status bar at the top of the screen.
 - On the gold rate page, the rate alerts card is there (it is invisible in a
   browser). Turning it on asks Android for permission once; turning it off does
