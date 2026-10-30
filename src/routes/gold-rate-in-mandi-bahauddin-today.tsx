@@ -33,6 +33,7 @@ import { renderRateCard } from "@/lib/share-card";
 import { ShareCardButton } from "@/components/ui/ShareCardButton";
 import { CopyTextButton } from "@/components/ui/CopyTextButton";
 import { RomanUrduAnswers } from "@/components/page/RomanUrduAnswers";
+import { RateAlerts } from "@/components/app/RateAlerts";
 import { RATE_ANSWERS } from "@/lib/roman-urdu";
 
 export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
@@ -197,6 +198,9 @@ function GoldRatePage() {
                 Confirm on WhatsApp
               </ActionLink>
             </div>
+
+            {/* In the app only: an offer to send tomorrow's rate. */}
+            <RateAlerts />
           </Reveal>
         </section>
 

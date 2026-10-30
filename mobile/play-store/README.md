@@ -115,18 +115,26 @@ contact page, as the privacy policy explains. The app has no user accounts.
 _optional_ (the user chooses to send it), purpose **App functionality** and
 **Customer support**:
 
-| Category          | Data type                    | Where it comes from                                                                                            |
-| ----------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Personal info     | Name                         | Contact, bridal, custom order, order request and review forms                                                  |
-| Personal info     | Phone number                 | The same forms                                                                                                 |
-| Personal info     | Email address                | Contact form (optional field); newsletter sign-up on the home page — also purpose **Developer communications** |
-| Personal info     | Other info                   | City, wedding date, budget range, piece size, order reference                                                  |
-| Photos and videos | Photos                       | Custom order form (optional attachment)                                                                        |
-| Audio             | Voice or sound recordings    | Custom order form (optional voice note)                                                                        |
-| App activity      | Other user-generated content | Messages, piece descriptions, product reviews                                                                  |
+| Category            | Data type                    | Where it comes from                                                                                            |
+| ------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Personal info       | Name                         | Contact, bridal, custom order, order request and review forms                                                  |
+| Personal info       | Phone number                 | The same forms                                                                                                 |
+| Personal info       | Email address                | Contact form (optional field); newsletter sign-up on the home page — also purpose **Developer communications** |
+| Personal info       | Other info                   | City, wedding date, budget range, piece size, order reference                                                  |
+| Photos and videos   | Photos                       | Custom order form (optional attachment)                                                                        |
+| Audio               | Voice or sound recordings    | Custom order form (optional voice note)                                                                        |
+| App activity        | Other user-generated content | Messages, piece descriptions, product reviews                                                                  |
+| Device or other IDs | Device or other IDs          | The notification token, if the customer turns on rate alerts (see below)                                       |
 
 **Not collected:** location, financial or payment info, contacts, calendar,
-health, files, device IDs, web browsing history.
+health, files, web browsing history.
+
+**Notifications.** The app asks for the notification permission only when
+somebody taps to turn rate alerts on, and sends one message a day: the morning
+the shop publishes its board. The token it registers is declared above under
+**Device or other IDs** — collected, **not shared**, optional, purpose **App
+functionality** — and it is deleted when the alerts are turned off. The privacy
+policy describes it under "Rate alerts in the app"; the two must agree.
 
 **Analytics: both are ON.** Google Analytics and the Meta Pixel run on the
 website the app displays, so Data safety must declare, under **App activity →
@@ -186,3 +194,8 @@ it is what Play's link verification reads.
 - In aeroplane mode the app shows the shop's own "you are offline" screen with
   the phone numbers, not a browser error page.
 - Nothing is hidden behind the status bar at the top of the screen.
+- On the gold rate page, the rate alerts card is there (it is invisible in a
+  browser). Turning it on asks Android for permission once; turning it off does
+  not ask again.
+- Publishing a rate from the admin panel reaches the phone as one notification,
+  not four, and tapping it opens the rate page.

@@ -24,6 +24,30 @@
 
         </activity>
 
+        <!--
+          How a rate notification looks before the app is even opened: Firebase
+          builds it from these when a message arrives in the background.
+
+          The icon has to be a flat silhouette — Android throws the colour away
+          and draws whatever is opaque in white — so it is ic_stat_rate, not the
+          launcher icon, which would arrive as a white square. The colour behind
+          it is the shop's gold.
+
+          The channel is the one the app creates when someone turns rate alerts
+          on (src/lib/push.ts). Naming it here as the default means a message
+          still lands if that channel has somehow gone, instead of being
+          dropped by Android for belonging to a channel that does not exist.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_rate" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorAccent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="rates" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -38,4 +62,12 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      Asked for at the moment someone turns rate alerts on, and never before —
+      Android 13 and later show the system prompt only once, and spending it on
+      first launch, before anyone has been told what the notifications are for,
+      is how an app gets a permanent no.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

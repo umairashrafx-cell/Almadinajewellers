@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 import { Analytics } from "@/components/layout/Analytics";
+import { PushBridge } from "@/components/app/PushBridge";
 import { ServiceWorker } from "@/components/layout/ServiceWorker";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -308,6 +309,8 @@ function RootComponent() {
       </div>
       {/* Renders nothing and loads nothing unless the tracking IDs are set. */}
       <Analytics />
+      {/* Inside the Android app only: catches a tapped rate notification. */}
+      <PushBridge />
       {/* Production only: the offline page for the website and the Android app. */}
       <ServiceWorker />
     </QueryClientProvider>
