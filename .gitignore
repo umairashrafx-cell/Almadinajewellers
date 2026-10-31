@@ -40,3 +40,9 @@ dist-ssr
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+# Firebase service account keys. These are live credentials and this repository
+# is public: one `git add .` would publish the shop's Firebase project. The
+# download keeps its generated name, so match the shape rather than one file.
+*firebase-adminsdk*.json
+service-account*.json
