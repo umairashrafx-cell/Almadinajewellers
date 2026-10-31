@@ -29,7 +29,7 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
    * request is made either way and the markets block renders nothing until it
    * has something to say.
    */
-  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot);
+  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 15000);
 
   if (rates.empty) return <NoRatesYet refresh={rates.refresh} loading={rates.loading} />;
   if (!rates.data) return <Waiting />;

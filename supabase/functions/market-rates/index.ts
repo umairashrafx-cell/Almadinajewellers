@@ -23,9 +23,22 @@
  * platform, and every upstream here is keyless.
  */
 
-/** How long a fetched board stays good. Five minutes is finer than anyone
- *  walking into a jeweller's needs, and keeps us far inside every free tier. */
-const CACHE_SECONDS = 300;
+/**
+ * How long a fetched board stays good.
+ *
+ * Fifteen seconds, matching how often the app asks while its rate screen is
+ * open — so a customer watching the board sees it move, and the upstreams see
+ * four requests a minute no matter how many phones are watching. That is the
+ * whole point of caching here rather than in the app: the cost of this board
+ * does not grow with the number of customers.
+ *
+ * Shorter than this buys nothing. Gold and the dollar index are republished
+ * about once a minute at these sources, so asking sixty times a minute would
+ * return the same figure fifty-nine times and get us refused on the sixtieth.
+ * Bitcoin is the one instrument that genuinely moves faster, and the app
+ * streams that straight from the exchange rather than through here.
+ */
+const CACHE_SECONDS = 15;
 
 /** Nothing upstream is allowed to hold the whole board up. */
 const UPSTREAM_TIMEOUT_MS = 8000;

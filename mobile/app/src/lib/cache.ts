@@ -69,7 +69,7 @@ export type Cached<T> = {
  * board, and quietly replaces it when the network answers. A failed fetch is
  * not an error screen — it is yesterday's figures with a line saying so.
  */
-export function useCached<T>(key: string, load: () => Promise<T>): Cached<T> {
+export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: number): Cached<T> {
   const [data, setData] = useState<T>();
   const [stale, setStale] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -111,6 +111,33 @@ export function useCached<T>(key: string, load: () => Promise<T>): Cached<T> {
   }, [key, attempt]);
 
   const refresh = useCallback(() => setAttempt((n) => n + 1), []);
+
+  /*
+   * Screens that want to keep moving say how often, in milliseconds. Only the
+   * international board asks for this; a rate the shop sets by hand each
+   * morning has nothing to gain from being asked for again.
+   *
+   * Never while the app is out of sight. A phone in a pocket fetching every
+   * few seconds is battery and data spent on a figure nobody is reading, so
+   * the clock stops when the app is hidden and goes again the moment it is
+   * back — which also means the first thing somebody sees on returning is
+   * current, not whatever was on screen when they put the phone down.
+   */
+  useEffect(() => {
+    if (!everyMs) return;
+
+    const tick = () => {
+      if (document.visibilityState === "visible") setAttempt((n) => n + 1);
+    };
+
+    const timer = setInterval(tick, everyMs);
+    document.addEventListener("visibilitychange", tick);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [everyMs]);
 
   return { data, stale, empty: data === undefined && !loading, loading, refresh };
 }
