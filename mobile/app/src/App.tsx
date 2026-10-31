@@ -31,14 +31,21 @@ const TABS = [
   { id: "rate", label: "Rate", icon: Gem },
   { id: "pieces", label: "Pieces", icon: Sparkles },
   { id: "calculator", label: "Calculator", icon: Calculator },
-  { id: "saved", label: "Saved", icon: Heart },
   { id: "store", label: "Store", icon: Store },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+/**
+ * Saved is a screen but not a tab.
+ *
+ * The bar is for the four things somebody opens the app to do. The saved
+ * pieces are a place they come back to, not one of those four, so the heart
+ * sits in the header beside the door to the website — and the bar keeps the
+ * room it needs to spell "Calculator".
+ */
+type View = (typeof TABS)[number]["id"] | "saved";
 
 export function App() {
-  const [tab, setTab] = useState<TabId>("rate");
+  const [view, setView] = useState<View>("rate");
 
   /*
    * One snapshot, two screens. The board and the calculator must never show
@@ -50,50 +57,72 @@ export function App() {
     <div className="flex min-h-screen flex-col bg-ivory">
       <header className="flex items-center justify-between border-b border-gold/20 bg-ivory px-4 py-3">
         <p className="font-display text-lg tracking-[0.2em] text-primary uppercase">Al-Madina</p>
-        {/*
-          The door to the rest of the website — the forms, the cart, the custom
-          order. It said "Shop" while the app had no catalogue of its own; with
-          a Pieces tab and a Store tab in the bar below, that word now belongs
-          to two other things, and the honest name for what this opens is the
-          website itself.
-        */}
-        <button
-          type="button"
-          onClick={() => openShop("/collections")}
-          className="inline-flex items-center gap-2 border border-gold/45 px-3 py-2 text-[11px] font-semibold tracking-widest text-gold-deep uppercase transition-colors hover:bg-gold hover:text-primary"
-        >
-          <ExternalLink className="h-4 w-4" aria-hidden />
-          Website
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/*
+            The heart, filled while you are looking at what it holds. No label:
+            at this size a word beside the Website button crowds the line, and
+            a heart in a jeweller's app needs no explaining.
+          */}
+          <button
+            type="button"
+            onClick={() => setView(view === "saved" ? "rate" : "saved")}
+            aria-label="Saved pieces"
+            aria-pressed={view === "saved"}
+            className={cn(
+              "inline-grid h-9 w-9 place-items-center border transition-colors",
+              view === "saved"
+                ? "border-gold bg-gold text-primary"
+                : "border-gold/45 text-gold-deep hover:bg-gold hover:text-primary",
+            )}
+          >
+            <Heart className={cn("h-4 w-4", view === "saved" && "fill-current")} aria-hidden />
+          </button>
+
+          {/*
+            The door to the rest of the website — the forms, the cart, the custom
+            order. It said "Shop" while the app had no catalogue of its own; with
+            a Pieces tab and a Store tab in the bar below, that word now belongs
+            to two other things, and the honest name for what this opens is the
+            website itself.
+          */}
+          <button
+            type="button"
+            onClick={() => openShop("/collections")}
+            className="inline-flex items-center gap-2 border border-gold/45 px-3 py-2 text-[11px] font-semibold tracking-widest text-gold-deep uppercase transition-colors hover:bg-gold hover:text-primary"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden />
+            Website
+          </button>
+        </div>
       </header>
 
       <main className="flex-1">
-        {tab === "rate" && <RateScreen rates={rates} />}
-        {tab === "pieces" && <PiecesScreen />}
-        {tab === "calculator" && <CalculatorScreen rates={rates} />}
-        {tab === "saved" && <SavedScreen />}
-        {tab === "store" && <StoreScreen />}
+        {view === "rate" && <RateScreen rates={rates} />}
+        {view === "pieces" && <PiecesScreen />}
+        {view === "calculator" && <CalculatorScreen rates={rates} />}
+        {view === "saved" && <SavedScreen />}
+        {view === "store" && <StoreScreen />}
       </main>
 
       <nav
         aria-label="Sections"
-        className="sticky bottom-0 grid grid-cols-5 border-t border-gold/25 bg-ivory"
+        className="sticky bottom-0 grid grid-cols-4 border-t border-gold/25 bg-ivory"
       >
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
-            onClick={() => setTab(id)}
-            aria-current={tab === id ? "page" : undefined}
+            onClick={() => setView(id)}
+            aria-current={view === id ? "page" : undefined}
             className={cn(
               /*
-               * Five across a 360px phone leaves about seventy pixels a tab,
-               * and "Calculator" is the one that decides the type size. Nine
-               * pixels at narrower tracking fits it without wrapping; the
-               * icons carry the recognition anyway.
+               * Four across a 360px phone leaves ninety pixels a tab, which is
+               * what "Calculator" needs at the house size. It was nine pixels
+               * while Saved was down here too, and cramped at it.
                */
-              "flex flex-col items-center gap-1 px-1 py-3 text-[9px] leading-none font-semibold tracking-wide uppercase transition-colors",
-              tab === id ? "text-gold-deep" : "text-warmgrey",
+              "flex flex-col items-center gap-1 py-3 text-[10px] leading-none font-semibold tracking-widest uppercase transition-colors",
+              view === id ? "text-gold-deep" : "text-warmgrey",
             )}
           >
             <Icon className="h-5 w-5" aria-hidden />
