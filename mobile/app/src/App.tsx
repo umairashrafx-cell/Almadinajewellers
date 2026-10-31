@@ -56,7 +56,19 @@ export function App() {
   return (
     <div className="flex min-h-screen flex-col bg-ivory">
       <header className="flex items-center justify-between border-b border-gold/20 bg-ivory px-4 py-3">
-        <p className="font-display text-lg tracking-[0.2em] text-primary uppercase">Al-Madina</p>
+        {/*
+          The full name, set the way it is on the shopfront and on a bill:
+          AL-MADINA over JEWELLERS, the second line smaller and wider. On one
+          line at 375px it would take two thirds of the header and leave the
+          heart and the website button fighting for what is left — the stacked
+          lockup says the whole name in the width of half of it.
+        */}
+        <p className="font-display text-primary uppercase">
+          <span className="block text-lg leading-none tracking-[0.2em]">Al-Madina</span>
+          <span className="mt-1 block text-[9px] leading-none tracking-[0.42em] text-gold-deep">
+            Jewellers
+          </span>
+        </p>
 
         <div className="flex items-center gap-2">
           {/*
