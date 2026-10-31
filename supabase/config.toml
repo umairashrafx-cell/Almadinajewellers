@@ -20,3 +20,14 @@ project_id = "uldsqxymxjwhifrmonis"
 # answers 403 when the header does not match. Set that secret.
 [functions.notify-enquiry]
 verify_jwt = false
+
+# The international market board. Called straight from the app's own screens,
+# which are served from https://localhost inside the WebView and carry no user
+# session, so there is no JWT to verify and nothing private behind it: every
+# figure it returns is a public reference price from a public endpoint.
+#
+# What it does guard is the upstreams. It serves a cached board and refreshes
+# at most once every few minutes, so neither the app nor anyone who finds the
+# URL can put a free API's rate limit at risk.
+[functions.market-rates]
+verify_jwt = false

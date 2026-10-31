@@ -3,10 +3,14 @@ import { RefreshCcw } from "lucide-react";
 import { RateAlerts } from "@/components/app/RateAlerts";
 import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
 import { ActionButton, ActionLink } from "@/components/ui/ActionButton";
+import { fetchMarketSnapshot } from "@/lib/markets";
+import type { MarketSnapshot } from "@/lib/markets";
 import { SITE, whatsappLink } from "@/lib/site";
 import type { RateSnapshot } from "@/lib/rates";
 
 import { Kept } from "../components/Kept";
+import { MarketsBoard } from "../components/MarketsBoard";
+import { MARKETS_KEY, useCached } from "../lib/cache";
 import type { Cached } from "../lib/cache";
 
 /**
@@ -18,6 +22,15 @@ import type { Cached } from "../lib/cache";
  * morning's figures, with a line saying when they were taken.
  */
 export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
+  /*
+   * Fetched here rather than in App, because this is the only screen that
+   * shows them, and before the early returns below, because a hook cannot be
+   * called conditionally. It costs nothing when there is no board to draw: the
+   * request is made either way and the markets block renders nothing until it
+   * has something to say.
+   */
+  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot);
+
   if (rates.empty) return <NoRatesYet refresh={rates.refresh} loading={rates.loading} />;
   if (!rates.data) return <Waiting />;
 
@@ -38,6 +51,14 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         Rates move through the day. Your price is confirmed against the rate at the time of
         purchase, and every piece is weighed in front of you before it is billed.
       </p>
+
+      {/*
+        The world's prices, after the shop's own and after the sentence that
+        ends them. A customer in the Sarafa follows gold in dollars and the
+        rupee against it; this is that context, kept visibly separate from the
+        figure they are actually being quoted.
+      */}
+      <MarketsBoard markets={markets} />
     </div>
   );
 }
