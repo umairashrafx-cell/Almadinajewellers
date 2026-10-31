@@ -14,6 +14,8 @@ import { useCallback, useEffect, useState } from "react";
 
 export const RATES_KEY = "amj:cache:rates";
 export const SAVED_KEY = "amj:cache:saved";
+/** The catalogue as the app last saw it, so the grid opens with no connection. */
+export const PIECES_KEY = "amj:cache:pieces";
 
 /**
  * The wishlist, mirrored by the website. Written by src/hooks/use-wishlist.ts
