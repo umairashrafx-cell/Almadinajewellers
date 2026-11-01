@@ -117,6 +117,82 @@ function drawCover(
 }
 
 /**
+ * Does this browser's canvas blur?
+ *
+ * ctx.filter is everywhere current and was missing from Safari until 16.4,
+ * which is still on phones. Asked by setting it and reading it back, because a
+ * browser that does not know the property keeps "none".
+ */
+function blurs(ctx: CanvasRenderingContext2D): boolean {
+  const before = ctx.filter;
+  ctx.filter = "blur(1px)";
+  const supported = ctx.filter !== "none";
+  ctx.filter = before;
+  return supported;
+}
+
+/**
+ * object-fit: contain, with the photograph itself as the ground behind it.
+ *
+ * A piece is the one thing on its card that must arrive whole. The box it goes
+ * in is wider than it is tall and wider than any photograph the shop takes, so
+ * covering it took a fifth of the height off the top and the same off the
+ * bottom — on a necklace that is the clasp and the drop, the two ends of the
+ * thing somebody is being shown.
+ *
+ * Containing it leaves a margin either side, and cream there reads as a
+ * mistake rather than as a frame. So the same photograph fills the box
+ * underneath, blurred out of focus and veiled in cream: a ground that belongs
+ * to this piece and that nobody could mistake for part of it.
+ */
+function drawContain(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  const scale = Math.min(w / img.width, h / img.height);
+  const dw = img.width * scale;
+  const dh = img.height * scale;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.fillStyle = LIGHT.cream;
+  ctx.fillRect(x, y, w, h);
+
+  if (blurs(ctx)) {
+    ctx.filter = "blur(56px)";
+    /*
+     * Drawn over-size on purpose: a blur reads from beyond the edges of what
+     * it is given, and at the box's own size that shows up as a pale border
+     * inside the clip.
+     */
+    drawCover(ctx, img, x - 80, y - 80, w + 160, h + 160);
+    ctx.filter = "none";
+
+    ctx.fillStyle = "rgba(250,247,242,0.66)";
+    ctx.fillRect(x, y, w, h);
+  }
+
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+
+  /*
+   * A hairline where the photograph ends, drawn over it. Without one, a piece
+   * shot on cream sits on a ground of its own blurred cream and the two run
+   * together, which makes the margin look like a fault rather than a mount.
+   */
+  ctx.strokeStyle = "rgba(11,61,46,0.14)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  ctx.restore();
+}
+
+/**
  * Letter-spaced capitals, which the wordmark and the small labels use.
  *
  * Native letterSpacing where the browser has it, which is everywhere current.
@@ -1119,10 +1195,12 @@ export async function renderProductCard(product: ProductDetail, listedPkr: numbe
   ctx.fillRect(0, 0, CARD_W, CARD_H);
 
   /*
-   * The photograph, and a gold rule where it ends.
+   * The photograph, whole, and a gold rule where it ends.
    *
-   * Cut straight rather than faded: on a cream ground a scrim would read as a
-   * smudge, where a line of gold reads as the edge of a frame.
+   * Whole because the piece is the point: see drawContain, which fits the
+   * photograph inside this band rather than filling it. Cut straight rather
+   * than faded, because on a cream ground a scrim would read as a smudge,
+   * where a line of gold reads as the edge of a frame.
    */
   ctx.font = `400 60px ${DISPLAY}`;
   const nameLines = wrap(ctx, product.name, CARD_W - 220).slice(0, 2);
@@ -1135,7 +1213,7 @@ export async function renderProductCard(product: ProductDetail, listedPkr: numbe
   if (first) {
     try {
       const img = await loadImage(first);
-      drawCover(ctx, img, 0, 0, CARD_W, photoH);
+      drawContain(ctx, img, 0, 0, CARD_W, photoH);
       drew = true;
     } catch {
       // A photograph that will not load is not a reason to withhold the card.
