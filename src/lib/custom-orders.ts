@@ -21,7 +21,15 @@ export const CUSTOM_ORDER_BUCKET = "custom-orders";
 
 const PHONE = /^(\+?92|0)?[\s-]?\d{2,4}[\s-]?\d{6,8}$/;
 
-/** 12 MB. Enough for a phone photograph or a minute or two of speech. */
+/**
+ * What an attachment may be: 12 MB, and a photograph or a recording.
+ *
+ * Enough for a phone photograph or a minute or two of speech. The bucket
+ * enforces both of these itself — see the custom_order_upload_limits
+ * migration — because anybody can upload here without signing in, and a check
+ * in the browser only stops an honest mistake. These two are the friendly half
+ * of one rule: change them here and change them there in the same breath.
+ */
 export const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
 
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/avif"];
