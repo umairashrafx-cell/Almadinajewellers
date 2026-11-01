@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Product } from "@/data/products";
 import type { RateSnapshot } from "@/lib/rates";
 import { SITE, formatGrams, formatPKR, productUrl } from "@/lib/site";
+import { throttleMessage } from "@/lib/throttle";
 
 /**
  * Order requests.
@@ -99,9 +100,10 @@ export async function placeOrder(
 
   if (error) {
     throw new Error(
-      /violates|constraint/i.test(error.message)
-        ? "Please check the details and try again."
-        : "We could not place that order just now. Please try again, or send it to us on WhatsApp.",
+      throttleMessage(error) ??
+        (/violates|constraint/i.test(error.message)
+          ? "Please check the details and try again."
+          : "We could not place that order just now. Please try again, or send it to us on WhatsApp."),
     );
   }
 

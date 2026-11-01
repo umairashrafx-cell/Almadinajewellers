@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { throttleMessage } from "@/lib/throttle";
 
 /**
  * Enquiry submission. The enquiries table is insert-only for the public, so
@@ -64,9 +65,10 @@ export async function submitBridalEnquiry(values: BridalEnquiry): Promise<void> 
 
   if (error) {
     throw new Error(
-      error.message.includes("violates")
-        ? "Please check the details and try again."
-        : "We could not save that just now. Please try again, or send us a message on WhatsApp.",
+      throttleMessage(error) ??
+        (error.message.includes("violates")
+          ? "Please check the details and try again."
+          : "We could not save that just now. Please try again, or send us a message on WhatsApp."),
     );
   }
 }
@@ -146,9 +148,10 @@ export async function submitContactEnquiry(values: ContactEnquiry): Promise<void
   }
 
   throw new Error(
-    error.message.includes("violates")
-      ? "Please check the details and try again."
-      : "We could not send that just now. Please try again, or reach us on WhatsApp.",
+    throttleMessage(error) ??
+      (error.message.includes("violates")
+        ? "Please check the details and try again."
+        : "We could not send that just now. Please try again, or reach us on WhatsApp."),
   );
 }
 
