@@ -1,6 +1,6 @@
 # Phase 6 — an assistant, and the automations around it
 
-A plan, not a build. The roadmap says to *plan* the assistant and *propose* the
+A plan, not a build. The roadmap says to _plan_ the assistant and _propose_ the
 n8n workflows, and it puts both behind a condition: "Only after data/security
 foundations are verified." Those are verified — phases 1 to 5 are merged, the
 throttle was checked against the live database with a real submission, and the
@@ -20,11 +20,11 @@ on the site today.
 
 **Curated prose, already written and already shown to customers**
 
-| Source | What it holds |
-|---|---|
-| `src/lib/faq.ts` | 173 lines of answers by topic — ordering, hallmarking, buy-back, delivery |
+| Source                  | What it holds                                                             |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `src/lib/faq.ts`        | 173 lines of answers by topic — ordering, hallmarking, buy-back, delivery |
 | `src/lib/roman-urdu.ts` | The same answers in Roman Urdu, under the rate board and the selling page |
-| `src/lib/site.ts` | `SITE` and `STORES`: address, hours, phones, the WhatsApp link |
+| `src/lib/site.ts`       | `SITE` and `STORES`: address, hours, phones, the WhatsApp link            |
 
 Both files carry the same rule in their own doc comments: nothing in them is
 invented, every answer restates something the site says elsewhere, and a
@@ -188,17 +188,19 @@ with who made it and when, and `/admin/orders` shows the trail. Sending the
 message is what still waits on a WhatsApp sender. Whatever eventually sends it
 should read that table rather than race the UPDATE that caused the change.
 
+The sender itself is costed in [whatsapp-sender.md](./whatsapp-sender.md).
+
 ---
 
 ## 6. Risks, and how each is held down
 
-| Risk | Why it matters here | Held down by |
-|---|---|---|
-| A wrong price from a machine | A quote is an argument at the counter and a lost customer | Tier 2 only, through the site's tested pricing functions; the model does no arithmetic |
-| Prompt injection | Reviews are customer-written and product names are editable; both would sit in the corpus | Corpus is delimited data, never instructions; no tools, so there is nothing to hijack |
-| A policy drifting | Two copies of the buy-back rule is how they disagree | Tier 1 is verbatim from `faq.ts`; no second copy is written |
-| Cost | A chat box is a bill that scales with strangers | `check_request` throttle, plus a per-day ceiling in the function |
-| Exposure of customer data | The worst outcome available | The assistant reads nothing admin-only; section 2 |
+| Risk                         | Why it matters here                                                                       | Held down by                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| A wrong price from a machine | A quote is an argument at the counter and a lost customer                                 | Tier 2 only, through the site's tested pricing functions; the model does no arithmetic |
+| Prompt injection             | Reviews are customer-written and product names are editable; both would sit in the corpus | Corpus is delimited data, never instructions; no tools, so there is nothing to hijack  |
+| A policy drifting            | Two copies of the buy-back rule is how they disagree                                      | Tier 1 is verbatim from `faq.ts`; no second copy is written                            |
+| Cost                         | A chat box is a bill that scales with strangers                                           | `check_request` throttle, plus a per-day ceiling in the function                       |
+| Exposure of customer data    | The worst outcome available                                                               | The assistant reads nothing admin-only; section 2                                      |
 
 **Rollback.** The assistant is one Edge Function and one flag. Turning the flag
 off removes the entry point; deleting the function removes it entirely. No
@@ -221,7 +223,10 @@ migrate back. The n8n workflows are rolled back by switching each off in n8n.
    would need to say so.
 5. **A WhatsApp sender.** Workflows 1 and 4 message customers. That needs a
    WhatsApp Business sender and the shop's agreement about what customers are
-   told and how they stop it.
+   told and how they stop it. Now costed, in
+   [whatsapp-sender.md](./whatsapp-sender.md): the messages are pennies at this
+   shop's volume and the fixed cost is the whole bill, so the recommendation
+   there is to wait — and to close one phone-normalisation hole either way.
 
 Nothing in this document has been implemented, and nothing should be until
 those five are answered.
