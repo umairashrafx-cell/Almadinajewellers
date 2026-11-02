@@ -1,0 +1,27 @@
+{
+  /*
+   * The Android app's own screens, typechecked.
+   *
+   * They were not, and nothing said so: tsconfig.json covers src/, and Vite
+   * builds the app with esbuild, which strips the types without reading them.
+   * So the app shipped whatever compiled, and the first error in it was found
+   * by pointing the compiler at the directory on purpose.
+   *
+   * A second project rather than more paths in the first, because the app and
+   * the website are built separately and the website's own check must not
+   * start depending on mobile/node_modules being installed.
+   *
+   * The compiler options are the website's, down to
+   * exactOptionalPropertyTypes. The two halves share src/ — the board, the
+   * calculator and the arithmetic under them are the same files — so a rule
+   * that holds on one side and not the other would be a rule that does not
+   * hold.
+   */
+  "extends": "./tsconfig.json",
+  "include": [
+    "mobile/app/src/**/*.ts",
+    "mobile/app/src/**/*.tsx",
+    "mobile/app/vite.config.ts",
+    "mobile/capacitor.config.ts"
+  ]
+}

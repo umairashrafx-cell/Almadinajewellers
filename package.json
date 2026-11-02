@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "typecheck:mobile": "tsc --noEmit -p tsconfig.mobile.json",
     "format": "prettier --write .",
     "check:migrations": "bun scripts/check-migrations.mjs",
     "test": "vitest run",

@@ -19,6 +19,14 @@ import { supabase } from "@/integrations/supabase/client";
 /** Agreed with RATE_CHANNEL in the Edge Function. */
 const CHANNEL_ID = "rates";
 
+/**
+ * The page a tapped notification is about. Agreed with RATE_PATH in that
+ * same function, and exported because the app's own screens answer the tap
+ * too — they have the board already, and going to the website to read the
+ * same figures would be slower and would need a signal.
+ */
+export const RATE_ALERT_PATH = "/gold-rate-in-mandi-bahauddin-today";
+
 /** Remembered on the phone, so the card knows what to show before asking. */
 const WANTED_KEY = "amj:rate-alerts";
 const TOKEN_KEY = "amj:push-token";
@@ -41,7 +49,55 @@ export type AlertState =
  */
 const untyped = supabase as unknown as SupabaseClient;
 
-function remember(key: string, value: string | null) {
+/**
+ * Where the phone keeps what it knows about its own subscription.
+ *
+ * localStorage is the obvious place, and was the first one, until what that
+ * means here became clear: the app is two halves — its own screens, bundled
+ * and served from https://localhost, and the website at
+ * www.almadinajeweller.com — and those are separate origins with separate
+ * localStorage. Alerts turned on from the app's rate tab were invisible to the
+ * website's pages and to the launch housekeeping that runs on them, which is
+ * how a reissued token could quietly end a subscription the card still called
+ * on.
+ *
+ * Capacitor Preferences belongs to the app rather than to an origin, so both
+ * halves read one answer. The same reasoning as mobile/app/src/lib/cache.ts.
+ * In a browser there is no plugin and no second half, and localStorage is
+ * still exactly right.
+ */
+async function appStore() {
+  if (!(await inApp())) return null;
+
+  try {
+    const { Preferences } = await import("@capacitor/preferences");
+    return Preferences;
+  } catch {
+    return null;
+  }
+}
+
+function localRecalled(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+async function remember(key: string, value: string | null): Promise<void> {
+  const prefs = await appStore();
+
+  if (prefs) {
+    try {
+      if (value === null) await prefs.remove({ key });
+      else await prefs.set({ key, value });
+      return;
+    } catch {
+      // Fall through. This origin's own storage is better than nowhere.
+    }
+  }
+
   try {
     if (value === null) localStorage.removeItem(key);
     else localStorage.setItem(key, value);
@@ -51,12 +107,26 @@ function remember(key: string, value: string | null) {
   }
 }
 
-function recalled(key: string): string | null {
+async function recalled(key: string): Promise<string | null> {
+  const prefs = await appStore();
+  if (!prefs) return localRecalled(key);
+
   try {
-    return localStorage.getItem(key);
+    const { value } = await prefs.get({ key });
+    if (value !== null) return value;
   } catch {
-    return null;
+    // Unreadable. The lines below are the only other place it could be.
   }
+
+  /*
+   * Written by a build that kept this in localStorage, on whichever half of
+   * the app happened to be open at the time. Moved across on the way past, so
+   * somebody who turned alerts on before this change is not shown a card
+   * offering them what they already have.
+   */
+  const old = localRecalled(key);
+  if (old !== null) await remember(key, old);
+  return old;
 }
 
 /** True only inside the app. Everything below returns early without it. */
@@ -142,7 +212,7 @@ export async function alertState(): Promise<AlertState> {
   if (receive === "denied") return "blocked";
   if (receive !== "granted") return "off";
 
-  return recalled(WANTED_KEY) === "yes" ? "on" : "off";
+  return (await recalled(WANTED_KEY)) === "yes" ? "on" : "off";
 }
 
 /**
@@ -193,8 +263,8 @@ export async function enableRateAlerts(): Promise<AlertState> {
     return "off";
   }
 
-  remember(TOKEN_KEY, token);
-  remember(WANTED_KEY, "yes");
+  await remember(TOKEN_KEY, token);
+  await remember(WANTED_KEY, "yes");
   return "on";
 }
 
@@ -216,7 +286,7 @@ export async function disableRateAlerts(): Promise<AlertState> {
    * it can still be deleted. Saying "off" while the row lives on would leave
    * somebody with notifications they have no way to stop.
    */
-  const token = recalled(TOKEN_KEY) ?? (await registrationToken());
+  const token = (await recalled(TOKEN_KEY)) ?? (await registrationToken());
 
   if (!token) {
     console.error("push: no token to forget, so the subscription is still live");
@@ -237,8 +307,8 @@ export async function disableRateAlerts(): Promise<AlertState> {
     console.error("push: unregister failed", error);
   }
 
-  remember(TOKEN_KEY, null);
-  remember(WANTED_KEY, null);
+  await remember(TOKEN_KEY, null);
+  await remember(WANTED_KEY, null);
   return "off";
 }
 
@@ -256,7 +326,7 @@ export async function disableRateAlerts(): Promise<AlertState> {
  * upsert costs one call a launch and moves last_seen_at either way.
  */
 export async function refreshRegistration(): Promise<void> {
-  if (recalled(WANTED_KEY) !== "yes") return;
+  if ((await recalled(WANTED_KEY)) !== "yes") return;
   if ((await alertState()) !== "on") return;
 
   const token = await registrationToken();
@@ -267,7 +337,7 @@ export async function refreshRegistration(): Promise<void> {
     p_platform: "android",
   });
 
-  if (!error) remember(TOKEN_KEY, token);
+  if (!error) await remember(TOKEN_KEY, token);
 }
 
 /**

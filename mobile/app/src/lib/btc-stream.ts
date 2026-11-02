@@ -53,8 +53,14 @@ export function useLiveBitcoin(): LiveQuote | undefined {
           const price = Number(frame.c);
           if (!Number.isFinite(price)) return;
 
+          /*
+           * The day's move is left off rather than set to undefined when the
+           * frame does not carry one. Under exactOptionalPropertyTypes an
+           * optional property and a property holding undefined are not the
+           * same thing, and the board asks whether the key is there.
+           */
           const move = Number(frame.P);
-          setQuote({ usd: price, changePercent: Number.isFinite(move) ? move : undefined });
+          setQuote(Number.isFinite(move) ? { usd: price, changePercent: move } : { usd: price });
         } catch {
           // A frame we cannot read is not worth a thought; the next one is a
           // second away.
