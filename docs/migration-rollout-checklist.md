@@ -1,8 +1,8 @@
 # Migration rollout checklist
 
 Date written: 2026-11-02
-Applies to the three migrations merged on 2026-11-02 and not yet applied to the
-live database:
+Last run: 2026-11-02. One of the three migrations below is applied; two are
+not. See "Where this stands" after the table.
 
 | Version        | File                             | What it changes                                                                                                          |
 | -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -13,6 +13,32 @@ live database:
 Vercel deploys the website only. It does not run migrations, so until the push
 below the site runs new code against the old database.
 
+## Where this stands
+
+The first push attempt on 2026-11-02 applied 20261102090000 and then stopped:
+
+| Version        | State                                                         |
+| -------------- | ------------------------------------------------------------- |
+| 20261102090000 | Applied. The review policy change is live now.                |
+| 20261102100000 | Not applied — it failed to parse. Fixed; needs pushing again. |
+| 20261102110000 | Not applied. The push stopped before reaching it.             |
+
+The failure was `ERROR: unterminated /* comment` (SQLSTATE 42601) on the
+upload-limits migration. PostgreSQL nests block comments, and that file had a
+mime-type wildcard written inside one, which opened a second comment the
+closer never got back out of — taking the dollar-quote terminator with it.
+Nothing from that file applied: the statement never parsed, so the transaction
+rolled back whole. The bucket still has no size or type limit until it is
+pushed again.
+
+Two consequences worth holding on to:
+
+- A migration that fails leaves the ones before it applied. The run is not
+  atomic across files, only within each one. After any failure, read
+  `supabase migration list --linked` rather than assuming the push was undone.
+- Because 20261102090000 is already live, checks 1 to 3 under "After pushing"
+  apply right now, not after the next push.
+
 ## Before pushing
 
 1. Be on `master` with the merge commits present:
@@ -21,19 +47,32 @@ below the site runs new code against the old database.
    git checkout master && git pull
    ```
 
-2. Read the list `db push` prints before confirming it. Exactly the three
-   versions above should be pending. If it offers to apply anything else, stop
-   and find out what it is first — Supabase keys applied migrations on the
-   version number alone, so a repeat version is applied once and silently
-   skipped thereafter.
+2. Parse every migration before sending any of them:
+
+   ```bash
+   bun run check:migrations
+   ```
+
+   This is the check that would have caught the 2026-11-02 failure. It uses
+   PostgreSQL's own grammar and compiles every `DO` block and function body,
+   which is the layer that rejected the file. It talks to no database, so it
+   says nothing about privileges or whether a policy is right — only that the
+   files will parse. It refuses to report a pass unless it can still fail a
+   known-bad snippet.
+
+3. Read the list `db push` prints before confirming it. Only the versions
+   marked not applied above should be pending — two, as of the last run. If
+   it offers to apply anything else, stop and find out what it is first:
+   Supabase keys applied migrations on the version number alone, so a repeat
+   version is applied once and silently skipped thereafter.
 
    ```bash
    bunx supabase db push
    ```
 
-3. Two statements in these migrations need privileges the migration role may
-   not hold: the `storage.objects` policy swap and `ALTER ROLE authenticator
-SET pgrst.db_pre_request`. Both are wrapped so that a refusal raises a
+4. Two statements in these migrations need privileges the migration role may
+   not hold: the `storage.objects` policy swap, and the `ALTER ROLE` that
+   installs the pre-request hook. Both are wrapped so that a refusal raises a
    warning instead of failing the push. Read the output. A line beginning
    `WARNING: Could not` means that piece did not take effect and has to be
    done from the dashboard — the rest of the migration still applied.

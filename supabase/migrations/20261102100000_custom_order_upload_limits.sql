@@ -24,18 +24,21 @@ BEGIN
            'image/webp',
            'image/heic',
            'image/avif',
-           /*
-            * Recordings, by family rather than by name. MediaRecorder hands
-            * back a type with its codec attached — "audio/webm;codecs=opus" —
-            * and which one a phone picks depends on the browser: Safari
-            * records mp4 and refuses webm outright. A list of exact names
-            * would turn that into a failed upload on somebody's phone and
-            * nobody else's.
-            *
-            * Images are named one by one instead, because image/* would also
-            * accept image/svg+xml, and an SVG is a document that can carry
-            * script. These files are opened by the shop from a signed URL.
-            */
+           -- Recordings, by family rather than by name. MediaRecorder hands
+           -- back a type with its codec attached — "audio/webm;codecs=opus" —
+           -- and which one a phone picks depends on the browser: Safari
+           -- records mp4 and refuses webm outright. A list of exact names
+           -- would turn that into a failed upload on somebody's phone and
+           -- nobody else's.
+           --
+           -- Images are named one by one instead, because a wildcard for them
+           -- would also accept image/svg+xml, and an SVG is a document that
+           -- can carry script. These files are opened by the shop from a
+           -- signed URL.
+           --
+           -- Line comments rather than a block comment, deliberately:
+           -- PostgreSQL nests block comments, so a mime-type wildcard written
+           -- inside one opens a second comment and the first is never closed.
            'audio/*'
          ]
    WHERE id = 'custom-orders';
