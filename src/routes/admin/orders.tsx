@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Package, Phone, Wallet } from "lucide-react";
+import { History, Loader2, Package, Phone, Wallet } from "lucide-react";
 
 import { Banner, Card, Chip, PageHeading, StatCard, toneBar } from "@/components/admin/ui";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import {
+  fetchOrderStatusHistory,
   fetchOrders,
   formatEnquiryDate,
   setOrderStatus,
@@ -249,8 +250,78 @@ function OrderCard({
               </select>
             </span>
           </div>
+
+          <Trail orderId={order.id} />
         </div>
       </Card>
     </li>
+  );
+}
+
+/**
+ * How this order got where it is.
+ *
+ * Folded away, and read only when somebody opens it. The trail matters when a
+ * customer is on the phone asking why their order has not moved, which is rare
+ * enough that fetching it for five hundred orders nobody asked about would be
+ * the wrong trade.
+ *
+ * A failure is shown rather than swallowed. An empty trail and a trail that
+ * could not be read look identical once the difference is hidden, and they
+ * mean opposite things: the first is an order placed before the trigger
+ * existed, the second is the migration not having been applied.
+ */
+function Trail({ orderId }: { orderId: string }) {
+  const [open, setOpen] = useState(false);
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ["admin", "orders", orderId, "history"],
+    queryFn: () => fetchOrderStatusHistory(orderId),
+    enabled: open,
+  });
+
+  return (
+    <div className="mt-5 border-t border-gold/15 pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((was) => !was)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-warmgrey transition-colors hover:text-primary"
+      >
+        <History className="h-3.5 w-3.5" aria-hidden="true" />
+        {open ? "Hide history" : "History"}
+      </button>
+
+      {open ? (
+        <div className="mt-3">
+          {isPending ? (
+            <p className="text-xs text-warmgrey">Reading the trail…</p>
+          ) : error ? (
+            <Banner tone="error">{(error as Error).message}</Banner>
+          ) : data && data.length > 0 ? (
+            <ol className="grid gap-1.5">
+              {data.map((step) => (
+                <li key={step.id} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                  <span className="font-medium text-ink">
+                    {step.action === "placed"
+                      ? "Placed"
+                      : `${step.old_status ?? "unknown"} → ${step.new_status}`}
+                  </span>
+                  <span className="nums text-warmgrey">{formatEnquiryDate(step.changed_at)}</span>
+                  <span className="text-warmgrey">
+                    {step.changed_by_email ??
+                      (step.action === "placed" ? "by the customer" : "not signed in")}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-xs text-warmgrey">
+              Nothing recorded. An order placed before this was switched on carries no trail.
+            </p>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }
