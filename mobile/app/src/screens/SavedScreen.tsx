@@ -2,6 +2,7 @@ import { Heart } from "lucide-react";
 
 import { ActionButton } from "@/components/ui/ActionButton";
 import type { Product } from "@/data/products";
+import { useWishlist } from "@/hooks/use-wishlist";
 import { fetchProductsBySkus } from "@/lib/catalogue";
 import { formatPKR } from "@/lib/site";
 
@@ -10,19 +11,27 @@ import { SAVED_KEY, savedSkus, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
 
 /**
- * The pieces saved while browsing the shop.
+ * The pieces somebody has kept.
  *
- * The saving happens on the website, where the pieces are — the heart on a
- * product card. That list is mirrored into the app's own storage as it
- * changes, because the website and these screens are different origins and
- * cannot see each other's localStorage. Here it is read back, priced at the
- * day's rate, and kept on the phone so it can be shown in a shop with no
- * signal, which is where somebody actually needs it.
+ * Saving happens wherever the pieces are: the heart on a card on the website,
+ * or the heart on the Pieces screen next door. Both of them write Capacitor
+ * Preferences, which is the one store the app's own screens and the website
+ * can both see, and a removal here writes it too — so the two halves cannot
+ * disagree about a list they both read from one place. src/lib/wishlist.ts
+ * carries the reasoning, and why Preferences rather than a merge of two lists.
  *
- * Read-only on purpose: the piece is removed where it was saved, one tap away
- * on the website, rather than in two places that can disagree.
+ * This screen used to be read-only, and said so: with the list kept in each
+ * origin's own localStorage there were two of it, and a removal in one place
+ * would have been undone by the other. There is one list now, so taking a
+ * piece off it belongs here, where somebody is looking at it.
+ *
+ * The pieces themselves are fetched for the SKUs that list holds, priced at
+ * the day's rate, and kept on the phone so they can be shown in a shop with no
+ * signal — which is where somebody actually needs them.
  */
 export function SavedScreen() {
+  const { has, toggle, ready } = useWishlist();
+
   const saved = useCached<Product[]>(SAVED_KEY, async () => {
     const skus = await savedSkus();
     return skus.length === 0 ? [] : await fetchProductsBySkus(skus);
@@ -36,10 +45,24 @@ export function SavedScreen() {
     );
   }
 
-  const pieces = saved.data ?? [];
+  const fetched = saved.data ?? [];
+
+  /*
+   * What was fetched, less whatever has been removed since.
+   *
+   * The fetch asks the saved list what to look up, so what came back was right
+   * when it was asked for; filtering against the live list is what makes a
+   * heart tapped here empty the row at once instead of on the next visit.
+   *
+   * Only once that list is the real one, though. Reading Preferences is
+   * asynchronous inside the app, and filtering against a list that has not
+   * arrived yet would blank the screen for a moment and announce that nothing
+   * is saved — which is the one thing it must not say wrongly.
+   */
+  const pieces = ready ? fetched.filter((piece) => has(piece.sku)) : fetched;
 
   return (
-    <div className="px-4 pb-10 pt-6">
+    <div className="px-4 pt-6 pb-10">
       <Kept stale={saved.stale} loading={saved.loading} refresh={saved.refresh} />
 
       <h1 className="font-display text-2xl font-light tracking-wide text-primary">Saved pieces</h1>
@@ -51,12 +74,12 @@ export function SavedScreen() {
         <>
           <ul className="mt-7 grid gap-4">
             {pieces.map((piece) => (
-              <Piece key={piece.sku} piece={piece} />
+              <Piece key={piece.sku} piece={piece} onRemove={() => toggle(piece.sku)} />
             ))}
           </ul>
           <p className="mt-8 text-center text-xs leading-relaxed text-warmgrey">
-            Prices are worked out against the day&rsquo;s rate and the piece&rsquo;s weight. Remove
-            a piece where you saved it, on its page in the shop.
+            Prices are worked out against the day&rsquo;s rate and the piece&rsquo;s weight. Tap a
+            heart to take a piece off the list.
           </p>
         </>
       )}
@@ -72,8 +95,8 @@ function Empty() {
         Nothing saved yet
       </h2>
       <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-warmgrey">
-        Tap the heart on a piece in the shop and it will be here, with its price at the day&rsquo;s
-        rate, whether or not you have a signal.
+        Tap the heart on a piece — on the Pieces screen or in the shop — and it will be here, with
+        its price at the day&rsquo;s rate, whether or not you have a signal.
       </p>
       <div className="mt-7">
         <ActionButton onClick={() => openShop("/collections")}>Browse the shop</ActionButton>
@@ -82,16 +105,16 @@ function Empty() {
   );
 }
 
-function Piece({ piece }: { piece: Product }) {
+function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
   const price = piece.salePricePkr ?? piece.pricePkr;
   const weight = piece.pricedWeightG ?? piece.grossWeightG;
 
   return (
-    <li>
+    <li className="relative">
       <button
         type="button"
         onClick={() => openShop(`/products/${piece.slug}`)}
-        className="flex w-full items-center gap-4 border border-gold/25 bg-white/70 p-3 text-left transition-colors hover:border-gold/60"
+        className="flex w-full items-center gap-4 border border-gold/25 bg-white/70 p-3 pr-14 text-left transition-colors hover:border-gold/60"
       >
         {/*
           The photograph comes from the shop's storage, so with no connection
@@ -119,6 +142,24 @@ function Piece({ piece }: { piece: Product }) {
           </span>
           <span className="mt-2 block text-sm font-semibold text-ink">{formatPKR(price)}</span>
         </span>
+      </button>
+
+      {/*
+        Outside the button that opens the piece, because a button inside a
+        button is not something a browser will render, and the row keeps a
+        right-hand gutter clear so the two tap targets never overlap.
+
+        A filled heart rather than a cross: it is the same gesture as the heart
+        that put the piece here, and tapping a filled heart to undo it is what
+        it does everywhere else in the app and on the website.
+      */}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${piece.name} from saved pieces`}
+        className="absolute top-1/2 right-3 grid h-9 w-9 -translate-y-1/2 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold"
+      >
+        <Heart className="h-4 w-4 fill-rose text-rose" strokeWidth={1.4} aria-hidden />
       </button>
     </li>
   );
