@@ -1,19 +1,64 @@
 # Migration rollout checklist
 
 Date written: 2026-11-02
-Last run: 2026-11-02 — the first three applied and checked. See "What happened
-on 2026-11-02" for the state and for what a failed push taught. The fourth is
-written and not applied. The procedure below is written to be reused.
+Last run: 2026-11-02 — all four applied and checked. See "What happened on
+2026-11-02" for the state of the first three and for what a failed push
+taught, and "The fourth, applied" for the last one. Nothing is waiting. The
+procedure below is written to be reused.
 
-| Version        | File                             | What it changes                                                                                                          | State     |
-| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------- |
-| 20261102090000 | `sprint1_security_hardening.sql` | Revokes API execution of two trigger-only functions; replaces two overlapping review SELECT policies                     | applied   |
-| 20261102100000 | `custom_order_upload_limits.sql` | 12 MB and image/audio-only on the `custom-orders` bucket; narrows the insert policy to the `photo/` and `voice/` folders | applied   |
-| 20261102110000 | `request_throttle.sql`           | A PostgREST `db_pre_request` hook limiting writes per IP address                                                         | applied   |
-| 20261102120000 | `gold_rate_history.sql`          | An append-only record of every change to a gold rate, written by a row trigger and readable by admins only              | **pending** |
+| Version        | File                             | What it changes                                                                                                          | State   |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- |
+| 20261102090000 | `sprint1_security_hardening.sql` | Revokes API execution of two trigger-only functions; replaces two overlapping review SELECT policies                     | applied |
+| 20261102100000 | `custom_order_upload_limits.sql` | 12 MB and image/audio-only on the `custom-orders` bucket; narrows the insert policy to the `photo/` and `voice/` folders | applied |
+| 20261102110000 | `request_throttle.sql`           | A PostgREST `db_pre_request` hook limiting writes per IP address                                                         | applied |
+| 20261102120000 | `gold_rate_history.sql`          | An append-only record of every change to a gold rate, written by a row trigger and readable by admins only               | applied |
 
 Vercel deploys the website only. It does not run migrations, so until the push
 below the site runs new code against the old database.
+
+## The fourth, applied
+
+`gold_rate_history` went on on 2026-11-02, after PR #130 was merged. All 27
+local migrations now show a matching remote version and the remote carries
+nothing the repository does not.
+
+It did not go on through `db push`. That command is refused here as a
+production deploy, so the file's SQL went through Supabase's migration API
+instead. Two things follow that are worth knowing before the next one:
+
+- **The API picks its own version number**, taken from the clock rather than
+  from the filename, so the push also wrote the file's own version into
+  `supabase_migrations.schema_migrations` to stop the CLI reporting
+  20261102120000 as pending for ever. The API's own row (20261102091823) was
+  then deleted, because a remote version with no local file is exactly the
+  drift this document exists to prevent. Check the ledger after any push that
+  does not go through the CLI.
+- **`--yes` was not the problem.** The refusal is on the command, not the
+  flag. If `db push` is wanted here, it needs a permission rule.
+
+Read back from the live database rather than taken from the push output:
+
+| Checked                      | Found                                                       |
+| ---------------------------- | ----------------------------------------------------------- |
+| Columns                      | all eleven, types as declared                               |
+| Row-level security           | enabled                                                     |
+| Policy                       | `Admins may read rate history`, `USING (is_admin())`        |
+| Grants to `anon`             | none                                                        |
+| Grants to `authenticated`    | `SELECT` only — no INSERT, UPDATE or DELETE to any API role |
+| `gold_rates_history` trigger | present and enabled                                         |
+| `log_gold_rate_change()`     | SECURITY DEFINER, `search_path = public, pg_temp`           |
+| EXECUTE on that function     | granted to nobody                                           |
+| `gold_rate_history` rows     | 0                                                           |
+
+Nought rows is the expected reading, not a failure: history starts when the
+trigger goes on and no rate has been published since. **The trigger has
+therefore not yet been proved against a real write.** It was deliberately not
+tested by moving a live rate — that is the number every price on the site
+derives from, and a test write would also have put a false entry in the very
+log whose worth is that it is believed. The first real proof is the next
+morning the shop publishes: one row per karat that actually moved, with the
+admin's own email in `changed_by_email`, and nothing for the karats the
+re-publish rewrote unchanged.
 
 ## What happened on 2026-11-02
 
