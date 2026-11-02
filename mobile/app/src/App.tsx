@@ -1,11 +1,21 @@
-import { Calculator, ExternalLink, Gem, Heart, Sparkles, Store } from "lucide-react";
-import { useState } from "react";
+import {
+  Calculator,
+  ExternalLink,
+  Gem,
+  Heart,
+  Sparkles,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { fetchRateSnapshot } from "@/lib/rates";
 import { cn } from "@/lib/utils";
 
+import { PushHousekeeping } from "./components/PushHousekeeping";
 import { RATES_KEY, useCached } from "./lib/cache";
 import { openShop } from "./lib/shop";
+import { viewFromHistory, type View } from "./lib/views";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
 import { PiecesScreen } from "./screens/PiecesScreen";
 import { RateScreen } from "./screens/RateScreen";
@@ -23,29 +33,45 @@ import { StoreScreen } from "./screens/StoreScreen";
  * website, which opens in this same WebView — the back button brings you home.
  *
  * No router: a handful of screens and a tab bar do not need one, and a router
- * would put a second idea of what a page is next to the website's. The one
- * place that borrows from history is a piece opened over the grid, so that
- * Android's back button closes it.
+ * would put a second idea of what a page is next to the website's. What the
+ * screens do borrow is history, because that is what Android's back button
+ * actually is — see lib/views.ts.
  */
-const TABS = [
+const TABS: ReadonlyArray<{ id: View; label: string; icon: LucideIcon }> = [
   { id: "rate", label: "Rate", icon: Gem },
   { id: "pieces", label: "Pieces", icon: Sparkles },
   { id: "calculator", label: "Calculator", icon: Calculator },
   { id: "store", label: "Store", icon: Store },
-] as const;
-
-/**
- * Saved is a screen but not a tab.
- *
- * The bar is for the four things somebody opens the app to do. The saved
- * pieces are a place they come back to, not one of those four, so the heart
- * sits in the header beside the door to the website — and the bar keeps the
- * room it needs to spell "Calculator".
- */
-type View = (typeof TABS)[number]["id"] | "saved";
+];
 
 export function App() {
-  const [view, setView] = useState<View>("rate");
+  /*
+   * The screen, read out of the history entry the app is sitting on.
+   *
+   * Not simply "rate": the Website button is a real navigation away, and
+   * coming back from it rebuilds this page from scratch. Reading the entry is
+   * what returns somebody to the tab they left instead of to the board.
+   */
+  const [view, setView] = useState<View>(() => viewFromHistory(window.history.state));
+
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => setView(viewFromHistory(event.state));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  /**
+   * Going to a screen, and leaving a way back to this one.
+   *
+   * Pushed rather than replaced, which is the whole point: four tabs deep,
+   * four back presses walk out the way somebody came in, and only the screen
+   * they started on leaves the app.
+   */
+  const go = (next: View) => {
+    if (next === view) return;
+    window.history.pushState({ view: next }, "");
+    setView(next);
+  };
 
   /*
    * One snapshot, two screens. The board and the calculator must never show
@@ -55,6 +81,14 @@ export function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-ivory">
+      {/*
+        Nothing on screen: the token housekeeping rate alerts need on launch,
+        and somewhere for a tapped notification to land. It belongs in the
+        shell because the app opens here, on its own screens, and never on the
+        website where the same work was already being done.
+      */}
+      <PushHousekeeping showRates={() => go("rate")} />
+
       <header className="flex items-center justify-between border-b border-gold/20 bg-ivory px-4 py-3">
         {/*
           The full name, set the way it is on the shopfront and on a bill:
@@ -75,10 +109,20 @@ export function App() {
             The heart, filled while you are looking at what it holds. No label:
             at this size a word beside the Website button crowds the line, and
             a heart in a jeweller's app needs no explaining.
+
+            Saved is a screen but not a tab. The bar below is for the four
+            things somebody opens the app to do; the saved pieces are a place
+            they come back to, not one of those four — and the bar keeps the
+            room it needs to spell "Calculator".
+
+            Opened over whatever they were doing and closed with a step back,
+            so the cross here and Android's own button are one gesture and
+            cannot disagree. The same arrangement as a piece opened over the
+            grid in PiecesScreen.
           */}
           <button
             type="button"
-            onClick={() => setView(view === "saved" ? "rate" : "saved")}
+            onClick={() => (view === "saved" ? window.history.back() : go("saved"))}
             aria-label="Saved pieces"
             aria-pressed={view === "saved"}
             className={cn(
@@ -125,7 +169,7 @@ export function App() {
           <button
             key={id}
             type="button"
-            onClick={() => setView(id)}
+            onClick={() => go(id)}
             aria-current={view === id ? "page" : undefined}
             className={cn(
               /*

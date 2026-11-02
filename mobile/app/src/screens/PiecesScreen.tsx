@@ -60,7 +60,10 @@ export function PiecesScreen() {
   }, []);
 
   const openPiece = (piece: Product) => {
-    window.history.pushState({ piece: piece.sku }, "");
+    // The screen is named as well as the piece: every entry the app pushes
+    // says which screen it belongs to, so a back press is answered by reading
+    // the entry landed on. See lib/views.ts.
+    window.history.pushState({ view: "pieces", piece: piece.sku }, "");
     setOpen(piece);
   };
 

@@ -1,5 +1,7 @@
+import { Clock } from "lucide-react";
+
 import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
-import { formatRateStamp, goldOnly, type RateSnapshot } from "@/lib/rates";
+import { formatRateStamp, goldOnly, rateAgeNote, type RateSnapshot } from "@/lib/rates";
 
 import { Kept } from "../components/Kept";
 import type { Cached } from "../lib/cache";
@@ -27,6 +29,8 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
       </div>
     );
   }
+
+  const ageNote = rateAgeNote(rates.data);
 
   return (
     <div className="px-4 pb-10 pt-6">
@@ -56,6 +60,23 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         ))}
         <p className="w-full text-[11px] text-warmgrey">Per tola · {formatRateStamp(rates.data)}</p>
       </dl>
+
+      {/*
+        Said out loud when the board the sum is worked from is not today's.
+
+        The stamp in the line above carries the date, but an estimate is read
+        as a price, and a price worked from a three-day-old board is wrong in a
+        way that a date nobody stopped to compare does not convey. Nothing is
+        rendered on an ordinary day. It is the same line the board itself
+        shows on the rate screen, out of the same function, so the two cannot
+        come to disagree.
+      */}
+      {ageNote ? (
+        <p className="mt-3 flex items-start gap-2 border border-gold/30 bg-champagne/25 px-4 py-3 text-xs leading-relaxed text-ink">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden />
+          <span>{ageNote}</span>
+        </p>
+      ) : null}
 
       <div className="mt-8">
         <GoldValueCalculator snapshot={rates.data} side="buy" />

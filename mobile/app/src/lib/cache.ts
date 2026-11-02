@@ -1,5 +1,7 @@
 import { Preferences } from "@capacitor/preferences";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { shouldRecheck } from "./recheck";
 
 /**
  * What the app keeps on the phone, so its screens open with no connection.
@@ -75,6 +77,9 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
 
+  /** When the last successful fetch landed, so a return to the app can tell. */
+  const freshAt = useRef<number | undefined>(undefined);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -93,10 +98,19 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
         if (cancelled) return;
         setData(fresh);
         setStale(false);
+        freshAt.current = Date.now();
         await remember(key, fresh);
       } catch {
-        // Keep whatever was shown. stale stays true when there was something,
-        // and data stays undefined when there was not.
+        /*
+         * Keep whatever was shown, and say that is what it is.
+         *
+         * Marked stale even when this attempt followed a successful one,
+         * which it now can: the screens ask again when the app comes back,
+         * and a board fetched this morning that cannot be checked this
+         * evening is not a live figure. data stays undefined when nothing
+         * was ever kept, and then no screen reaches this line at all.
+         */
+        if (!cancelled) setStale(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -137,6 +151,29 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
       clearInterval(timer);
       document.removeEventListener("visibilitychange", tick);
     };
+  }, [everyMs]);
+
+  /*
+   * Asked again when the app comes back, if what is on screen has had time
+   * to go out of date. recheck.ts carries the reasoning and the interval.
+   *
+   * visibilitychange rather than a native resume event: the WebView raises
+   * it when Android pauses and resumes the activity, so it covers both
+   * leaving the app and coming back to it, and needs no plugin to do so.
+   *
+   * Not for the international board, which says how often it wants asking
+   * just above and handles coming back itself.
+   */
+  useEffect(() => {
+    if (everyMs) return;
+
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (shouldRecheck(freshAt.current, Date.now())) setAttempt((n) => n + 1);
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [everyMs]);
 
   return { data, stale, empty: data === undefined && !loading, loading, refresh };
