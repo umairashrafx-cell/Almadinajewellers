@@ -1,15 +1,16 @@
 # Migration rollout checklist
 
 Date written: 2026-11-02
-Last run: 2026-11-02 — all three applied and checked. See "What happened on
-2026-11-02" for the state and for what a failed push taught. The procedure
-below is written to be reused for the next one.
+Last run: 2026-11-02 — the first three applied and checked. See "What happened
+on 2026-11-02" for the state and for what a failed push taught. The fourth is
+written and not applied. The procedure below is written to be reused.
 
-| Version        | File                             | What it changes                                                                                                          |
-| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 20261102090000 | `sprint1_security_hardening.sql` | Revokes API execution of two trigger-only functions; replaces two overlapping review SELECT policies                     |
-| 20261102100000 | `custom_order_upload_limits.sql` | 12 MB and image/audio-only on the `custom-orders` bucket; narrows the insert policy to the `photo/` and `voice/` folders |
-| 20261102110000 | `request_throttle.sql`           | A PostgREST `db_pre_request` hook limiting writes per IP address                                                         |
+| Version        | File                             | What it changes                                                                                                          | State     |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------- |
+| 20261102090000 | `sprint1_security_hardening.sql` | Revokes API execution of two trigger-only functions; replaces two overlapping review SELECT policies                     | applied   |
+| 20261102100000 | `custom_order_upload_limits.sql` | 12 MB and image/audio-only on the `custom-orders` bucket; narrows the insert policy to the `photo/` and `voice/` folders | applied   |
+| 20261102110000 | `request_throttle.sql`           | A PostgREST `db_pre_request` hook limiting writes per IP address                                                         | applied   |
+| 20261102120000 | `gold_rate_history.sql`          | An append-only record of every change to a gold rate, written by a row trigger and readable by admins only              | **pending** |
 
 Vercel deploys the website only. It does not run migrations, so until the push
 below the site runs new code against the old database.
@@ -127,6 +128,35 @@ Anything that fails is listed under "If something breaks".
    more in a row. Both should succeed. The limits are ten form submissions and
    two hundred writes per address per ten minutes.
 
+7. **The rate history is being written** — only once `20261102120000` is
+   applied. Publish the day's rates from the admin panel as normal, then in the
+   SQL editor:
+
+   ```sql
+   select rate_date, karat, action, old_per_tola_pkr, new_per_tola_pkr,
+          changed_by_email, changed_at
+     from public.gold_rate_history
+    order by id desc limit 20;
+   ```
+
+   One row per karat that actually moved, `action` reading `insert` on the
+   day's first save and `update` on a correction, and `changed_by_email`
+   holding the signed-in admin's address. A karat whose figure did not change
+   writes nothing, by design — so re-saving the board unchanged should add no
+   rows at all, which is the second half of this check.
+
+   Then confirm the record cannot be reached from outside. Signed out, in a
+   browser or with curl:
+
+   ```bash
+   curl -s "https://uldsqxymxjwhifrmonis.supabase.co/rest/v1/gold_rate_history?select=*" -H "apikey: <the anon key from src/integrations/supabase/client.ts>"
+   ```
+
+   This must not return rows. `anon` holds no privilege on the table and the
+   only policy is `is_admin()`, so the expected answer is a permission error,
+   not an empty list — and an empty list would not be proof of anything, which
+   is the lesson the review policies taught on 2026-11-02.
+
 ## If something breaks
 
 The throttle is the only change here that sits in front of every write, so it
@@ -171,3 +201,16 @@ review policies are reversed by recreating the single combined policy that
   affect them — PostgreSQL checks that privilege at `CREATE TRIGGER`, not when
   the trigger fires. Reasoned and read out of the catalogue, not observed: the
   next real enquiry is the proof.
+- `gold_rate_history` records what happens from the moment it is applied and
+  nothing before it. The 338 rate rows already in the table are not
+  backfilled, deliberately: their original figures are gone, so seeding them
+  would record today's value as the one first published. An old day with no
+  history means the trigger did not exist yet, not that nobody touched it.
+- Nothing in the website or the admin panel reads `gold_rate_history` yet, and
+  `src/integrations/supabase/types.ts` has not been regenerated for it. It is
+  read in the SQL editor until a screen is built for it.
+- The rate trigger is the one piece here with no kill switch worth using: it
+  writes inside the publishing transaction and has no exception handler, on
+  purpose. If it ever did block a rate publish, the switch is
+  `DROP TRIGGER gold_rates_history ON public.gold_rates;` — which leaves the
+  table and everything already recorded in it in place.
