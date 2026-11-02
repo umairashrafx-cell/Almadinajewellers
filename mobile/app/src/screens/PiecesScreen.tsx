@@ -1,8 +1,9 @@
-import { Search, X } from "lucide-react";
+import { Heart, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ActionButton } from "@/components/ui/ActionButton";
 import type { Product } from "@/data/products";
+import { useWishlist } from "@/hooks/use-wishlist";
 import { fetchAllProducts, searchProducts } from "@/lib/catalogue";
 import { formatGrams, formatPKR, productEnquiryLink, productUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,12 @@ import { openShop } from "../lib/shop";
  * storage, fetched when they are asked for. With no connection the tiles stay
  * where they are and the words carry the screen, which is the part that
  * matters when somebody is asking what a piece weighs.
+ *
+ * A piece can be kept from here, on the tile or on the piece itself. That
+ * heart writes the same list the website's hearts write — Capacitor
+ * Preferences, which both halves of the app can see — so a piece saved here
+ * shows up on the Saved screen and on the website's own wishlist, and one
+ * removed in either place stays removed. src/lib/wishlist.ts has the why.
  */
 export function PiecesScreen() {
   const pieces = useCached<Product[]>(PIECES_KEY, fetchAllProducts);
@@ -203,7 +210,7 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
   const price = piece.salePricePkr ?? piece.pricePkr;
 
   return (
-    <li>
+    <li className="relative">
       <button
         type="button"
         onClick={onOpen}
@@ -238,7 +245,41 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
           </span>
         </span>
       </button>
+
+      <Keep piece={piece} className="absolute top-2 right-2" />
     </li>
+  );
+}
+
+/**
+ * The heart, on a tile or on the piece itself.
+ *
+ * It sits outside whatever button opens the piece, because a button inside a
+ * button is not something a browser will render — the same arrangement the
+ * website's product card uses, and for the same reason. Its own 36px target,
+ * so at 375px keeping a piece and opening it are not one fumbled tap.
+ */
+function Keep({ piece, className }: { piece: Product; className?: string }) {
+  const { has, toggle } = useWishlist();
+  const saved = has(piece.sku);
+
+  return (
+    <button
+      type="button"
+      onClick={() => toggle(piece.sku)}
+      aria-label={saved ? `Remove ${piece.name} from saved pieces` : `Save ${piece.name}`}
+      aria-pressed={saved}
+      className={cn(
+        "grid h-9 w-9 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold",
+        className,
+      )}
+    >
+      <Heart
+        className={cn("h-4 w-4", saved ? "fill-rose text-rose" : "text-primary")}
+        strokeWidth={1.4}
+        aria-hidden
+      />
+    </button>
   );
 }
 
@@ -267,14 +308,24 @@ function Detail({
         <p className="text-[11px] font-semibold tracking-widest text-warmgrey uppercase">
           {piece.category}
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="inline-grid h-9 w-9 place-items-center border border-gold/40 text-gold-deep transition-colors hover:bg-gold hover:text-primary"
-        >
-          <X className="h-4 w-4" aria-hidden />
-        </button>
+
+        {/*
+          The heart beside the cross rather than a third button under the other
+          two. The grid behind this panel teaches the gesture on every tile, and
+          the actions at the foot are the two that leave the screen — keeping a
+          piece does not, so it belongs up here with closing.
+        */}
+        <div className="flex items-center gap-2">
+          <Keep piece={piece} />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-grid h-9 w-9 place-items-center border border-gold/40 text-gold-deep transition-colors hover:bg-gold hover:text-primary"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
       </div>
 
       <div className="px-4 pt-5 pb-12">

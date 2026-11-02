@@ -10,8 +10,7 @@ import { shouldRecheck } from "./recheck";
  * the bundled screens are served from https://localhost and the website from
  * www.almadinajeweller.com, which are different origins with different
  * localStorage. Preferences belongs to the app, so it is the one place both
- * halves can see — it is how the wishlist saved while browsing the shop
- * reaches the Saved screen.
+ * halves can see — it is how a piece saved on either side reaches the other.
  */
 
 export const RATES_KEY = "amj:cache:rates";
@@ -22,9 +21,11 @@ export const PIECES_KEY = "amj:cache:pieces";
 export const MARKETS_KEY = "amj:cache:markets";
 
 /**
- * The wishlist, mirrored by the website. Written by src/hooks/use-wishlist.ts
- * whenever a piece is saved or removed inside the app; this is the only reader.
- * The name is the same as that hook's localStorage key on purpose.
+ * The saved pieces — and inside the app, the list itself rather than a copy of
+ * one. src/lib/wishlist.ts reads and writes it from both halves and explains
+ * why it has to be the single source of truth; this file only reads it, to
+ * know which pieces to fetch. The name is the same as that store's
+ * localStorage key on purpose.
  */
 export const WISHLIST_KEY = "amj:wishlist";
 
