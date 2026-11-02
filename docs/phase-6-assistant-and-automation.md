@@ -166,18 +166,27 @@ could add is the **WhatsApp arm** — the same verified event, to customers who
 gave a number rather than installed the app, with the same once-a-day guard
 read from the same table.
 
-**2. New enquiry to the shop.** An enquiry row arrives; the shop gets a
-WhatsApp message within the minute with the customer's name, number and what
-they asked, and a link to the row in admin. Replaces watching an inbox.
+**2. New enquiry to the shop.** Also already ships, which this document first
+got wrong: `notify-enquiry` handles four sources, not one, and an enquiry
+reaches the shop by email the moment it arrives. n8n would change the channel,
+not add the notification — a WhatsApp message instead of an inbox to watch.
 
-**3. Custom order to the shop.** The same, plus the photograph and the voice
-note as **signed URLs with a short expiry** — the bucket is private and must
+**3. Custom order to the shop.** The same correction: the trigger and the email
+exist today. What n8n would add is WhatsApp delivery, plus the photograph and
+the voice note as **signed URLs with a short expiry** — the bucket is private and must
 stay private, and the migration that set its limits chose its allowed types one
 by one for exactly that reason.
 
-**4. Order status change to the customer.** The shop moves an order to
-confirmed, dispatched or ready; the customer gets a message on the number on
-that row. This is section 2's answer to order status, and the only safe one.
+**4. Order status change to the customer.** The only one of the four that does
+not exist in any form. The shop moves an order to confirmed, completed or
+cancelled; the customer gets a message on the number on that row. This is
+section 2's answer to order status, and the only safe one.
+
+It splits in two, and the half that needs no infrastructure is built:
+`order_status_history` (migration `20261102170000`) records every status change
+with who made it and when, and `/admin/orders` shows the trail. Sending the
+message is what still waits on a WhatsApp sender. Whatever eventually sends it
+should read that table rather than race the UPDATE that caused the change.
 
 ---
 
