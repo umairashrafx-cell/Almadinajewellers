@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import { throttleMessage } from "@/lib/throttle";
 
 /**
  * Custom order enquiries.
@@ -133,7 +134,8 @@ export async function submitCustomOrder(
 
   if (error) {
     throw new Error(
-      "We could not send that just now. Please try again, or send it to us on WhatsApp.",
+      throttleMessage(error) ??
+        "We could not send that just now. Please try again, or send it to us on WhatsApp.",
     );
   }
 

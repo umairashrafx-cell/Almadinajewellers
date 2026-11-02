@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import { throttleMessage } from "@/lib/throttle";
 
 /**
  * Customer reviews.
@@ -94,9 +95,10 @@ export async function submitReview(sku: string, draft: ReviewDraft): Promise<voi
 
   if (error) {
     throw new Error(
-      /unknown product/i.test(error.message)
-        ? "We could not find that piece. Please reload the page and try again."
-        : "We could not send that review just now. Please try again in a moment.",
+      throttleMessage(error) ??
+        (/unknown product/i.test(error.message)
+          ? "We could not find that piece. Please reload the page and try again."
+          : "We could not send that review just now. Please try again in a moment."),
     );
   }
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import { throttleMessage } from "@/lib/throttle";
 
 /**
  * Newsletter sign-up.
@@ -32,6 +33,8 @@ export async function subscribeNewsletter(email: string, source = "home"): Promi
   });
 
   if (error) {
+    const throttled = throttleMessage(error);
+    if (throttled) throw new Error(throttled);
     if (error.code === "22023") throw new Error("Please check the email address.");
     throw new Error("We could not add you just now. Please try again in a moment.");
   }
