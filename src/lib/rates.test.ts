@@ -11,6 +11,8 @@ import {
   goldOnly,
   metalValue,
   perGramFromTola,
+  rateAgeDays,
+  rateAgeNote,
   rateBoard,
   rateCards,
   rateFor,
@@ -216,5 +218,49 @@ describe("the shop's clock", () => {
     const { publishedAt: _unused, ...undated } = BOARD;
     expect(formatRateStamp(undated)).toBe("02 November 2026");
     expect(formatRateStamp(BOARD)).toMatch(/12:12\s*pm PKT$/i);
+  });
+});
+
+describe("how old the board is", () => {
+  // The board is dated 2 November 2026.
+  const atKarachi = (iso: string) => new Date(iso);
+
+  test("is nothing on the day it was set", () => {
+    // 06:00 UTC is 11 in the morning in Mandi Bahauddin, same day.
+    expect(rateAgeDays(BOARD, atKarachi("2026-11-02T06:00:00Z"))).toBe(0);
+    expect(rateAgeNote(BOARD, atKarachi("2026-11-02T06:00:00Z"))).toBeUndefined();
+  });
+
+  test("turns over at midnight in the shop, not in UTC", () => {
+    // 19:30 UTC is half past midnight on the 3rd in Pakistan. In UTC it is
+    // still the 2nd, and counting there would call this morning's board
+    // today's for another five hours.
+    expect(rateAgeDays(BOARD, atKarachi("2026-11-02T19:30:00Z"))).toBe(1);
+    expect(rateAgeNote(BOARD, atKarachi("2026-11-02T19:30:00Z"))).toMatch(/^Set yesterday\./);
+  });
+
+  test("counts whole days, not hours", () => {
+    expect(rateAgeDays(BOARD, atKarachi("2026-11-05T06:00:00Z"))).toBe(3);
+    expect(rateAgeNote(BOARD, atKarachi("2026-11-05T06:00:00Z"))).toMatch(/^Set 3 days ago\./);
+  });
+
+  test("says to confirm before ordering", () => {
+    // Every price on the site is rebuilt from this board, so an old one means
+    // old prices. The line has to be useful, not just true.
+    expect(rateAgeNote(BOARD, atKarachi("2026-11-05T06:00:00Z"))).toContain("confirm");
+  });
+
+  test("never reads as negative when a clock disagrees", () => {
+    expect(rateAgeDays(BOARD, atKarachi("2026-10-30T06:00:00Z"))).toBe(0);
+    expect(rateAgeNote(BOARD, atKarachi("2026-10-30T06:00:00Z"))).toBeUndefined();
+  });
+
+  test("says nothing about figures nobody published", () => {
+    // The fallback carries no date, and an age invented for it would be worse
+    // than no age at all.
+    expect(rateAgeDays(FALLBACK_SNAPSHOT)).toBeUndefined();
+    expect(rateAgeNote(FALLBACK_SNAPSHOT)).toBeUndefined();
+    expect(rateAgeDays(undefined)).toBeUndefined();
+    expect(rateAgeNote(undefined)).toBeUndefined();
   });
 });

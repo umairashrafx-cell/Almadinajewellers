@@ -1,9 +1,18 @@
-import { BadgeCheck, CalendarDays, Gem, Globe, MapPin, RefreshCcw, TrendingUp } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarDays,
+  Clock,
+  Gem,
+  Globe,
+  MapPin,
+  RefreshCcw,
+  TrendingUp,
+} from "lucide-react";
 
 import logoOnLight from "@/assets/brand/logo-stacked-on-light.svg";
 import { RateCard } from "@/components/rate/RateCard";
 import { TrustFeature } from "@/components/rate/TrustFeature";
-import { formatRateStamp, rateCards, type RateSnapshot } from "@/lib/rates";
+import { formatRateStamp, rateAgeNote, rateCards, type RateSnapshot } from "@/lib/rates";
 import { SITE } from "@/lib/site";
 
 /**
@@ -39,6 +48,7 @@ export function GoldRateBoard({
   showFooter?: boolean | undefined;
 }) {
   const cards = rateCards(snapshot);
+  const ageNote = rateAgeNote(snapshot);
 
   return (
     <section
@@ -122,6 +132,33 @@ export function GoldRateBoard({
             {formatRateStamp(snapshot)}
           </time>
         </p>
+
+        {/*
+          Said out loud when the board is not today's.
+
+          The stamp above already carries the date, but a date only tells a
+          reader the board is old if they stop to work out what today is — and
+          every price on this site is rebuilt from these figures. Nothing is
+          rendered on an ordinary day, so the one day it appears it means
+          something.
+
+          suppressHydrationWarning because the shop's midnight can fall
+          between the server rendering this and the browser hydrating it, and
+          a warning over a single word is not worth the noise.
+        */}
+        {ageNote ? (
+          <p
+            suppressHydrationWarning
+            className="mx-auto mt-4 flex max-w-md items-center justify-center gap-2 rounded-lg border border-rate-gold/40 bg-rate-gold/10 px-3 py-2 text-center text-xs leading-relaxed text-rate-ink/85 sm:text-sm"
+          >
+            <Clock
+              className="h-4 w-4 shrink-0 text-rate-ink/70"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+            <span>{ageNote}</span>
+          </p>
+        ) : null}
 
         <ul className="mt-7 grid gap-3 sm:gap-4">
           {cards.map((rate) => (
