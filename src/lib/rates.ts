@@ -485,6 +485,70 @@ export function formatRateStamp(snapshot: RateSnapshot): string {
   return formatRateDate(snapshot.date);
 }
 
+/** Today's date in the shop's calendar, as "2026-11-02". */
+function shopToday(now: Date): string {
+  // en-CA formats as YYYY-MM-DD, which is the shape rate_date is stored in.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: SHOP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/**
+ * How many days old the published board is, counted in the shop's calendar.
+ *
+ * Whole days between dates rather than elapsed hours, because that is how the
+ * question is actually asked: a rate set at 6pm yesterday and read at 9am
+ * today is yesterday's rate, not a fifteen-hour-old one.
+ *
+ * Both dates are parsed at UTC noon so that no timezone can roll either of
+ * them onto the wrong day — the same guard formatRateDate uses.
+ *
+ * Undefined when there is no date to measure: the fallback snapshot carries
+ * none, and an age invented for figures nobody published would be worse than
+ * no age at all.
+ */
+export function rateAgeDays(
+  snapshot: RateSnapshot | undefined,
+  now: Date = new Date(),
+): number | undefined {
+  if (!snapshot?.date) return undefined;
+
+  const set = Date.parse(`${snapshot.date}T12:00:00Z`);
+  const today = Date.parse(`${shopToday(now)}T12:00:00Z`);
+  if (Number.isNaN(set) || Number.isNaN(today)) return undefined;
+
+  // Never negative. A rate dated ahead of today means a clock disagrees
+  // somewhere, and "set in -1 days" helps nobody.
+  return Math.max(0, Math.round((today - set) / 86_400_000));
+}
+
+/**
+ * The line to show when the board is not today's, and nothing when it is.
+ *
+ * Every price on this site is rebuilt from this board, so a customer reading
+ * an old one is reading old prices without being told. The shop does not
+ * publish every single day — it is shut on Fridays, and the morning's figures
+ * go up when the counter opens — so this says what is true rather than
+ * raising an alarm: the board was set then, and today's is not up yet.
+ *
+ * This is a different thing from the app's "kept on this phone", which means
+ * the device could not reach the network. Here the network answered; this is
+ * the newest board there is.
+ */
+export function rateAgeNote(
+  snapshot: RateSnapshot | undefined,
+  now: Date = new Date(),
+): string | undefined {
+  const days = rateAgeDays(snapshot, now);
+  if (!days) return undefined;
+
+  const when = days === 1 ? "yesterday" : `${days} days ago`;
+  return `Set ${when}. Today's rate is not up yet — please confirm before ordering.`;
+}
+
 /** "18 August 2026" from an ISO date string. */
 export function formatRateDate(iso: string): string {
   if (!iso) return "";
