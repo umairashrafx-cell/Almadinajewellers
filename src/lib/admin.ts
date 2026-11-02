@@ -695,6 +695,44 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
   if (error) throw readableError(error, "Could not update that order");
 }
 
+/** One step in how an order got to where it is. */
+export type OrderStatusChange = {
+  id: number;
+  order_id: string;
+  reference: string;
+  /** 'placed' is the order arriving; 'changed' is the shop moving it. */
+  action: "placed" | "changed";
+  /** Null on 'placed'. There was no status before the order existed. */
+  old_status: OrderStatus | null;
+  new_status: OrderStatus;
+  /** Null when nobody was signed in: the customer placing it, or a service-role write. */
+  changed_by_email: string | null;
+  changed_at: string;
+};
+
+/**
+ * The trail of one order, oldest first.
+ *
+ * Written only by the orders_status_history trigger (migration
+ * 20261102170000), which holds the only permission to write it — admins may
+ * read this table and no API role may write it at all. So what comes back is
+ * what happened, not what something later decided to record.
+ *
+ * Oldest first because a trail is read forwards, unlike every other list on
+ * these screens.
+ */
+export async function fetchOrderStatusHistory(orderId: string): Promise<OrderStatusChange[]> {
+  const { data, error } = await untyped
+    .from("order_status_history")
+    .select("id, order_id, reference, action, old_status, new_status, changed_by_email, changed_at")
+    .eq("order_id", orderId)
+    .order("changed_at", { ascending: true });
+
+  if (error) throw readableError(error, "Could not read the history for that order");
+
+  return (data ?? []) as OrderStatusChange[];
+}
+
 // ---------------------------------------------------------------------------
 // Reviews
 // ---------------------------------------------------------------------------
