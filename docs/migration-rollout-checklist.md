@@ -47,19 +47,32 @@ Two consequences worth holding on to:
    git checkout master && git pull
    ```
 
-2. Read the list `db push` prints before confirming it. Only the versions
-   marked not applied above should be pending — two, as of the last run. If it offers to apply anything else, stop
-   and find out what it is first — Supabase keys applied migrations on the
-   version number alone, so a repeat version is applied once and silently
-   skipped thereafter.
+2. Parse every migration before sending any of them:
+
+   ```bash
+   bun run check:migrations
+   ```
+
+   This is the check that would have caught the 2026-11-02 failure. It uses
+   PostgreSQL's own grammar and compiles every `DO` block and function body,
+   which is the layer that rejected the file. It talks to no database, so it
+   says nothing about privileges or whether a policy is right — only that the
+   files will parse. It refuses to report a pass unless it can still fail a
+   known-bad snippet.
+
+3. Read the list `db push` prints before confirming it. Only the versions
+   marked not applied above should be pending — two, as of the last run. If
+   it offers to apply anything else, stop and find out what it is first:
+   Supabase keys applied migrations on the version number alone, so a repeat
+   version is applied once and silently skipped thereafter.
 
    ```bash
    bunx supabase db push
    ```
 
-3. Two statements in these migrations need privileges the migration role may
-   not hold: the `storage.objects` policy swap and `ALTER ROLE authenticator
-SET pgrst.db_pre_request`. Both are wrapped so that a refusal raises a
+4. Two statements in these migrations need privileges the migration role may
+   not hold: the `storage.objects` policy swap, and the `ALTER ROLE` that
+   installs the pre-request hook. Both are wrapped so that a refusal raises a
    warning instead of failing the push. Read the output. A line beginning
    `WARNING: Could not` means that piece did not take effect and has to be
    done from the dashboard — the rest of the migration still applied.
