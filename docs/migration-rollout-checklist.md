@@ -1,8 +1,9 @@
 # Migration rollout checklist
 
 Date written: 2026-11-02
-Last run: 2026-11-02. One of the three migrations below is applied; two are
-not. See "Where this stands" after the table.
+Last run: 2026-11-02 — all three applied and checked. See "What happened on
+2026-11-02" for the state and for what a failed push taught. The procedure
+below is written to be reused for the next one.
 
 | Version        | File                             | What it changes                                                                                                          |
 | -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -13,31 +14,42 @@ not. See "Where this stands" after the table.
 Vercel deploys the website only. It does not run migrations, so until the push
 below the site runs new code against the old database.
 
-## Where this stands
+## What happened on 2026-11-02
 
-The first push attempt on 2026-11-02 applied 20261102090000 and then stopped:
+All three are applied, and neither of the two statements that could have been
+refused for want of privileges was refused. Read back from the live database
+rather than taken from the push output:
 
-| Version        | State                                                         |
-| -------------- | ------------------------------------------------------------- |
-| 20261102090000 | Applied. The review policy change is live now.                |
-| 20261102100000 | Not applied — it failed to parse. Fixed; needs pushing again. |
-| 20261102110000 | Not applied. The push stopped before reaching it.             |
+| Checked                              | Found                                                             |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `custom-orders` size limit           | 12582912 bytes                                                    |
+| `custom-orders` types                | jpeg, png, webp, heic, avif, `audio/*`                            |
+| Bucket insert policy                 | anon + authenticated, `photo/` or `voice/` folder only            |
+| Review SELECT policies               | anon sees approved; authenticated sees approved or all when admin |
+| `pgrst.db_pre_request`               | set on `authenticator` to `public.check_request`                  |
+| `private` schema reachable by `anon` | no — no schema usage, no select on the log                        |
+| Notification triggers                | all five present and enabled                                      |
+| One form submission end to end       | written, logged once, counted as a submission                     |
 
-The failure was `ERROR: unterminated /* comment` (SQLSTATE 42601) on the
-upload-limits migration. PostgreSQL nests block comments, and that file had a
-mime-type wildcard written inside one, which opened a second comment the
-closer never got back out of — taking the dollar-quote terminator with it.
-Nothing from that file applied: the statement never parsed, so the transaction
-rolled back whole. The bucket still has no size or type limit until it is
-pushed again.
+The first attempt did not go this way. It applied 20261102090000, then
+stopped on the next file with `ERROR: unterminated /* comment` (SQLSTATE
+42601). PostgreSQL nests block comments, and that file had a mime-type
+wildcard written inside one, which opened a second comment the closer never
+got back out of — taking the dollar-quote terminator with it. The file read
+perfectly in English.
 
-Two consequences worth holding on to:
+Three things that cost time, worth keeping:
 
-- A migration that fails leaves the ones before it applied. The run is not
-  atomic across files, only within each one. After any failure, read
-  `supabase migration list --linked` rather than assuming the push was undone.
-- Because 20261102090000 is already live, checks 1 to 3 under "After pushing"
-  apply right now, not after the next push.
+- **A failed push is not atomic across files.** The migration before the
+  failure stayed applied. After any failure, read the state with
+  `supabase migration list --linked` rather than assuming the run was undone.
+- **Parse the files first.** Step 2 below is the check that would have caught
+  this in a second, without a database.
+- **An empty result is not a passing result.** "No reviews for this piece yet"
+  on the live site looked like proof that the new review policy worked. It was
+  not: `safeFetchReviews` returns an empty list when the read fails too, and
+  there were no approved reviews to show either way. The policies had to be
+  read out of `pg_policy` to actually know.
 
 ## Before pushing
 
@@ -60,11 +72,11 @@ Two consequences worth holding on to:
    files will parse. It refuses to report a pass unless it can still fail a
    known-bad snippet.
 
-3. Read the list `db push` prints before confirming it. Only the versions
-   marked not applied above should be pending — two, as of the last run. If
-   it offers to apply anything else, stop and find out what it is first:
-   Supabase keys applied migrations on the version number alone, so a repeat
-   version is applied once and silently skipped thereafter.
+3. Read the list `db push` prints before confirming it. Only the migrations
+   you expect should be pending. If it offers to apply anything else, stop and
+   find out what it is first: Supabase keys applied migrations on the version
+   number alone, so a repeat version is applied once and silently skipped
+   thereafter.
 
    ```bash
    bunx supabase db push
@@ -146,7 +158,16 @@ review policies are reversed by recreating the single combined policy that
 - The hook runs inside the request's own transaction. A write that fails its
   own constraints rolls back its log row with it, so malformed spam is not
   counted. Well-formed spam is, which is the kind that costs the shop time.
-- `public.check_request()` has never run against a live PostgREST. There is no
-  staging database on this project. Every expression inside it was checked
-  separately against the live database read-only; the function as a whole was
-  not. That is what steps 5 and 6 above are for.
+- `public.check_request()` has now run against a live PostgREST, once: a
+  newsletter sign-up on 2026-11-02 was written, logged, and counted as a
+  submission, with `/rpc/subscribe_newsletter` recorded as the path. That
+  proves the hook runs, identifies the caller and lets an honest write
+  through. It does not prove the refusal works — nothing has yet reached a
+  limit, so the throttled branch and its 429 have never executed. The first
+  request it ever refuses will be a customer's.
+- No notification has been sent since the hardening migration revoked API
+  execution of the two notifier functions. All five triggers are present and
+  enabled, owned by `postgres` and `SECURITY DEFINER`, so the revoke cannot
+  affect them — PostgreSQL checks that privilege at `CREATE TRIGGER`, not when
+  the trigger fires. Reasoned and read out of the catalogue, not observed: the
+  next real enquiry is the proof.
