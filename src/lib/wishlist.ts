@@ -105,7 +105,28 @@ async function resolvePreferences() {
     if (!Capacitor.isNativePlatform()) return null;
 
     const { Preferences } = await import("@capacitor/preferences");
-    return Preferences;
+
+    /*
+     * Wrapped, and that wrapper is the whole point.
+     *
+     * Capacitor's plugin objects are Proxies that turn any property read into
+     * a call to a native method of that name. Returning one straight out of an
+     * async function hands it to the promise machinery, which asks every
+     * resolved value whether it is a thenable — and that read of `.then` became
+     * a native call, so Android answered
+     *
+     *     "Preferences.then()" is not implemented on android
+     *
+     * and this lookup rejected. Both callers catch and carry on with
+     * localStorage, so nothing broke loudly: the app simply stopped writing the
+     * one store both halves can see, and the wishlist went back to being
+     * per-origin without a word. It passed every test and every browser check,
+     * because a browser returns null above before it ever touches the proxy,
+     * and only showed up in logcat on a device.
+     *
+     * A plain object is not thenable, so the plugin travels inside one.
+     */
+    return { plugin: Preferences };
   } catch {
     return null;
   }
@@ -143,7 +164,7 @@ function queueWrite(skus: string[]) {
     try {
       const prefs = await preferences();
       if (!prefs) return;
-      await prefs.set({ key: KEY, value: JSON.stringify(skus) });
+      await prefs.plugin.set({ key: KEY, value: JSON.stringify(skus) });
     } catch {
       // Inside the app this is the copy the other half reads, so losing it
       // means the two disagree until the next change. Still not worth
@@ -177,7 +198,7 @@ function hydrate() {
       const prefs = await preferences();
 
       if (prefs) {
-        const { value } = await prefs.get({ key: KEY });
+        const { value } = await prefs.plugin.get({ key: KEY });
 
         // A heart was tapped while the read was in flight. That tap is newer
         // than a read that started before it, and has already been written to

@@ -29,8 +29,22 @@ vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => native },
 }));
 
-vi.mock("@capacitor/preferences", () => ({
-  Preferences: {
+/**
+ * Preferences, behaving the way the real plugin does — which is the only
+ * reason this file can catch the bug that got through to a device.
+ *
+ * Capacitor's plugin objects are Proxies that turn any property read into a
+ * call to a native method of that name, so reading something they do not
+ * implement throws instead of giving back undefined. A plain object mock is
+ * silent about that, and a plain object mock is what let the store ship a
+ * lookup that handed the proxy straight to the promise machinery: it probed
+ * the resolved value for `.then`, Android answered that `Preferences.then()`
+ * is not implemented, and the whole lookup rejected. Both callers caught it
+ * and quietly carried on with localStorage, so on a phone the app simply
+ * stopped writing the store both halves share.
+ */
+vi.mock("@capacitor/preferences", () => {
+  const implemented = {
     get: async ({ key }: { key: string }) => {
       if (gate) await gate;
       return { value: preferences.has(key) ? preferences.get(key) : null };
@@ -38,8 +52,17 @@ vi.mock("@capacitor/preferences", () => ({
     set: async ({ key, value }: { key: string; value: string }) => {
       preferences.set(key, value);
     },
-  },
-}));
+  };
+
+  return {
+    Preferences: new Proxy(implemented, {
+      get(target, prop, receiver) {
+        if (prop in target) return Reflect.get(target, prop, receiver);
+        throw new Error(`"Preferences.${String(prop)}()" is not implemented on android`);
+      },
+    }),
+  };
+});
 
 /**
  * One origin's localStorage.
