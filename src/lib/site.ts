@@ -18,7 +18,7 @@ export const SITE = {
   /** The shop's mobile numbers in the local form customers dial. Printed on bills. */
   cellNumbers: ["0321-7759959", "0321-7744282"],
   address: "Sarafa Market, Mandi Bahauddin, Punjab, Pakistan",
-  announcement: "Free insured delivery across Pakistan",
+  announcement: "Free insured delivery on full payment",
   /** The branded 1200x630 card shown when a link is shared. */
   shareImage: "/og-image.jpg",
   founded: "1980",

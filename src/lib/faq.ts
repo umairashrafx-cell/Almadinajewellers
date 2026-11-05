@@ -27,7 +27,7 @@ export const FAQ_TOPICS: FaqTopic[] = [
     items: [
       {
         q: "Can I buy on the website?",
-        a: "You can save pieces to your wishlist, add them to your bag and send an order request, or ask about any piece on WhatsApp. There is no online checkout: we confirm the weight and the price with you first, and payment is then settled in store or on confirmed delivery.",
+        a: "You can save pieces to your wishlist, add them to your bag and send an order request, or ask about any piece on WhatsApp. There is no online checkout: we confirm the weight and the price with you first, and payment is then settled in store, or in full before the piece is posted.",
         more: { label: "Browse the collections", to: "/collections" },
       },
       {
@@ -116,7 +116,7 @@ export const FAQ_TOPICS: FaqTopic[] = [
     items: [
       {
         q: "Do you charge for delivery?",
-        a: "No. Delivery is insured and free of charge anywhere in Pakistan, on every order, regardless of value.",
+        a: "No. Delivery is insured and free of charge anywhere in Pakistan, on every order, regardless of value, once the piece is paid for in full.",
         more: { label: "Delivery & payment", to: "/delivery-payment" },
       },
       {
@@ -125,7 +125,7 @@ export const FAQ_TOPICS: FaqTopic[] = [
       },
       {
         q: "How do I pay for a piece?",
-        a: "Payment is arranged in store, or on confirmed delivery. No card details are ever entered on this website — there is nothing here to take them.",
+        a: "In store at the counter, or in full before the piece is posted. A delivery is dispatched once it is paid for, not paid for on arrival. No card details are ever entered on this website — there is nothing here to take them.",
         more: { label: "How ordering & payment work", to: "/delivery-payment" },
       },
     ],

@@ -237,8 +237,8 @@ export function Footer() {
             </a>
 
             <p className="mt-6 text-xs leading-relaxed text-champagne/60">
-              Every piece is hallmarked and weighed in front of you. Payment is arranged in store or
-              on confirmed delivery.
+              Every piece is hallmarked and weighed in front of you. Payment is arranged in store,
+              or in full before a piece is posted.
             </p>
           </div>
         </div>

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/policies")({
   head: () => {
     const title = `Delivery, Exchange & Buy-Back — ${SITE.name}`;
     const description =
-      "How Al-Madina Jewellers delivers, how payment works, and how exchange and lifetime buy-back are handled. Free insured delivery across Pakistan; pieces bought back at the 20k rate on the day you return.";
+      "How Al-Madina Jewellers delivers, how payment works, and how exchange and lifetime buy-back are handled. Free insured delivery across Pakistan on full payment; pieces bought back at the 20k rate on the day you return.";
     return {
       meta: [
         { title },
@@ -55,9 +55,10 @@ const POLICIES: Policy[] = [
     id: "delivery",
     title: "Delivery",
     summary:
-      "Free insured delivery anywhere in Pakistan. Nothing leaves the counter until you have seen it and agreed the price.",
+      "Free insured delivery anywhere in Pakistan, once the piece is paid for in full. Nothing leaves the counter until you have seen it and agreed the price.",
     points: [
       "Delivery is insured and free of charge across Pakistan, on every order, regardless of value.",
+      "Free delivery is on full payment. A piece is posted once it has been paid for; nothing is sent to be paid for on arrival.",
       "Order by WhatsApp. We send photographs and a video of the actual piece, confirm its weight, and price it against that day's gold rate before anything is dispatched.",
       "Dispatch timing is confirmed with you when you order. Pieces in stock go quickly; bridal work is made to order and is ready within ten days.",
       "Every piece is hallmarked and weighed in front of you in store, or shown weighed on video before dispatch.",
@@ -68,7 +69,7 @@ const POLICIES: Policy[] = [
     title: "Payment",
     summary: "There is no online checkout on this website, and that is deliberate.",
     points: [
-      "Gold is priced against a rate that moves daily. You enquire, we agree the weight and the price, and payment is settled directly — either in store or on confirmed delivery.",
+      "Gold is priced against a rate that moves daily. You enquire, we agree the weight and the price, and payment is settled directly — either in store, or in full before the piece is posted.",
       "No card details are ever entered on this website. There is nothing here to take them.",
       "The price you are quoted is the price at the counter on the day you buy, confirmed against that day's rate.",
     ],

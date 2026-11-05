@@ -66,7 +66,7 @@ function OrdersScreen() {
     <>
       <PageHeading
         title="Orders"
-        hint="Requests placed through the cart. No payment is taken on the website — confirm the weights and the day's rate, then settle in store or on delivery."
+        hint="Requests placed through the cart. No payment is taken on the website — confirm the weights and the day's rate, then settle in store, or in full before the piece is posted."
       />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
