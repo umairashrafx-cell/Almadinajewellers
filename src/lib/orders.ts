@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Product } from "@/data/products";
+import { PHONE } from "@/lib/phone";
 import type { RateSnapshot } from "@/lib/rates";
 import { SITE, formatGrams, formatPKR, productUrl } from "@/lib/site";
 import { throttleMessage } from "@/lib/throttle";
@@ -18,9 +19,6 @@ import { throttleMessage } from "@/lib/throttle";
  * handle with the row shape declared here.
  */
 const untyped = supabase as unknown as SupabaseClient;
-
-/** Pakistani mobile and landline formats, matching the enquiry forms. */
-const PHONE = /^(\+?92|0)?[\s-]?\d{2,4}[\s-]?\d{6,8}$/;
 
 export const orderSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name.").max(80, "That name is too long."),

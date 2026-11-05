@@ -635,13 +635,14 @@ export function formatEnquiryDate(iso: string): string {
   });
 }
 
-/** Digits-only form of a submitted phone number, for a wa.me link. */
-export function whatsappNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("92")) return digits;
-  if (digits.startsWith("0")) return `92${digits.slice(1)}`;
-  return digits;
-}
+/**
+ * Digits-only form of a submitted phone number, for a wa.me link.
+ *
+ * It lives in phone.ts now, beside the validator it has to agree with, and is
+ * re-exported here because the admin routes have always imported it from this
+ * module.
+ */
+export { whatsappNumber } from "@/lib/phone";
 
 // ---------------------------------------------------------------------------
 // Orders

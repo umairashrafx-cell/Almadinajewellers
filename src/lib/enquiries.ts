@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { PHONE } from "@/lib/phone";
 import { throttleMessage } from "@/lib/throttle";
 
 /**
@@ -8,9 +9,6 @@ import { throttleMessage } from "@/lib/throttle";
  * result. Validation is duplicated as CHECK constraints in the database, since
  * the anon key means anyone can post directly at the API.
  */
-
-/** Pakistani mobile and landline formats, with or without +92 / 0 prefix. */
-const PHONE = /^(\+?92|0)?[\s-]?\d{2,4}[\s-]?\d{6,8}$/;
 
 export const BUDGET_RANGES = [
   "Under Rs. 500,000",
