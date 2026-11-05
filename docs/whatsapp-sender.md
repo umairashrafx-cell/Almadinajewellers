@@ -129,22 +129,36 @@ all three correctly — run against each shape, every one comes out in
 `923217759959` form. That is not a gap, and no existing `wa.me` link in the admin
 panel is wrong.
 
-**It has one hole.** The `PHONE` validator used by the order, enquiry and
-custom-order forms is `/^(\+?92|0)?[\s-]?\d{2,4}[\s-]?\d{6,8}$/`, in which the
-country code is **optional**. So a bare `3217759959` passes validation, and
-`whatsappNumber()` returns it unchanged, producing a link to a number in some
-other country. `whatsappNumber()` has no tests.
+**It had one hole, now closed.** The `PHONE` validator used by the order,
+enquiry and custom-order forms is `/^(\+?92|0)?[\s-]?\d{2,4}[\s-]?\d{6,8}$/`, in
+which the country code is **optional**. So a bare `3217759959` passed validation
+and `whatsappNumber()` returned it unchanged, producing a link to a number in
+some other country. `whatsappNumber()` had no tests.
 
-Today that is harmless: nothing stored is in that shape, and a person reads the
-link before pressing send. An automated sender removes the person. It would
-deliver one customer's order details to a wrong number with nobody looking, which
-is the single worst failure available to this feature and much worse than not
-sending at all.
+That was harmless while a person in the admin panel reads the link before
+pressing send. An automated sender removes the person, and one customer's order
+details arriving at a stranger's phone is the single worst failure available to
+this feature — much worse than not sending at all.
 
-**So this is worth closing whether or not a sender is ever bought:** require a
-country code or a leading zero in `PHONE`, and give `whatsappNumber()` tests
-covering all four shapes. Roughly twenty lines, no migration, no cost, and it
-makes the existing manual links provably right as well.
+The first instinct was to tighten the validator and require a prefix. That would
+have been the wrong trade. The looseness is deliberate and documented: somebody
+typing their own number into a Pakistani shop's website leaves the zero off as
+often as not, and the database's CHECK constraints say the same thing. Rejecting
+those customers to make the normaliser's job easier helps nobody.
+
+**So the normaliser learned the case instead.** No prefix means a national number
+with the trunk zero left off, and Pakistan is the only country these forms claim
+to serve. It also drops a trunk zero written _after_ the country code, which
+produced a thirteen-digit number WhatsApp cannot deliver to.
+
+The change that matters is that the two halves now live together, in
+[src/lib/phone.ts](../src/lib/phone.ts). The pattern had been copied into three
+form modules while the normaliser sat in `admin.ts`, which is how they came to
+disagree in the first place. `phone.test.ts` pins the invariant that was
+violated: **every number `PHONE` accepts, `whatsappNumber` places in Pakistan.**
+Note the scope — `whatsappNumber` is not a validator and must not be used as one.
+Handed `+1 555 0100` it would return nonsense; `PHONE` is what refuses that, and
+the two only hold as a pair.
 
 **The recorded half is already shipped.** `order_status_history` (migration
 `20261102170000`) and the History panel on `/admin/orders` record every status
@@ -172,9 +186,9 @@ would actually justify the fixed cost — and it is worth knowing before paying 
 it that `push_devices` is **0**, so the FCM arm that already exists currently
 reaches nobody at all.
 
-**Do now, cheaply:** close the phone-normalisation hole and test it. It is the one
-item here that costs nothing, helps the manual links today, and is a prerequisite
-for anything automated later.
+**Done already, because it cost nothing:** the phone-normalisation hole is
+closed and tested (section 4). It was the one item here that needed no decision,
+helps the manual links today, and is a prerequisite for anything automated later.
 
 ---
 
