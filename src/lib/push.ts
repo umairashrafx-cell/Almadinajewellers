@@ -103,7 +103,14 @@ function localRecalled(key: string): string | null {
 }
 
 async function remember(key: string, value: string | null): Promise<void> {
-  const prefs = await appStore();
+  /*
+   * Caught here, not just inside appStore(). The lookup's own try/catch cannot
+   * see a rejection raised while its promise is being resolved — which is what
+   * the proxy above did — and a throw on this line would carry straight past
+   * the localStorage fallback below, storing the value nowhere at all. null is
+   * the answer this function is written to handle.
+   */
+  const prefs = await appStore().catch(() => null);
 
   if (prefs) {
     try {
@@ -125,7 +132,9 @@ async function remember(key: string, value: string | null): Promise<void> {
 }
 
 async function recalled(key: string): Promise<string | null> {
-  const prefs = await appStore();
+  // As in remember(): a rejection here would skip the only other place the
+  // value could be, and answer nothing instead of answering localStorage.
+  const prefs = await appStore().catch(() => null);
   if (!prefs) return localRecalled(key);
 
   try {
