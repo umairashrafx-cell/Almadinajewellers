@@ -71,7 +71,24 @@ async function appStore() {
 
   try {
     const { Preferences } = await import("@capacitor/preferences");
-    return Preferences;
+
+    /*
+     * Wrapped, for the reason written out at the same wrapper in wishlist.ts.
+     *
+     * A Capacitor plugin is a Proxy that answers every property read with a
+     * method of that name, `then` among them. Returning one from an async
+     * function therefore hands a thenable to the promise machinery, which
+     * calls it, and Android answers
+     *
+     *     "Preferences.then()" is not implemented on android
+     *
+     * so this lookup rejected. Both readers below catch and carry on with
+     * localStorage, which is per-origin — so the token and the wanted flag
+     * went back to being invisible to the app's other half, which is the one
+     * thing Preferences was chosen to prevent. A plain object is not
+     * thenable, so the plugin travels inside one.
+     */
+    return { plugin: Preferences };
   } catch {
     return null;
   }
@@ -90,8 +107,8 @@ async function remember(key: string, value: string | null): Promise<void> {
 
   if (prefs) {
     try {
-      if (value === null) await prefs.remove({ key });
-      else await prefs.set({ key, value });
+      if (value === null) await prefs.plugin.remove({ key });
+      else await prefs.plugin.set({ key, value });
       return;
     } catch {
       // Fall through. This origin's own storage is better than nowhere.
@@ -112,7 +129,7 @@ async function recalled(key: string): Promise<string | null> {
   if (!prefs) return localRecalled(key);
 
   try {
-    const { value } = await prefs.get({ key });
+    const { value } = await prefs.plugin.get({ key });
     if (value !== null) return value;
   } catch {
     // Unreadable. The lines below are the only other place it could be.
@@ -139,9 +156,19 @@ export async function inApp(): Promise<boolean> {
   }
 }
 
-async function plugin() {
+/**
+ * The push plugin, inside a plain object.
+ *
+ * The same hazard as appStore() above, and the same wrapper. This proxy was
+ * returned bare from an async function too, so every caller below rejected
+ * with "PushNotifications.then()" is not implemented on android — which is to
+ * say that on a phone the rate alert card could not read its state, turn
+ * alerts on, or turn them off. A browser never reached it: inApp() answers
+ * false first, which is why nothing here showed up in a test or a preview.
+ */
+async function pushNotifications() {
   const { PushNotifications } = await import("@capacitor/push-notifications");
-  return PushNotifications;
+  return { plugin: PushNotifications };
 }
 
 /**
@@ -153,7 +180,7 @@ async function plugin() {
  * spinning for ever.
  */
 async function registrationToken(): Promise<string | null> {
-  const PushNotifications = await plugin();
+  const { plugin: PushNotifications } = await pushNotifications();
 
   return new Promise<string | null>((resolve) => {
     let settled = false;
@@ -194,7 +221,7 @@ async function registrationToken(): Promise<string | null> {
 export async function alertState(): Promise<AlertState> {
   if (!(await inApp())) return "unsupported";
 
-  const PushNotifications = await plugin();
+  const { plugin: PushNotifications } = await pushNotifications();
 
   let receive: string;
   try {
@@ -225,7 +252,7 @@ export async function alertState(): Promise<AlertState> {
 export async function enableRateAlerts(): Promise<AlertState> {
   if (!(await inApp())) return "unsupported";
 
-  const PushNotifications = await plugin();
+  const { plugin: PushNotifications } = await pushNotifications();
 
   let { receive } = await PushNotifications.checkPermissions();
   if (receive === "prompt" || receive === "prompt-with-rationale") {
@@ -300,7 +327,7 @@ export async function disableRateAlerts(): Promise<AlertState> {
   }
 
   try {
-    const PushNotifications = await plugin();
+    const { plugin: PushNotifications } = await pushNotifications();
     await PushNotifications.unregister();
   } catch (error) {
     // The row is gone, so nothing can be sent either way.
@@ -349,7 +376,7 @@ export async function refreshRegistration(): Promise<void> {
 export async function onNotificationTap(open: (path: string) => void): Promise<() => void> {
   if (!(await inApp())) return () => {};
 
-  const PushNotifications = await plugin();
+  const { plugin: PushNotifications } = await pushNotifications();
   const handle = await PushNotifications.addListener(
     "pushNotificationActionPerformed",
     (action) => {
