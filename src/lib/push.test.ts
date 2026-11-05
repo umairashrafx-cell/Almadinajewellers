@@ -1,86 +1,53 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Rate alerts, exercised the way a phone meets them.
+ * Rate alerts, exercised against plugins that behave like the real ones.
  *
- * What is worth testing here is not that a flag round-trips. It is that this
- * module reaches the plugins at all. A Capacitor plugin is a Proxy that
- * answers every property read with a method of that name, `then` included, so
- * a plugin handed to the promise machinery is called as a thenable and the
- * call rejects — on a phone, and nowhere else, because a browser returns
- * early before it ever touches one. A plain object mock is silent about that,
- * and that silence is how the bug below reached a device: alertState() could
- * not read its own state, and the store fell back to the per-origin copy that
- * Preferences exists to replace.
+ * This file exists because of a bug that reached a device twice. Capacitor's
+ * plugin objects are Proxies that turn any property read into a call to a
+ * native method of that name, so returning one straight out of an `async`
+ * function hands a thenable to the promise machinery: it probes the resolved
+ * value for `.then`, Android answers that `Preferences.then()` is not
+ * implemented, and the lookup rejects. Both of this module's plugin lookups
+ * did exactly that.
  *
- * So the mocks throw the way the real bridge throws, and the tests only ask
- * what the module managed to read and write.
+ * On a phone that took the whole feature down without a sound — `alertState()`
+ * rejected, the card read "unsupported" and never rendered, so alerts could
+ * not be turned on at all, and `refreshRegistration()` died as an unhandled
+ * rejection at every launch. Nothing caught it: a browser answers `inApp()`
+ * false before there is any proxy to touch, so every unit test and every
+ * preview stayed green.
+ *
+ * So the mocks below are Proxies that throw on anything they do not implement,
+ * like the real plugins, and the tests only use this module's exported
+ * surface. A plain-object mock is silent about this entire class of bug, and
+ * asserting on how the lookups wrap their plugin would pin the shape of the
+ * fix rather than the behaviour that matters. Please don't simplify either.
+ *
+ * The keys are spelled out rather than imported: they are a contract with
+ * whatever the app's other half reads, so a test that took them from the
+ * source could not notice them changing.
  */
-
-/** Spelled out rather than imported: it is a contract with the app's storage. */
 const WANTED_KEY = "amj:rate-alerts";
 
 /** Whether the code under test believes it is inside the app. */
 let native = false;
 
-/** What Android answers when asked about the notification permission. */
-let permission = "granted";
-
-/** What Capacitor Preferences holds — the app's storage, outside any origin. */
+/** What Capacitor Preferences holds — the app's store, outside any origin. */
 let preferences = new Map<string, string>();
 
-/**
- * A plugin as @capacitor/core builds one.
- *
- * registerPlugin returns a Proxy whose `get` special-cases four names and
- * turns everything else into a native method call, so reading a name the
- * plugin does not implement does not give back undefined — it throws when
- * called. `then` is one of those names.
- */
-function bridge<T extends object>(name: string, implemented: T): T {
-  return new Proxy(implemented, {
-    get(target, prop, receiver) {
-      if (prop in target) return Reflect.get(target, prop, receiver);
-      throw new Error(`"${name}.${String(prop)}()" is not implemented on android`);
-    },
-  });
-}
-
-vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
-
-vi.mock("@capacitor/core", () => ({
-  Capacitor: { isNativePlatform: () => native },
-}));
-
-vi.mock("@capacitor/preferences", () => ({
-  Preferences: bridge("Preferences", {
-    get: async ({ key }: { key: string }) => ({
-      value: preferences.has(key) ? preferences.get(key) : null,
-    }),
-    set: async ({ key, value }: { key: string; value: string }) => {
-      preferences.set(key, value);
-    },
-    remove: async ({ key }: { key: string }) => {
-      preferences.delete(key);
-    },
-  }),
-}));
-
-vi.mock("@capacitor/push-notifications", () => ({
-  PushNotifications: bridge("PushNotifications", {
-    checkPermissions: async () => ({ receive: permission }),
-  }),
-}));
+/** What Android says when asked about the notification permission. */
+let permission = "granted";
 
 /**
- * One origin's localStorage.
+ * This origin's localStorage, which the tests run without.
  *
- * Replaced between tests to stand for the other half of the app: same device,
- * same Preferences, a different origin that kept its own copy.
+ * Only one of them needs it — the migration path that moves a flag written by
+ * an older build into the shared store — but `remember()` falls back to it on
+ * any failure, so every test needs it to exist rather than throw.
  */
-function origin(wanted?: string) {
+function origin() {
   const map = new Map<string, string>();
-  if (wanted) map.set(WANTED_KEY, wanted);
 
   globalThis.localStorage = {
     getItem: (key: string) => map.get(key) ?? null,
@@ -94,65 +61,117 @@ function origin(wanted?: string) {
   return map;
 }
 
-async function load() {
-  vi.resetModules();
-  return await import("./push");
+/**
+ * A plugin that answers only what it implements and throws otherwise, which is
+ * what makes this file able to catch the bug it was written for.
+ */
+function asPlugin<T extends object>(implemented: T): T {
+  return new Proxy(implemented, {
+    get(target, prop, receiver) {
+      if (prop in target) return Reflect.get(target, prop, receiver);
+      throw new Error(`"Plugin.${String(prop)}()" is not implemented on android`);
+    },
+  });
 }
+
+vi.mock("@capacitor/core", () => ({
+  Capacitor: { isNativePlatform: () => native },
+}));
+
+vi.mock("@capacitor/preferences", () => ({
+  Preferences: asPlugin({
+    get: async ({ key }: { key: string }) => ({
+      value: preferences.has(key) ? preferences.get(key) : null,
+    }),
+    set: async ({ key, value }: { key: string; value: string }) => {
+      preferences.set(key, value);
+    },
+    remove: async ({ key }: { key: string }) => {
+      preferences.delete(key);
+    },
+  }),
+}));
+
+vi.mock("@capacitor/push-notifications", () => ({
+  PushNotifications: asPlugin({
+    checkPermissions: async () => ({ receive: permission }),
+    requestPermissions: async () => ({ receive: permission }),
+    createChannel: async () => {},
+    register: async () => {},
+    unregister: async () => {},
+    addListener: async () => ({ remove: async () => {} }),
+  }),
+}));
+
+/** Nothing here reaches the shop; no test below gets as far as a token. */
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: { rpc: async () => ({ error: null }) },
+}));
+
+const { alertState, inApp, refreshRegistration } = await import("@/lib/push");
 
 beforeEach(() => {
   native = false;
-  permission = "granted";
   preferences = new Map();
+  permission = "granted";
   origin();
 });
 
-describe("in a browser", () => {
-  it("says there is nothing to offer, without reaching for a plugin", async () => {
-    const { alertState } = await load();
-
-    expect(await alertState()).toBe("unsupported");
+describe("the mocks", () => {
+  it("throw on an unimplemented read, the way a real plugin does", async () => {
+    const { Preferences } = await import("@capacitor/preferences");
+    // The exact read the promise machinery performs, and the whole bug.
+    expect(() => (Preferences as unknown as { then: unknown }).then).toThrow(/not implemented/);
   });
 });
 
-describe("on a phone", () => {
+describe("outside the app", () => {
+  it("is not in the app", async () => {
+    await expect(inApp()).resolves.toBe(false);
+  });
+
+  it("offers nothing, and touches no plugin doing so", async () => {
+    await expect(alertState()).resolves.toBe("unsupported");
+  });
+});
+
+describe("inside the app", () => {
   beforeEach(() => {
     native = true;
   });
 
-  it("reads the flag the app stored, not this origin's copy", async () => {
-    preferences.set(WANTED_KEY, "yes");
-    origin();
+  /*
+   * Each of these rejected before the fix, which is the point of them. None
+   * asserts on how a lookup wraps its plugin — only that asking this module a
+   * question gets an answer rather than a rejection.
+   */
 
-    const { alertState } = await load();
-
-    expect(await alertState()).toBe("on");
+  it("reads the state as off when alerts have never been turned on", async () => {
+    await expect(alertState()).resolves.toBe("off");
   });
 
-  it("believes Preferences over an origin that disagrees", async () => {
+  it("reads the state as on from the store the other half can see", async () => {
     preferences.set(WANTED_KEY, "yes");
-    origin("no");
-
-    const { alertState } = await load();
-
-    expect(await alertState()).toBe("on");
+    await expect(alertState()).resolves.toBe("on");
   });
 
-  it("moves a flag only this origin kept into the app's own store", async () => {
-    origin("yes");
-
-    const { alertState } = await load();
-
-    expect(await alertState()).toBe("on");
-    // Carried across on the way past, so the app's other half can see it too.
-    expect(preferences.get(WANTED_KEY)).toBe("yes");
-  });
-
-  it("reports what Android says about the permission", async () => {
-    preferences.set(WANTED_KEY, "yes");
+  it("reports what the phone says when the permission was taken away", async () => {
     permission = "denied";
+    preferences.set(WANTED_KEY, "yes");
+    await expect(alertState()).resolves.toBe("blocked");
+  });
 
-    const { alertState } = await load();
+  it("does its launch housekeeping without rejecting", async () => {
+    // The caller is `void refreshRegistration()`, so a rejection here is an
+    // unhandled one that no part of the app would ever report.
+    await expect(refreshRegistration()).resolves.toBeUndefined();
+  });
 
-    expect(await alertState()).toBe("blocked");
+  it("carries a flag written by an older build across to the shared store", async () => {
+    // The localStorage migration path in recalled(), which the proxy bug also
+    // took out: it rejected before the fallback could be read.
+    localStorage.setItem(WANTED_KEY, "yes");
+    await expect(alertState()).resolves.toBe("on");
+    expect(preferences.get(WANTED_KEY)).toBe("yes");
   });
 });
