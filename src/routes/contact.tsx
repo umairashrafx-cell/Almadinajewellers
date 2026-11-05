@@ -65,7 +65,7 @@ const FAQS = [
   },
   {
     q: "Do you take card or online payment?",
-    a: "Payment is arranged in store, or on confirmed delivery. There is no online checkout on this website — you enquire, we agree the price and the weight, and then payment is settled directly.",
+    a: "Payment is arranged in store, or in full before the piece is posted. There is no online checkout on this website — you enquire, we agree the price and the weight, and then payment is settled directly.",
   },
   {
     q: "Can rings be resized?",

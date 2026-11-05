@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import { PHONE } from "@/lib/phone";
 import { throttleMessage } from "@/lib/throttle";
 
 /**
@@ -19,8 +20,6 @@ const untyped = supabase as unknown as SupabaseClient;
 
 /** Customer uploads live here. Private, unlike the product photography. */
 export const CUSTOM_ORDER_BUCKET = "custom-orders";
-
-const PHONE = /^(\+?92|0)?[\s-]?\d{2,4}[\s-]?\d{6,8}$/;
 
 /**
  * What an attachment may be: 12 MB, and a photograph or a recording.

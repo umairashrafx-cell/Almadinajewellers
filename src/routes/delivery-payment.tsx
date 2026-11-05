@@ -29,7 +29,7 @@ export const Route = createFileRoute("/delivery-payment")({
   head: () => {
     const title = `Delivery & Payment — ${SITE.name}`;
     const description =
-      "Free insured delivery anywhere in Pakistan. See photographs and a video of the actual piece, agree the weight and price at the day's gold rate, then pay in store or on confirmed delivery. No online checkout.";
+      "Free insured delivery anywhere in Pakistan on full payment. See photographs and a video of the actual piece, agree the weight and price at the day's gold rate, then pay in store or in full before it is posted. No online checkout.";
     return {
       meta: [
         { title },
@@ -56,8 +56,8 @@ export const Route = createFileRoute("/delivery-payment")({
 
 const PROMISES: PointItem[] = [
   {
-    title: "Free insured delivery",
-    body: "Insured and free of charge anywhere in Pakistan, on every order, regardless of value.",
+    title: "Free insured delivery on full payment",
+    body: "Insured and free of charge anywhere in Pakistan, on every order, regardless of value, once the piece is paid for in full.",
     icon: Truck,
   },
   {
@@ -67,7 +67,7 @@ const PROMISES: PointItem[] = [
   },
   {
     title: "No online checkout",
-    body: "No card details are ever entered on this website. Payment is settled in store, or on confirmed delivery.",
+    body: "No card details are ever entered on this website. Payment is settled in store, or in full before the piece is posted.",
     icon: Wallet,
   },
 ];
@@ -89,8 +89,8 @@ const STEPS: StepItem[] = [
     icon: Scale,
   },
   {
-    title: "Delivered, then paid",
-    body: "Insured delivery at no charge anywhere in Pakistan, or come to the shop. Pay in store or on confirmed delivery.",
+    title: "Paid, then delivered",
+    body: "Pay in full and the piece is posted, insured and free of charge anywhere in Pakistan. Or come to the shop and settle at the counter.",
     icon: ShieldCheck,
   },
 ];
@@ -121,7 +121,7 @@ function DeliveryPaymentPage() {
     <PageShell>
       <PageHero
         title="Delivery & payment"
-        intro="Free insured delivery anywhere in Pakistan. Nothing is sent, and nothing is paid, until you have seen the piece and agreed the price."
+        intro="Free insured delivery anywhere in Pakistan, on full payment. Nothing is paid, and nothing is sent, until you have seen the piece and agreed the price."
         trail={[{ name: "Delivery & Payment", path: PATH }]}
       >
         <div className="flex flex-col gap-3 sm:flex-row">

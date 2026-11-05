@@ -5,7 +5,7 @@ const ITEMS = [
   { Icon: BadgeCheck, label: "Hallmarked 22K Gold" },
   { Icon: Gem, label: "925 Certified Silver" },
   { Icon: RefreshCcw, label: "Lifetime Buy-Back" },
-  { Icon: Truck, label: "Insured Nationwide Delivery" },
+  { Icon: Truck, label: "Free Insured Delivery On Full Payment" },
 ];
 
 /** Four thin-icon trust points below the hero. */

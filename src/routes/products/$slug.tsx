@@ -596,9 +596,9 @@ function Details({ product }: { product: ProductDetail }) {
       <AccordionItem value="delivery">
         <AccordionTrigger>Delivery &amp; buy-back</AccordionTrigger>
         <AccordionContent>
-          Insured delivery across Pakistan, free of charge. Bridal sets are made to order and ready
-          within ten days. Every piece carries a lifetime buy-back against the day's rate — bring it
-          back to {SITE.address} with the bill.
+          Insured delivery across Pakistan, free of charge once the piece is paid for in full.
+          Bridal sets are made to order and ready within ten days. Every piece carries a lifetime
+          buy-back against the day's rate — bring it back to {SITE.address} with the bill.
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -666,7 +666,8 @@ function ProductSchema({
        * This said OnSitePickup alone, which told a shopping engine the piece
        * could only be collected in Sarafa Market — while the announcement bar,
        * /delivery-payment and /policies all promise free insured delivery
-       * anywhere in Pakistan. The markup contradicted the page it sat on, and
+       * anywhere in Pakistan on full payment. The markup contradicted the page
+       * it sat on, and
        * the out-of-town buyer the delivery service exists for was the one it
        * turned away.
        */
@@ -685,9 +686,11 @@ function ProductSchema({
         return until ? { priceValidUntil: until } : {};
       })(),
       /*
-       * "Free of charge across Pakistan, on every order, regardless of value"
-       * — /policies. Stated here so the shipping cost is known before the
-       * customer has to ask, which is what the promise is for.
+       * "Free of charge across Pakistan, on every order, regardless of value,
+       * once the piece is paid for in full" — /policies. Free is the only
+       * delivery the shop offers, so the rate is 0 outright. Stated here so the
+       * shipping cost is known before the customer has to ask, which is what
+       * the promise is for.
        */
       shippingDetails: {
         "@type": "OfferShippingDetails",
@@ -696,10 +699,10 @@ function ProductSchema({
       },
       /*
        * hasMerchantReturnPolicy is deliberately absent. The shop's buy-back is
-       * a purchase at the day's 20K rate, not a refund, and payment is settled
-       * on delivery rather than up front — so every returnPolicyCategory in the
-       * vocabulary would describe terms this shop does not offer. Adding one to
-       * satisfy a rich-result checklist would be a false claim.
+       * a purchase at the day's 20K rate, not a refund — so every
+       * returnPolicyCategory in the vocabulary would describe terms this shop
+       * does not offer. Adding one to satisfy a rich-result checklist would be
+       * a false claim.
        */
       seller: { "@type": "JewelryStore", name: SITE.name, telephone: SITE.phones[0] },
     },

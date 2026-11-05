@@ -38,7 +38,7 @@ export const Route = createFileRoute("/cart")({
       {
         name: "description",
         content:
-          "Review the pieces you have chosen and send your order to Al-Madina Jewellers. Payment is arranged in store or on confirmed delivery.",
+          "Review the pieces you have chosen and send your order to Al-Madina Jewellers. Payment is arranged in store, or in full before the piece is posted.",
       },
       // A per-visitor page. Nothing here belongs in a search index.
       { name: "robots", content: "noindex, follow" },
@@ -122,7 +122,8 @@ function CartPage() {
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-champagne/80">
               Send us the pieces you have chosen and we will confirm weights, the day's rate and
-              delivery. Nothing is charged here — payment is arranged in store or on delivery.
+              delivery. Nothing is charged here — payment is arranged in store, or in full before
+              the piece is posted.
             </p>
           </div>
         </section>
