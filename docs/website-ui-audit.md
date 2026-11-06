@@ -113,24 +113,89 @@ add a fourth set.
 
 ## Medium
 
-### W3 · Tap targets under the minimum, site-wide
+### W3 · Tap targets under the minimum, site-wide — fixed
 
-Between 30 and 50 per page, and most of them are the same handful because they
-live in the shared chrome:
+Every control on the nine public routes was measured at 375×812: its box, and
+where it carries a hit area reaching past its ink, that. Before: **49 under 44
+pixels on the product page alone**, most of them the same handful repeated,
+because they live in the shared chrome.
 
-| Element                                  | Size         | Where              |
-| ---------------------------------------- | ------------ | ------------------ |
-| Search / Cart / WhatsApp / Menu          | 40×40 each   | header, every page |
-| Announcement bar phone link              | 174×17       | every page         |
-| Breadcrumb links ("HOME", "BRIDAL SETS") | 38×13, 82×13 | every inner page   |
-| Product-card wishlist heart              | 36×36        | every grid         |
-| "SAVE TO WISHLIST"                       | 145×17       | product page       |
-| Store phone links                        | 126×17       | `/stores`          |
-| Footer nav links                         | ~17 tall     | every page         |
+| Element                                   | Was           | Now                 |
+| ----------------------------------------- | ------------- | ------------------- |
+| Search / Cart / WhatsApp / Menu           | 40×40         | 44×44               |
+| Announcement bar WhatsApp link            | 174×17        | 174×44 (hit area)   |
+| Breadcrumb links, all sixteen copies      | 38×13, 82×13  | ≥44 tall (hit area) |
+| Footer column links, ~24 of them          | ~17 tall      | 44×44 on touch      |
+| Footer phone, social, Admin, build credit | 17–32         | 44                  |
+| Product-card wishlist heart               | 36×36         | 44×44               |
+| Product-card ENQUIRE bar                  | 164×41        | 164×45              |
+| Save to wishlist / Share / Book a viewing | 142–155×17    | 44 tall             |
+| Review stars, review form fields          | 32×32, ×42    | 44×44, ×44          |
+| Collection FILTER button and sort select  | 98×35, 192×34 | 44 tall             |
+| Hero pause button                         | 40×40         | 44×44               |
+| Our Story / Full rate table / Confirm     | 80–232×23     | 44 tall             |
+| Store phone and WhatsApp links            | 116–126×17    | 44 tall             |
 
-Android asks for 48dp, WCAG 2.2 for 44. The four header icons at 40 are the
-near-miss; the 13–17px text links are the real problem, and the store phone
-numbers are the same defect [PR #145 just fixed in the app](./app-ui-audit.md).
+After: **nothing under 44 on any of the nine routes** except inline links
+inside sentences, which are excluded below.
+
+#### Three ways, chosen per control
+
+**Real height** wherever there was room for it — the header icons, the card
+hearts, the phone numbers, the form controls, the standalone calls to action.
+A control a thumb aims at should be the size it claims to be.
+
+**A hit area reaching past the ink** (`.tap-44` in `src/styles.css`) where
+growing the box would push the page around: the announcement strip, which is
+already sixty-six pixels of every phone screen; the breadcrumb, which would
+open a gap under itself; and the twenty-two review links on the home page,
+where real height added six hundred pixels to a page that is twelve screens
+tall. The box is transparent and takes no space. It can reach over a
+neighbour and steal its tap, so it is only used where the neighbours are
+plain text — each one was checked by hit-testing the points around it.
+
+**Left alone: links inside a sentence.** "privacy policy" on the home page,
+"Send it there instead" on `/custom-order`, "Leave a review on Google" on
+`/stores`. WCAG 2.5.5 and 2.5.8 both except a target whose size is
+constrained by the line-height of the text around it, and that is exactly
+these: a 44px box around a word in a paragraph would reach into the lines
+above and below and take their taps. Also left alone is the
+`www.almadinajeweller.com` link inside the rate board, which is part of the
+artwork the shop forwards on WhatsApp, and the `sr-only` radios in the
+calculator, whose labels are the real targets and are already large.
+
+#### What it costs
+
+The footer goes from **1,542px to 2,078px on a touch device — plus 536px on
+every page**, isolated by neutralising the rules and re-measuring. Twenty-four
+links cannot each be 44px tall for free.
+
+Gated on `pointer: coarse` rather than on width, so a mouse keeps the compact
+footer: the predicate is whether a finger is doing the pointing, which is the
+thing 44px is for. Worth a second opinion, given that the same instinct to
+gate W1 by width was wrong — there the overlap existed at every width, so the
+breakpoint was answering the wrong question. Here it is not the viewport that
+decides whether 44px is needed.
+
+### W11 · The product card's ENQUIRE bar cannot be reached on a phone
+
+Found while fixing W3, and **not fixed**.
+
+The card's one call to action is `translate-y-full` until the card is
+hovered. On a touch device there is no hover, so it is never untranslated:
+measured, it sits at `translate: 0px 100%`, its top edge exactly on the image
+box's bottom edge, and the image box is `overflow: hidden`. A tap at its
+centre lands on the product name below the card. Keyboard and screen-reader
+users are fine — `focus-visible:translate-y-0` slides it in.
+
+The same hover-only treatment hid the wishlist heart, which _was_ fixed,
+because it was invisible and still tappable: a thumb brushing the top-right of
+a photograph silently saved the piece, and there was no visible way to save
+one on purpose. That is a defect with one answer. This is not: showing the bar
+on touch means a permanent gold band across the bottom of every product image
+on every phone, which is a decision about how the grid should look, not a bug
+to clear. The shortcut is lost, not the route — tapping the card still opens
+the piece, which has its own enquiry buttons.
 
 ### W4 · Heading hierarchy skips levels
 
@@ -265,8 +330,9 @@ borders, rules and one button variant, on ivory, with deep green for weight.
 ## Suggested order of work
 
 1. ~~**W1** — the FAB over the arrival view.~~ Done: one component, every route.
-2. **W3** — tap targets in the shared chrome. Header, breadcrumb, product-card
-   heart, store phones. One pass, every page benefits.
+2. ~~**W3** — tap targets in the shared chrome.~~ Done: 49 under-sized
+   controls on the product page alone, now none on any route bar the inline
+   exceptions. Left behind it: **W11**, below.
 3. **W2 + the semantic-token gap** — fold `lux-*` into the site palette, add
    `success`/`warning`. This is the "design system" sprint, and it is smaller
    than it sounds because two thirds of the system already exists.

@@ -414,6 +414,50 @@
 }
 
 /*
+ * A 44x44 touch target around something that has to stay small.
+ *
+ * Android asks for 48dp and WCAG for 44, and a line of 11px uppercase text is
+ * about seventeen pixels tall however much you care about it. Most of the
+ * time the answer is to make the control bigger — see the header icons, the
+ * card hearts, the phone numbers. But some of these sit in places where
+ * growing the box pushes the page around: the announcement strip would get
+ * taller on every page to fit a link that is already legible, and the
+ * breadcrumb would open a gap under it.
+ *
+ * So the ink stays where it is and the target reaches past it. A pointer
+ * event anywhere in the 44px box belongs to the link; the box is transparent
+ * and takes no space, so nothing above or beside it moves. This is the target
+ * WCAG measures, not a trick played on it.
+ *
+ * It does mean the box can reach over a neighbour and take a tap meant for
+ * it, so this is only for controls with room around them. Anything in a
+ * stacked list — the footer columns, the phone numbers on a shop page — gets
+ * real height instead, and the list gets the room for it.
+ *
+ * The breadcrumb is named here rather than given the class, because the trail
+ * is hand-written in sixteen places — PageHero and fifteen routes that
+ * predate it. Typing the same class into sixteen files would leave the
+ * seventeenth to be forgotten, so the rule is written once against the
+ * landmark they all share. The chevrons between the links take no taps of
+ * their own, and the only thing under the trail is a heading.
+ */
+.tap-44,
+nav[aria-label="Breadcrumb"] a {
+  position: relative;
+}
+
+.tap-44::after,
+nav[aria-label="Breadcrumb"] a::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  translate: -50% -50%;
+}
+
+/*
  * Page transition. Keyed on the pathname in __root, so it plays once per
  * navigation. Deliberately brief — a page change should feel immediate, and
  * anything longer reads as the site being slow rather than considered.

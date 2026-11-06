@@ -358,7 +358,7 @@ function CollectionPage() {
                     <DrawerTrigger asChild>
                       <button
                         type="button"
-                        className="flex items-center gap-2 border border-gold px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:bg-champagne/50 lg:hidden"
+                        className="flex min-h-11 items-center gap-2 border border-gold px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:bg-champagne/50 lg:hidden"
                       >
                         <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                         Filter
@@ -394,7 +394,7 @@ function CollectionPage() {
                     <select
                       value={sort}
                       onChange={(e) => setSort(e.target.value as SortKey)}
-                      className="border border-gold/50 bg-transparent px-3 py-2 text-[11px] font-medium uppercase tracking-widest text-ink focus-visible:outline-none"
+                      className="min-h-11 border border-gold/50 bg-transparent px-3 py-2 text-[11px] font-medium uppercase tracking-widest text-ink focus-visible:outline-none"
                     >
                       {SORT_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>

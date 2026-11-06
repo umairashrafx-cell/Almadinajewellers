@@ -122,17 +122,17 @@ export function GoldRateStrip({ initial }: { initial?: RateSnapshot | undefined 
         <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3">
           <Link
             to="/gold-rate-in-mandi-bahauddin-today"
-            className="border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
+            className="inline-flex min-h-11 items-center text-[12px] font-semibold uppercase tracking-widest text-gold transition-colors hover:text-champagne"
           >
-            Full rate table &amp; calculator
+            <span className="border-b border-gold pb-1">Full rate table &amp; calculator</span>
           </Link>
           <a
             href={whatsappLink("Assalam-o-Alaikum, please confirm today's gold rate.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="border-b border-gold/40 pb-1 text-[12px] font-semibold uppercase tracking-widest text-champagne/80 transition-colors hover:text-gold"
+            className="inline-flex min-h-11 items-center text-[12px] font-semibold uppercase tracking-widest text-champagne/80 transition-colors hover:text-gold"
           >
-            Confirm on WhatsApp
+            <span className="border-b border-gold/40 pb-1">Confirm on WhatsApp</span>
           </a>
         </div>
         <span className="sr-only">{SITE.whatsappDisplay}</span>

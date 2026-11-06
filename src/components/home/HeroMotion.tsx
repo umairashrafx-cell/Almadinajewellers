@@ -142,7 +142,7 @@ export function HeroMotion() {
           type="button"
           onClick={toggle}
           aria-label={paused ? "Play the background film" : "Pause the background film"}
-          className="absolute right-4 top-[calc(var(--header-h)+1rem)] z-20 grid h-10 w-10 place-items-center rounded-full border border-ivory/30 bg-primary-deep/40 text-ivory backdrop-blur-sm transition-colors hover:border-gold hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:right-6 lg:right-8"
+          className="absolute right-4 top-[calc(var(--header-h)+1rem)] z-20 grid h-11 w-11 place-items-center rounded-full border border-ivory/30 bg-primary-deep/40 text-ivory backdrop-blur-sm transition-colors hover:border-gold hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold sm:right-6 lg:right-8"
         >
           {paused ? (
             <Play className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />

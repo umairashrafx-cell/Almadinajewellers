@@ -244,7 +244,7 @@ function ReviewForm({
                   onClick={() => setValue("rating", value, { shouldValidate: true })}
                   aria-label={`${value} ${value === 1 ? "star" : "stars"}`}
                   aria-pressed={rating === value}
-                  className="rounded p-1 transition-transform hover:scale-110"
+                  className="grid h-11 w-11 place-items-center rounded transition-transform hover:scale-110"
                 >
                   <Star
                     className={cn(
@@ -296,7 +296,7 @@ function ReviewForm({
 }
 
 const inputClass =
-  "mt-1.5 w-full rounded-[2px] border border-gold/40 bg-ivory px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-gold";
+  "mt-1.5 min-h-11 w-full rounded-[2px] border border-gold/40 bg-ivory px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-gold";
 
 function Field({
   label,
