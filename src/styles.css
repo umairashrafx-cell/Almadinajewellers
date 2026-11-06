@@ -54,18 +54,9 @@
   --color-rate-ivory: var(--rate-ivory);
   --color-rate-ink: var(--rate-ink);
 
-  /* The header's luxury palette — see the :root block. */
-  --color-lux-ivory: var(--lux-ivory);
-  --color-lux-cream: var(--lux-cream);
-  --color-lux-border: var(--lux-border);
-  --color-lux-gold: var(--lux-gold);
-  --color-lux-gold-light: var(--lux-gold-light);
-  --color-lux-gold-deep: var(--lux-gold-deep);
-  --color-lux-gold-dark: var(--lux-gold-dark);
-  --color-lux-ink: var(--lux-ink);
-  --color-lux-muted: var(--lux-muted);
-
   --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-mid: var(--gold-mid);
   --color-gold-deep: var(--gold-deep);
   --color-gold-soft: var(--gold-soft);
   --color-champagne: var(--champagne);
@@ -73,6 +64,12 @@
   --color-ink: var(--ink);
   --color-warmgrey: var(--warmgrey);
   --color-rose: var(--rose);
+
+  /* Semantic status — see the :root block. */
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
 
   /* Admin accents — see the :root block for why these exist. */
   --color-bridal: var(--bridal);
@@ -102,8 +99,8 @@
 :root {
   --radius: 2px;
 
-  --ivory: oklch(0.975 0.006 85); /* #FAF7F2 */
-  --ink: oklch(0.22 0.006 80); /* #1E1C18 */
+  --ivory: oklch(0.975 0.006 85); /* #F9F6F2 */
+  --ink: oklch(0.22 0.006 80); /* #1C1A18 */
   /*
    * Secondary text. Was oklch(0.6 …) — #857F77 — which measured 3.7:1 on the
    * ivory ground and 4.0:1 on white: under the 4.5:1 AA minimum for the small
@@ -113,19 +110,41 @@
    * reads as grey beside the ink.
    */
   --warmgrey: oklch(0.5 0.014 80); /* #67635A */
-  --gold: oklch(0.72 0.1 85); /* #C9A24B */
   /*
-   * Gold to write small words in on a light ground.
+   * The gold ramp. Four steps on one hue, because gold has four jobs here and
+   * which step does which is decided by contrast, not by taste. Every figure
+   * below is measured against --ink and --ivory as they actually render.
    *
-   * --gold is the metal: right for rules, icons, buttons and any text on the
-   * green, where it measures 5.1:1. On ivory it measures 2.3:1, so an eyebrow
-   * set in it was decoration nobody could read. This is the same hue taken
-   * down until it can carry a word: 5.7:1 on ivory, 5.3:1 on the champagne band.
+   *   --gold-light  decoration only — the light end of the header's hover
+   *                 gradient. Far too pale to carry a word on ivory.
+   *   --gold        the metal: rules, icons, buttons, and text on the green,
+   *                 where it measures 5.1:1. On ivory it is 2.3:1, so an
+   *                 eyebrow set in it is decoration nobody can read.
+   *   --gold-mid    the darkest gold that still takes --ink on top of it
+   *                 (4.8:1), while staying light enough to read as gold
+   *                 against ivory (3.3:1) for icons and borders. The header's
+   *                 hover gradient ends here.
+   *   --gold-deep   gold to write in on a light ground: 5.6:1 on ivory, 5.3:1
+   *                 on the champagne band, and 6.1:1 under white text, which
+   *                 is what the cart badge needs.
+   *
+   * --gold-mid and --gold-deep cannot be the same colour. Ink needs its ground
+   * no darker than about L 0.61 to clear AA; white needs it no lighter than
+   * about L 0.57. Those two windows do not overlap, which is the whole reason
+   * there are two steps here rather than one.
+   *
+   * The header used to carry a near-copy of this ramp under --lux-*, a shade
+   * off, which is why the navigation was drawn in a slightly different gold
+   * from the site beneath it. Folded in; --gold-light and --gold-mid are the
+   * two steps the site had been missing.
    */
+  --gold-light: oklch(0.775 0.11 85); /* #D6B05E */
+  --gold: oklch(0.72 0.1 85); /* #C1A057 */
+  --gold-mid: oklch(0.625 0.11 85); /* #A6822C */
   --gold-deep: oklch(0.5 0.095 85); /* #7C5E13 */
   --gold-soft: oklch(0.72 0.1 85 / 0.35);
-  --champagne: oklch(0.89 0.045 90); /* #E8D9B5 */
-  --rose: oklch(0.44 0.14 15); /* #9B2C3F */
+  --champagne: oklch(0.89 0.045 90); /* #E6DABA */
+  --rose: oklch(0.44 0.14 15); /* #8F2639 */
 
   --background: var(--ivory);
   --foreground: var(--ink);
@@ -156,23 +175,7 @@
   --rate-ivory: #f8f5ec;
   --rate-ink: #163d34;
 
-  /*
-   * The header's palette: a warmer ivory and a deeper, more metallic gold
-   * than the site's own, for the navigation alone. Hover and active text on
-   * the gold is --lux-ink, which clears AA on both ends of the gradient; white
-   * does not. The badge uses --lux-gold-dark for the same reason.
-   */
-  --lux-ivory: #fcfaf6;
-  --lux-cream: #f8f4ec;
-  --lux-border: #e8dcc7;
-  --lux-gold: #b8892d;
-  --lux-gold-light: #d6b15a;
-  --lux-gold-deep: #a97820;
-  --lux-gold-dark: #8f671e;
-  --lux-ink: #111111;
-  --lux-muted: #6b6255;
-
-  --primary: oklch(0.3 0.06 160); /* #0B3D2E Madina Green */
+  --primary: oklch(0.3 0.06 160); /* #0A3723 Madina Green */
   --primary-foreground: var(--ivory);
   --primary-deep: oklch(0.16 0.035 160); /* #04180F */
   --secondary: var(--champagne);
@@ -208,12 +211,34 @@
   --callback-tint: oklch(0.5 0.12 300 / 0.1);
   --piece: oklch(0.55 0.1 70); /* bronze — about a specific piece */
   --piece-tint: oklch(0.55 0.1 70 / 0.12);
-  --settled: oklch(0.5 0.1 160); /* green — dealt with */
-  --settled-tint: oklch(0.5 0.1 160 / 0.1);
+  /*
+   * These two are the semantic pair under their admin names. One value, two
+   * vocabularies: the admin reads better saying a job is "settled" than
+   * saying it succeeded, and the storefront reads better the other way.
+   */
+  --settled: var(--success);
+  --settled-tint: var(--success-tint);
+  --caution: var(--warning);
+  --caution-tint: var(--warning-tint);
 
-  /* amber — needs a decision before saving, but nothing has gone wrong */
-  --caution: oklch(0.48 0.11 75);
-  --caution-tint: oklch(0.48 0.11 75 / 0.1);
+  /*
+   * Semantic status.
+   *
+   * Separate from the brand palette on purpose: green here means "this went
+   * through", not Madina green, and amber means "look at this", not gold. The
+   * site had neither, so a completed payment was being congratulated in
+   * --gold, which measures 2.3:1 on ivory — the exact mistake the gold ramp
+   * above warns about, in the one place the site tells somebody their money
+   * arrived.
+   *
+   * --success 5.3:1 on ivory, --warning 6.2:1, both well clear of AA for the
+   * small print they are used in. The -tint pair is the same hue at 10% for
+   * chip and banner grounds.
+   */
+  --success: oklch(0.5 0.1 160); /* #1F744F */
+  --success-tint: oklch(0.5 0.1 160 / 0.1);
+  --warning: oklch(0.48 0.11 75); /* #815200 */
+  --warning-tint: oklch(0.48 0.11 75 / 0.1);
 }
 
 @layer base {

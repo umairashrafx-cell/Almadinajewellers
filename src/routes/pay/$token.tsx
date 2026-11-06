@@ -64,7 +64,7 @@ function Sheet({ children }: { children: ReactNode }) {
 function Unusable() {
   return (
     <Sheet>
-      <h1 className="font-display text-3xl font-light tracking-wide text-forest">
+      <h1 className="font-display text-3xl font-light tracking-wide text-primary">
         This payment link is not valid
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-warmgrey">
@@ -87,10 +87,10 @@ function Unusable() {
 function AlreadyPaid({ intent }: { intent: PaymentIntent }) {
   return (
     <Sheet>
-      <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-gold">
+      <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-success">
         <Check className="h-4 w-4" /> Paid
       </p>
-      <h1 className="mt-4 font-display text-3xl font-light tracking-wide text-forest">
+      <h1 className="mt-4 font-display text-3xl font-light tracking-wide text-primary">
         Order {intent.reference} is paid
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-warmgrey">
@@ -134,25 +134,25 @@ function Payable({ intent, token }: { intent: PaymentIntent; token: string }) {
       <p className="text-[11px] uppercase tracking-[0.2em] text-warmgrey">
         Order {intent.reference}
       </p>
-      <h1 className="mt-4 font-display text-3xl font-light tracking-wide text-forest">
+      <h1 className="mt-4 font-display text-3xl font-light tracking-wide text-primary">
         Pay for your order
       </h1>
 
       {state === "returned" && (
-        <p className="mt-6 rounded-[2px] border border-gold/45 bg-gold/10 px-4 py-3 text-sm leading-relaxed text-forest">
+        <p className="mt-6 rounded-[2px] border border-gold/45 bg-gold/10 px-4 py-3 text-sm leading-relaxed text-primary">
           Thank you. Easypaisa is confirming the payment with us — this page will show it as paid
           once they do, usually within a minute or two. Nothing more is needed from you.
         </p>
       )}
       {state === "failed" && (
-        <p className="mt-6 rounded-[2px] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm leading-relaxed text-forest">
+        <p className="mt-6 rounded-[2px] border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm leading-relaxed text-primary">
           That payment was not completed, and nothing has been charged. You can try again below.
         </p>
       )}
 
-      <ul className="mt-8 divide-y divide-forest/10 border-y border-forest/10">
+      <ul className="mt-8 divide-y divide-primary/10 border-y border-primary/10">
         {intent.items.map((line) => (
-          <li key={line.name} className="flex justify-between gap-4 py-3 text-sm text-forest">
+          <li key={line.name} className="flex justify-between gap-4 py-3 text-sm text-primary">
             <span>{line.name}</span>
             <span className="text-warmgrey">×{line.quantity}</span>
           </li>
@@ -161,7 +161,7 @@ function Payable({ intent, token }: { intent: PaymentIntent; token: string }) {
 
       <div className="mt-6 flex items-baseline justify-between">
         <span className="text-[11px] uppercase tracking-[0.2em] text-warmgrey">Agreed total</span>
-        <span className="font-display text-3xl font-light text-forest">
+        <span className="font-display text-3xl font-light text-primary">
           {formatPKR(intent.amountPkr)}
         </span>
       </div>
