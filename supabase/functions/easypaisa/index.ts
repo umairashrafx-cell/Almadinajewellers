@@ -54,6 +54,24 @@ const HASH_KEY = Deno.env.get("EASYPAISA_HASH_KEY");
 const IPN_SECRET = Deno.env.get("EASYPAISA_IPN_SECRET");
 const SITE_ORIGIN = Deno.env.get("SITE_ORIGIN") ?? "https://www.almadinajeweller.com";
 
+/**
+ * AES has three key sizes and no others: 16, 24 or 32 bytes.
+ *
+ * The hash below used to name its cipher from the key's own length, so a key
+ * of any other size asked `node:crypto` for a cipher that does not exist —
+ * `aes-512-ecb`, for one that is 64 bytes — and threw in the middle of a
+ * customer's payment instead of refusing before it began. A hash key is
+ * pasted in by hand exactly once, and the usual paste faults all land on a
+ * length AES cannot take: a key written as hex (twice the bytes), the wrong
+ * credential copied from the portal, or a truncated selection.
+ *
+ * Measured in bytes rather than characters, because that is what the cipher
+ * is given and a single non-ASCII character would make the two disagree.
+ */
+const AES_KEY_BYTES = [16, 24, 32];
+const HASH_KEY_BYTES = HASH_KEY === undefined ? 0 : Buffer.byteLength(HASH_KEY, "utf8");
+const HASH_KEY_USABLE = HASH_KEY !== undefined && AES_KEY_BYTES.includes(HASH_KEY_BYTES);
+
 const HOST =
   Deno.env.get("EASYPAISA_ENV") === "live"
     ? "https://easypay.easypaisa.com.pk"
@@ -78,15 +96,30 @@ const db = createClient(
  * silently wrong hash rather than an error.
  */
 function hashRequest(params: Record<string, string>): string {
-  if (!HASH_KEY) return "";
+  // Both of these are refused by start() before anything is opened, so this
+  // is the belt to that braces: a future caller gets an error it can read
+  // rather than an empty signature or a cipher name that does not exist.
+  if (!HASH_KEY) {
+    throw new Error("EASYPAISA_HASH_KEY is not set, so no request can be signed.");
+  }
+  if (!HASH_KEY_USABLE) {
+    throw new Error(
+      `EASYPAISA_HASH_KEY is ${HASH_KEY_BYTES} bytes; AES takes 16, 24 or 32. ` +
+        "Check it against the merchant pack: 64 characters is usually a 32 byte " +
+        "key written as hex, which has to be decoded before it is used as a key.",
+    );
+  }
 
   const plain = Object.keys(params)
     .sort()
     .map((key) => `${key}=${params[key]}`)
     .join("&");
 
-  const bits = HASH_KEY.length * 8;
-  const cipher = createCipheriv(`aes-${bits}-ecb`, Buffer.from(HASH_KEY, "utf8"), null);
+  const cipher = createCipheriv(
+    `aes-${HASH_KEY_BYTES * 8}-ecb`,
+    Buffer.from(HASH_KEY, "utf8"),
+    null,
+  );
   return Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]).toString("base64");
 }
 
@@ -196,6 +229,18 @@ Deno.serve(async (req: Request) => {
  */
 async function start(req: Request): Promise<Response> {
   if (!STORE_ID || !HASH_KEY) {
+    return json({ error: "Online payment is not configured yet." }, 503);
+  }
+
+  // Word for word the same answer as above, so that nothing about the shop's
+  // configuration can be read off which refusal came back. The reason goes to
+  // the function log, where only the shop can see it. The length is recorded
+  // because it is the whole diagnosis; the key itself never goes near a log.
+  if (!HASH_KEY_USABLE) {
+    console.error(
+      `easypaisa: EASYPAISA_HASH_KEY is ${HASH_KEY_BYTES} bytes; AES takes 16, 24 ` +
+        "or 32. No payment can be signed until it is corrected — see docs/easypaisa.md.",
+    );
     return json({ error: "Online payment is not configured yet." }, 503);
   }
 
