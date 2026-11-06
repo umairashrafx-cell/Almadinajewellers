@@ -27,21 +27,60 @@ Routes exercised: `/`, `/collections`, `/collections/bridal-sets`,
 
 ## High
 
-### W1 · The floating WhatsApp button covers the product title on a phone
+### W1 · The floating WhatsApp button lands on the arrival view — fixed
 
-On `/products/:slug` at 375×812, the fixed WhatsApp button (`56×56` at
-x 295, y 732 — `src/components/layout/FloatingWhatsApp.tsx`) intersects the
-`<h1>`. Confirmed by rectangle intersection, not by eye: the only element it
-overlaps on that screen is the product's own name.
+At 375×812 the fixed WhatsApp button (`56×56` at x 295, y 732 —
+`src/components/layout/FloatingWhatsApp.tsx`) sits inside the text column.
+There is no gutter to put it in at that width: a 56px circle inset 24px from
+the right edge of a 375px screen is 16px inside the content's own margin. So
+the question was never whether it covers something, but what, and when.
 
-The product page is the most commercially important screen the shop has, and
-the piece's name is the first thing a customer reads on it. A FAB that floats
-over body text is ordinary; one that lands on the H1 at the commonest phone
-width is not.
+Re-measured by intersecting the circle against the rendered glyphs of every
+visible text node, and against every control's box, on arrival, with nothing
+scrolled:
 
-Worth checking the same intersection on every route before fixing — the
-button is global, so wherever a page puts something important at the foot of
-the first screen, it will be underneath.
+| Route                                          | Under the circle on arrival                          |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| `/collections`                                 | the **Bridal Sets** link — a live control            |
+| `/collections/bridal-sets`                     | the first card's **ENQUIRE** button — a live control |
+| `/products/:slug`                              | the `<h1>`, tail of line one                         |
+| `/cart`                                        | **"Nothing chosen yet"** and the line under it       |
+| `/wishlist`                                    | "Tap the heart on any piece to keep it here…"        |
+| `/`, `/custom-order`, `/stores`, `/gold-rate…` | nothing                                              |
+
+Five of the nine public routes, and the first draft of this document named
+only one of them. Two are live controls — a thumb reaching for the first
+collection, or for the first product's own Enquire button, meets the WhatsApp
+circle instead — and two more are the single sentence that tells a customer
+who has found an empty page what to do next.
+
+Every one of them is an **arrival** overlap. Nothing had been scrolled past,
+so nothing could be scrolled back to: the circle was sitting on the first
+impression and staying there until the customer worked out they had to move
+the page to read it.
+
+**Fixed in this change.** The button keeps off the first screen and fades in
+once the page has moved 120px — about the height of the button and its pulse
+ring, so whatever the arrival view put in that corner has cleared the band by
+then. A page too short to scroll that far shows it at once.
+
+At every width, not only on phones. The margin the circle would need in order
+to sit beside the content rather than inside it does not appear until roughly
+1400px: the column is `max-w-7xl` inside `px-4 sm:px-6 lg:px-8`, so on
+`/collections/bridal-sets` the circle still covers the first card's ENQUIRE
+button at 640, 768, 900, 1024, 1180 and 1280px. Where it clears depends on
+what a page puts in that corner as much as on the viewport, so there is no
+breakpoint worth picking.
+
+Waiting costs the shop no reach. WhatsApp is not only this button: the
+announcement bar carries the number and the header carries the same icon, both
+on the first screen of every page, above whatever the circle was covering.
+
+What is deliberately **not** fixed is the same circle floating over the middle
+of a long page once you are reading it — at 300px down the product page it
+covers part of a weight in the specification table. That is the ordinary cost
+of a floating button, it can be scrolled away from, and removing it would mean
+removing the button.
 
 ### W2 · Three competing gold palettes in one stylesheet
 
@@ -225,7 +264,7 @@ borders, rules and one button variant, on ivory, with deep green for weight.
 
 ## Suggested order of work
 
-1. **W1** — the FAB over the product title. One component, immediate.
+1. ~~**W1** — the FAB over the arrival view.~~ Done: one component, every route.
 2. **W3** — tap targets in the shared chrome. Header, breadcrumb, product-card
    heart, store phones. One pass, every page benefits.
 3. **W2 + the semantic-token gap** — fold `lux-*` into the site palette, add
