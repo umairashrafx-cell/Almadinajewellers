@@ -33,6 +33,33 @@ export const SITE = {
 };
 
 /**
+ * The shop's own Easypaisa merchant account, as printed on the card that sits
+ * on the counter.
+ *
+ * Read by the scan-to-pay fallback on /pay/$token and by nothing else. The
+ * automatic flow shares none of it: that request is signed inside the edge
+ * function from secrets which must never appear in this file, or in any file
+ * the browser can fetch.
+ *
+ * A till number is safe to publish — it is the shop's own address for
+ * receiving money, in the same class as the phone number above it, and a
+ * customer cannot take anything out with it. It still wants checking against
+ * the printed card before it ships, because a wrong digit does not fail: it
+ * quietly pays somebody else.
+ */
+export const EASYPAISA = {
+  /** Merchant Till Number, in the form the customer types into the app. */
+  till: "993114848",
+  /**
+   * The shop's printed QR card, as an image under public/. Null until that
+   * file exists, and the pay page then shows the till number by itself rather
+   * than a broken picture — which is the honest failure, since the number is
+   * the part that moves the money and the QR is only a shortcut to typing it.
+   */
+  qr: null as string | null,
+};
+
+/**
  * Branches. Kept here rather than in a database table because this is the file
  * non-technical edits happen in, and a one-row table with no admin screen is
  * harder to update than a line of config. Add an object per new branch.
