@@ -109,6 +109,36 @@ This is the "inconsistent colours" item in the brief, and it is the real
 design-system debt. The fix is to fold `lux-*` into the site palette, not to
 add a fourth set.
 
+**Done, and the obvious fix was wrong.** Pointing the header's golds at `--gold`
+and `--gold-deep` puts ink text at **2.86:1** on the deep end of its hover
+gradient. The header's four golds are load-bearing: ink needs its ground no
+darker than about L 0.61 to clear AA, white needs it no lighter than about L
+0.57, and those windows do not overlap — so a gold that takes dark text and a
+gold that takes white text cannot be the same token. The site palette had
+neither. It now carries the whole ramp, `--gold-light` / `--gold` /
+`--gold-mid` / `--gold-deep` on one hue, and the header uses it; every contrast
+pair came out equal or better. Nine `lux-*` tokens and forty references gone.
+
+Two things turned up alongside it, both the same kind of fault:
+
+- **`--color-forest` has never existed.** `text-forest`, `divide-forest` and
+  `border-forest` on `/pay/$token` — nine references — compiled to no CSS at
+  all, and the headings were silently inheriting body ink. Now `text-primary`.
+- **The "Paid" chip was `text-gold` on ivory: 2.31:1.** The one place the site
+  tells a customer their money arrived was below the readable minimum, which is
+  the exact mistake the gold ramp's own comment warns about. Now `--success`.
+
+`--success` and `--warning` now exist; the admin's `--settled` and `--caution`
+alias them rather than holding their own copies, so the admin's computed
+colours are provably unchanged. `--info` was not added — nothing consumes it.
+
+The hex values written in the comments throughout `styles.css` were also wrong
+(`--gold` was documented `#C9A24B`; it renders `#C1A057`) and have been
+corrected against the browser's own output. **The comparison table further down
+this document is built on those stale hexes.** Its conclusion is unaffected —
+the real `#C1A057` is nearer the brief's `#C6A15B` than the documented value
+was — but the figures in it should not be quoted.
+
 ---
 
 ## Medium
@@ -338,9 +368,9 @@ borders, rules and one button variant, on ivory, with deep green for weight.
 2. ~~**W3** — tap targets in the shared chrome.~~ Done: 49 under-sized
    controls on the product page alone, now none on any route bar the inline
    exceptions. Left behind it: **W11**, below.
-3. **W2 + the semantic-token gap** — fold `lux-*` into the site palette, add
-   `success`/`warning`. This is the "design system" sprint, and it is smaller
-   than it sounds because two thirds of the system already exists.
+3. ~~**W2 + the semantic-token gap**~~ Done. It was not smaller than it
+   sounded, and not a rename: see W2 below for why the header's four golds
+   could not simply collapse into the site's two.
 4. **W4, W7** — heading order and reserved image space. Quiet, mechanical,
    good for SEO and for CLS.
 5. **W5, W6** — the announcement bar and the length of the home page. These
