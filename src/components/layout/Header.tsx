@@ -57,7 +57,7 @@ const NAV: { label: string; to: string; icon: NavIcon; mega?: boolean }[] = [
  * Collections stays lit on a collection and Our Story on the founder's page.
  */
 const PILL =
-  "group/pill relative isolate inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-2xl border font-nav font-medium uppercase transition-[transform,box-shadow,border-color,color] duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-br before:from-lux-gold-light before:to-lux-gold-deep before:opacity-0 before:transition-opacity before:duration-[250ms] hover:-translate-y-0.5 hover:border-lux-gold hover:text-lux-ink hover:shadow-[0_8px_20px_rgb(184_137_45/0.22)] hover:before:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lux-gold data-[status=active]:border-lux-gold data-[status=active]:text-lux-ink data-[status=active]:shadow-[0_6px_18px_rgb(184_137_45/0.25)] data-[status=active]:before:opacity-100 motion-reduce:transition-none motion-reduce:before:transition-none motion-reduce:hover:translate-y-0";
+  "group/pill relative isolate inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-2xl border font-nav font-medium uppercase transition-[transform,box-shadow,border-color,color] duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)] before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-br before:from-gold-light before:to-gold-mid before:opacity-0 before:transition-opacity before:duration-[250ms] hover:-translate-y-0.5 hover:border-gold-mid hover:text-ink hover:shadow-[0_8px_20px_rgb(166_130_44/0.22)] hover:before:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-mid data-[status=active]:border-gold-mid data-[status=active]:text-ink data-[status=active]:shadow-[0_6px_18px_rgb(166_130_44/0.25)] data-[status=active]:before:opacity-100 motion-reduce:transition-none motion-reduce:before:transition-none motion-reduce:hover:translate-y-0";
 
 /*
  * Four sizes, because eight labelled pills do not fit one row until the
@@ -73,17 +73,17 @@ const PILL_SIZE =
   "h-10 px-2.5 text-[11px] tracking-[0.06em] min-[1400px]:h-[42px] min-[1400px]:px-3 min-[1400px]:text-[11.5px] min-[1400px]:tracking-[0.08em] min-[1536px]:h-11 min-[1536px]:px-3 min-[1536px]:text-xs min-[1536px]:tracking-[1.2px] min-[1840px]:h-[52px] min-[1840px]:px-3.5 min-[1840px]:text-[13px] min-[1840px]:tracking-[1.5px]";
 
 const PILL_IVORY =
-  "border-lux-border bg-gradient-to-br from-white to-lux-cream text-lux-ink shadow-[0_4px_12px_rgb(100_70_20/0.06)]";
+  "border-border bg-gradient-to-br from-white to-muted text-ink shadow-[0_4px_12px_rgb(100_70_20/0.06)]";
 
 /* Over a hero photograph: glass rather than ivory card, so the image shows. */
 const PILL_GLASS =
   "border-white/25 bg-gradient-to-br from-white/15 to-white/5 text-ivory backdrop-blur-sm";
 
 const ICON_BUTTON =
-  "relative grid h-11 w-11 place-items-center rounded-full transition-colors duration-[250ms] hover:text-lux-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lux-gold [&>svg]:transition-transform [&>svg]:duration-[250ms] hover:[&>svg]:scale-[1.08] motion-reduce:hover:[&>svg]:scale-100";
+  "relative grid h-11 w-11 place-items-center rounded-full transition-colors duration-[250ms] hover:text-gold-mid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-mid [&>svg]:transition-transform [&>svg]:duration-[250ms] hover:[&>svg]:scale-[1.08] motion-reduce:hover:[&>svg]:scale-100";
 
 const BADGE =
-  "nums absolute right-0 top-0.5 grid h-[19px] min-w-[19px] place-items-center rounded-full bg-lux-gold-dark px-1 text-[10px] font-semibold leading-none text-white";
+  "nums absolute right-0 top-0.5 grid h-[19px] min-w-[19px] place-items-center rounded-full bg-gold-deep px-1 text-[10px] font-semibold leading-none text-white";
 
 /**
  * Sticky header: ivory everywhere, glass over a hero.
@@ -137,7 +137,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
   }, [menuOpen]);
 
   const solid = !overHero || scrolled || menuOpen;
-  const iconTone = solid ? "text-lux-ink" : "text-ivory";
+  const iconTone = solid ? "text-ink" : "text-ivory";
 
   return (
     <header
@@ -147,7 +147,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
         // so the header is exactly --header-h tall in both modes and a hero
         // pulled up by that much leaves no hairline of page above it.
         solid
-          ? "bg-lux-ivory shadow-[inset_0_-1px_0_var(--lux-border),0_4px_20px_rgb(80_55_20/0.04)]"
+          ? "bg-ivory shadow-[inset_0_-1px_0_var(--border),0_4px_20px_rgb(80_55_20/0.04)]"
           : "bg-transparent",
       )}
     >
@@ -164,7 +164,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
         <Link
           to="/"
           aria-label={`${SITE.name} home`}
-          className="shrink-0 rounded-md leading-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lux-gold"
+          className="shrink-0 rounded-md leading-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-mid"
         >
           <img
             src={solid ? logoOnLight : logoOnDark}
@@ -184,8 +184,8 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
               <Link to={item.to} className={cn(PILL, PILL_SIZE, solid ? PILL_IVORY : PILL_GLASS)}>
                 <item.icon
                   className={cn(
-                    "hidden h-[18px] w-[18px] shrink-0 transition-colors group-hover/pill:text-lux-ink group-data-[status=active]/pill:text-lux-ink min-[1840px]:block",
-                    solid ? "text-lux-gold-deep" : "text-lux-gold-light",
+                    "hidden h-[18px] w-[18px] shrink-0 transition-colors group-hover/pill:text-ink group-data-[status=active]/pill:text-ink min-[1840px]:block",
+                    solid ? "text-gold-mid" : "text-gold-light",
                   )}
                   strokeWidth={1.7}
                 />
@@ -212,8 +212,8 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
                   menu closing underneath it.
                 */}
                 <div className="invisible absolute left-0 top-full z-10 w-[560px] pt-5 opacity-0 transition-[opacity,visibility] duration-300 group-focus-within/mega:visible group-focus-within/mega:opacity-100 group-hover/mega:visible group-hover/mega:opacity-100">
-                  <div className="rounded-2xl border border-lux-border bg-lux-ivory p-8 shadow-[0_18px_40px_rgb(80_55_20/0.12)]">
-                    <p className="font-nav text-[11px] font-medium uppercase tracking-[0.3em] text-lux-gold-dark">
+                  <div className="rounded-2xl border border-border bg-ivory p-8 shadow-[0_18px_40px_rgb(80_55_20/0.12)]">
+                    <p className="font-nav text-[11px] font-medium uppercase tracking-[0.3em] text-gold-deep">
                       Collections
                     </p>
                     <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
@@ -222,7 +222,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
                           <Link
                             to="/collections/$slug"
                             params={{ slug: c.slug }}
-                            className="font-display text-lg text-lux-ink transition-colors hover:text-lux-gold-dark"
+                            className="font-display text-lg text-ink transition-colors hover:text-gold-deep"
                           >
                             {c.name}
                           </Link>
@@ -233,7 +233,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
                                   <Link
                                     to="/collections/$slug"
                                     params={{ slug: child.slug }}
-                                    className="text-sm text-lux-muted transition-colors hover:text-lux-gold-dark"
+                                    className="text-sm text-warmgrey transition-colors hover:text-gold-deep"
                                   >
                                     {child.name}
                                   </Link>
@@ -265,7 +265,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
           <span
             className={cn(
               "mx-1 hidden h-8 w-px min-[1280px]:block",
-              solid ? "bg-lux-gold-light" : "bg-white/30",
+              solid ? "bg-gold-light" : "bg-white/30",
             )}
             aria-hidden="true"
           />
@@ -344,7 +344,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
       {menuOpen && (
         <div
           id="site-menu"
-          className="max-h-[calc(100dvh-var(--header-h))] overflow-y-auto border-t border-lux-border bg-lux-ivory min-[1280px]:hidden"
+          className="max-h-[calc(100dvh-var(--header-h))] overflow-y-auto border-t border-border bg-ivory min-[1280px]:hidden"
         >
           <nav
             aria-label="Main"
@@ -362,7 +362,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
                 )}
               >
                 <item.icon
-                  className="h-5 w-5 shrink-0 text-lux-gold-deep transition-colors group-hover/pill:text-lux-ink group-data-[status=active]/pill:text-lux-ink"
+                  className="h-5 w-5 shrink-0 text-gold-mid transition-colors group-hover/pill:text-ink group-data-[status=active]/pill:text-ink"
                   strokeWidth={1.7}
                 />
                 {item.label}
@@ -378,13 +378,13 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
               )}
             >
               <Heart
-                className="h-5 w-5 shrink-0 text-lux-gold-deep transition-colors group-hover/pill:text-lux-ink group-data-[status=active]/pill:text-lux-ink"
+                className="h-5 w-5 shrink-0 text-gold-mid transition-colors group-hover/pill:text-ink group-data-[status=active]/pill:text-ink"
                 strokeWidth={1.7}
                 aria-hidden="true"
               />
               Wishlist
               {skus.length > 0 && (
-                <span className="nums ml-auto grid h-[19px] min-w-[19px] place-items-center rounded-full bg-lux-gold-dark px-1 text-[10px] font-semibold leading-none tracking-normal text-white">
+                <span className="nums ml-auto grid h-[19px] min-w-[19px] place-items-center rounded-full bg-gold-deep px-1 text-[10px] font-semibold leading-none tracking-normal text-white">
                   {skus.length}
                 </span>
               )}
@@ -401,7 +401,7 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
                 "hide-in-app h-14 justify-start gap-3 px-4 text-[13px] tracking-[1.4px] min-[768px]:hidden",
               )}
             >
-              <GooglePlayIcon className="h-5 w-5 shrink-0 text-lux-gold-deep transition-colors group-hover/pill:text-lux-ink" />
+              <GooglePlayIcon className="h-5 w-5 shrink-0 text-gold-mid transition-colors group-hover/pill:text-ink" />
               Get the App
             </a>
           </nav>
