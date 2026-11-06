@@ -589,19 +589,19 @@ function Details({ product }: { product: ProductDetail }) {
   return (
     <Accordion type="single" collapsible className="mt-10 border-t border-gold/30">
       <AccordionItem value="description">
-        <AccordionTrigger>Description</AccordionTrigger>
+        <AccordionTrigger headingLevel={2}>Description</AccordionTrigger>
         <AccordionContent>{describe(product)}</AccordionContent>
       </AccordionItem>
       <AccordionItem value="care">
-        <AccordionTrigger>Care instructions</AccordionTrigger>
+        <AccordionTrigger headingLevel={2}>Care instructions</AccordionTrigger>
         <AccordionContent>{care}</AccordionContent>
       </AccordionItem>
       <AccordionItem value="certification">
-        <AccordionTrigger>Certification &amp; hallmarking</AccordionTrigger>
+        <AccordionTrigger headingLevel={2}>Certification &amp; hallmarking</AccordionTrigger>
         <AccordionContent>{certification}</AccordionContent>
       </AccordionItem>
       <AccordionItem value="delivery">
-        <AccordionTrigger>Delivery &amp; buy-back</AccordionTrigger>
+        <AccordionTrigger headingLevel={2}>Delivery &amp; buy-back</AccordionTrigger>
         <AccordionContent>
           Insured delivery across Pakistan, free of charge once the piece is paid for in full.
           Bridal sets are made to order and ready within ten days. Every piece carries a lifetime
