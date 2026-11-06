@@ -33,6 +33,42 @@ export const SITE = {
 };
 
 /**
+ * The shop's own Easypaisa merchant account, as printed on the card that sits
+ * on the counter.
+ *
+ * Read by the scan-to-pay fallback on /pay/$token and by nothing else. The
+ * automatic flow shares none of it: that request is signed inside the edge
+ * function from secrets which must never appear in this file, or in any file
+ * the browser can fetch.
+ *
+ * A till number is safe to publish — it is the shop's own address for
+ * receiving money, in the same class as the phone number above it, and a
+ * customer cannot take anything out with it. The owner checked this number
+ * against the printed card on 6 November 2026. Anybody changing it has to do
+ * the same, because a wrong digit does not fail: it quietly pays somebody
+ * else, and the shop only finds out when a customer says they have paid and
+ * nothing has arrived.
+ */
+export const EASYPAISA = {
+  /** Merchant Till Number, in the form the customer types into the app. */
+  till: "993114848",
+  /**
+   * The shop's own printed card, exactly as it is given out: the bytes are the
+   * file the shop supplied, re-encoded by nothing. That is deliberate. It is a
+   * payment instrument, a QR tolerates compression badly at its edges, and the
+   * file had already been through one lossy pass before it arrived — a second
+   * one buys nothing and risks a code that scans slowly or not at all. It is
+   * why this is a .jpg beside a folder of .webp.
+   *
+   * Set to null if the card is ever withdrawn: the block then shows the till
+   * number by itself rather than a broken picture, which is the honest
+   * failure, since the number is the part that moves the money and the QR is
+   * only a shortcut to typing it.
+   */
+  qr: "/images/easypaisa-qr.jpg" as string | null,
+};
+
+/**
  * Branches. Kept here rather than in a database table because this is the file
  * non-technical edits happen in, and a one-row table with no admin screen is
  * harder to update than a line of config. Add an object per new branch.
