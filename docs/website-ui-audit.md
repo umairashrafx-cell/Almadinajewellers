@@ -1,0 +1,243 @@
+# The website and admin: UI/UX audit
+
+Companion to [`app-ui-audit.md`](./app-ui-audit.md), which covers the Android
+app's own bundled screens and carries the technology discovery for the whole
+project. This document covers `src/` — the live website — and says what could
+not be seen.
+
+Measured on 6 November 2026 against the dev server, at 375×812 (phone) and
+1280×900 (desktop), on live Supabase data.
+
+## How this was measured
+
+Not by eye alone. For each route: the DOM was walked for elements extending
+past the viewport, for every link/button/field under 44px, and for heading
+order; images were counted for `alt`, lazy loading and intrinsic sizing; and
+colour contrast was computed per WCAG 2.1 with colours resolved through a
+canvas (`getComputedStyle` returns `oklch()` here, which a naive rgb parser
+reads as nonsense — an early pass of this audit produced a page of false
+contrast failures that way, and they are not in this document). The contrast
+maths was sanity-checked against white-on-black, which returned 21.0.
+
+Routes exercised: `/`, `/collections`, `/collections/bridal-sets`,
+`/products/noor-e-shahana-bridal-set`, `/cart`, `/wishlist`, `/custom-order`,
+`/gold-rate-in-mandi-bahauddin-today`, `/stores`, `/admin`.
+
+---
+
+## High
+
+### W1 · The floating WhatsApp button covers the product title on a phone
+
+On `/products/:slug` at 375×812, the fixed WhatsApp button (`56×56` at
+x 295, y 732 — `src/components/layout/FloatingWhatsApp.tsx`) intersects the
+`<h1>`. Confirmed by rectangle intersection, not by eye: the only element it
+overlaps on that screen is the product's own name.
+
+The product page is the most commercially important screen the shop has, and
+the piece's name is the first thing a customer reads on it. A FAB that floats
+over body text is ordinary; one that lands on the H1 at the commonest phone
+width is not.
+
+Worth checking the same intersection on every route before fixing — the
+button is global, so wherever a page puts something important at the foot of
+the first screen, it will be underneath.
+
+### W2 · Three competing gold palettes in one stylesheet
+
+`src/styles.css` defines three overlapping sets of brand colours:
+
+|            | gold                    | deep gold                    | ivory                    |
+| ---------- | ----------------------- | ---------------------------- | ------------------------ |
+| site       | `--gold` `#C9A24B`      | `--gold-deep` `#7C5E13`      | `--ivory` `#FAF7F2`      |
+| rate board | `--rate-gold` `#c9a24a` | `--rate-gold-deep` `#8a6a18` | `--rate-ivory` `#f8f5ec` |
+| "lux"      | `--lux-gold` `#b8892d`  | `--lux-gold-deep` `#a97820`  | `--lux-ivory` `#fcfaf6`  |
+
+Three golds, three deep golds, three ivories, two creams, two inks. The first
+two golds differ by one hex digit — close enough that nobody will spot it and
+far enough that they will never quite match.
+
+The `rate-*` fork has a defensible reason: the board is also the picture the
+shop forwards on WhatsApp, so it is a self-contained artwork. It is used
+across 21 files.
+
+The `lux-*` fork has no such reason. It is used by **exactly one component**,
+`src/components/layout/Header.tsx`, which means the site's header is drawn in
+a slightly different gold from the site underneath it.
+
+This is the "inconsistent colours" item in the brief, and it is the real
+design-system debt. The fix is to fold `lux-*` into the site palette, not to
+add a fourth set.
+
+---
+
+## Medium
+
+### W3 · Tap targets under the minimum, site-wide
+
+Between 30 and 50 per page, and most of them are the same handful because they
+live in the shared chrome:
+
+| Element                                  | Size         | Where              |
+| ---------------------------------------- | ------------ | ------------------ |
+| Search / Cart / WhatsApp / Menu          | 40×40 each   | header, every page |
+| Announcement bar phone link              | 174×17       | every page         |
+| Breadcrumb links ("HOME", "BRIDAL SETS") | 38×13, 82×13 | every inner page   |
+| Product-card wishlist heart              | 36×36        | every grid         |
+| "SAVE TO WISHLIST"                       | 145×17       | product page       |
+| Store phone links                        | 126×17       | `/stores`          |
+| Footer nav links                         | ~17 tall     | every page         |
+
+Android asks for 48dp, WCAG 2.2 for 44. The four header icons at 40 are the
+near-miss; the 13–17px text links are the real problem, and the store phone
+numbers are the same defect [PR #145 just fixed in the app](./app-ui-audit.md).
+
+### W4 · Heading hierarchy skips levels
+
+- `/collections/bridal-sets`: `H1 Bridal Sets` → `H3 Refine`, `H3 Metal`,
+  `H3 Purity`, `H3 Price`, `H3 Weight`, `H3 Stones`. No H2 anywhere.
+- `/products/:slug`: `H1` → `H3 Description`, `H3 Care instructions`,
+  `H3 Certification & hallmarking`, `H3 Delivery & buy-back` → _then_
+  `H2 Customer reviews`. An H3 block precedes the page's first H2.
+- Every page ends with four `H3`s that are footer column labels
+  (COLLECTIONS / INFORMATION / VISIT US / CONNECT), so every document outline
+  terminates in site furniture.
+
+Costs: screen-reader navigation by heading, and the outline Google reads.
+
+### W5 · The announcement bar costs 66px of a phone screen on every page
+
+At 375px the left-hand message wraps to three lines ("FREE INSURED / DELIVERY
+ON FULL / PAYMENT") beside the WhatsApp number, making the strip 66px tall —
+8% of the viewport, above the header, before any content, on every route.
+
+### W6 · Page lengths on a phone
+
+| Route                                 | Height at 375px | Screens |
+| ------------------------------------- | --------------- | ------- |
+| `/`                                   | 9,494px         | ~12     |
+| `/gold-rate-in-mandi-bahauddin-today` | 8,341px         | ~10     |
+| `/products/:slug`                     | 5,786px         | ~7      |
+| `/custom-order`                       | 4,918px         | ~6      |
+| `/collections`                        | 4,238px         | ~5      |
+| `/stores`                             | 3,579px         | ~4      |
+
+The home page carries eleven sections. None of this is wrong by itself, but
+it is the brief's "avoid overcrowding" and "weak visual hierarchy" made
+countable, and it is where a thumb-length audit should start.
+
+### W7 · Images without reserved space
+
+Nine images on the home page have neither `width`/`height` attributes nor an
+aspect-ratio container, so the layout moves as they arrive. On a jewellery
+site the photographs are most of the page, which makes this the main source
+of layout shift.
+
+---
+
+## Low
+
+- **W8 · 33 of 55 `src/components/ui/*` primitives are unused**, carrying
+  about thirty `@radix-ui/*` entries in `package.json` (alert-dialog, avatar,
+  calendar, chart, command, menubar, pagination, resizable, sidebar, table,
+  and more). Vite tree-shakes them, so **this is not bundle weight for
+  customers** — it is install size, upgrade churn and supply-chain surface.
+  Scaffolding left from the Lovable starter.
+- **W9 · The `/custom-order` photo field** is a zero-height `<input
+type="file">` with no label; the styled trigger beside it needs to carry the
+  accessible name. The page's other five fields are 44–46px and properly
+  labelled.
+- **W10 · `/stores` embeds a Google Map iframe** — confirm it has a `title`.
+
+---
+
+## Measured and found clean
+
+Worth recording, because a redesign brief assumes the opposite:
+
+- **No horizontal overflow anywhere tested.** `scrollWidth === clientWidth`
+  on all nine public routes at 375px and on `/` at 1280px. The carousels and
+  the one `min-w-[420px]` table overflow their own scroll containers by
+  design, not the page.
+- **No colour-contrast failures against solid backgrounds** on any page
+  measured. The only items the checker flagged were text over photographs,
+  which it cannot evaluate; each of those sits on a
+  `linear-gradient(to top, oklch(0.16 0.035 160) …)` scrim, which is the right
+  way to do it.
+- **Every image has `alt`**, and lazy loading is applied except above the fold.
+- **Corner radii and button heights are already tokenised and consistent** —
+  `--radius: 2px` throughout, and `ActionButton` is the single button shape.
+- **Typography is already a system**: Cormorant Garamond for display, Inter
+  for body, Montserrat for navigation, declared once as `--font-display` /
+  `--font-sans` / `--font-nav`.
+
+## Not audited
+
+**The seven admin routes.** `/admin` is a staff sign-in ("Accounts are created
+in the Supabase dashboard… there is no sign-up and no password reset by
+design"). I have no credentials and did not attempt to obtain any, so
+`/admin/products`, `/admin/orders`, `/admin/rates`, `/admin/categories`,
+`/admin/custom-orders`, `/admin/reviews` and `/admin/calculator` were not seen
+running. They can be audited from source, or with a throwaway staff account
+the owner creates.
+
+**Tablet and large-phone widths**, and **real devices**. Everything here is
+375×812 and 1280×900 in a desktop WebView.
+
+---
+
+## Phase 2: the proposed palette against the existing one
+
+The brief offers its tokens as "starting values". Set beside what is already
+in `src/styles.css`, they are nearly the same palette:
+
+| Brief                    | Nearest existing token      |                                             |
+| ------------------------ | --------------------------- | ------------------------------------------- |
+| Primary Gold `#C6A15B`   | `--gold` `#C9A24B`          | all but identical                           |
+| Deep Gold `#A9823D`      | `--lux-gold-deep` `#A97820` | close; `--gold-deep` `#7C5E13` is darker    |
+| Warm Ivory `#FAF8F3`     | `--ivory` `#FAF7F2`         | all but identical                           |
+| Soft Cream `#F3EFE6`     | `--lux-cream` `#F8F4EC`     | close                                       |
+| Charcoal `#242321`       | `--ink` `#1E1C18`           | close                                       |
+| Secondary Text `#77736B` | `--warmgrey` `#67635A`      | close, existing is darker (better contrast) |
+| Border `#E9E3D8`         | `--lux-border` `#E8DCC7`    | close                                       |
+| Error `#B74747`          | `--rose` `#9B2C3F`          | existing is deeper                          |
+| Success `#39845A`        | **nothing**                 | genuine gap                                 |
+
+Two conclusions:
+
+1. **Adopting the brief's hex values wholesale would be a lateral move** that
+   touches every component and invalidates every screenshot the shop has
+   shared, for differences mostly invisible side by side. It would also lose
+   the OKLCH authoring, which is what makes the existing ramps perceptually
+   even.
+2. **The real gaps are structural, not chromatic**: there is no `success`
+   token and no semantic layer at all (`--success`, `--warning`, `--info`
+   separate from the brand green and the bridal rose), and there are three
+   forks of the brand palette (W2). A design-system sprint should fix those
+   two things and leave the hues alone.
+
+The brief's one unambiguous colour instruction — "use gold as an accent rather
+than making every component gold" — is already how the site is built: gold is
+borders, rules and one button variant, on ivory, with deep green for weight.
+
+---
+
+## Suggested order of work
+
+1. **W1** — the FAB over the product title. One component, immediate.
+2. **W3** — tap targets in the shared chrome. Header, breadcrumb, product-card
+   heart, store phones. One pass, every page benefits.
+3. **W2 + the semantic-token gap** — fold `lux-*` into the site palette, add
+   `success`/`warning`. This is the "design system" sprint, and it is smaller
+   than it sounds because two thirds of the system already exists.
+4. **W4, W7** — heading order and reserved image space. Quiet, mechanical,
+   good for SEO and for CLS.
+5. **W5, W6** — the announcement bar and the length of the home page. These
+   are editorial decisions about what the shop wants said first, not CSS, and
+   they need the owner.
+6. **W8–W10** — housekeeping.
+
+Everything above Sprint 5 of the brief is covered by that list. Sprints
+touching accounts, orders and profiles are blocked on a product decision, not
+on design: see [`app-ui-audit.md` §1](./app-ui-audit.md) for what does and
+does not exist.
