@@ -174,13 +174,13 @@ Gated on `pointer: coarse` rather than on width, so a mouse keeps the compact
 footer: the predicate is whether a finger is doing the pointing, which is the
 thing 44px is for.
 
-That gating was put to the owner and kept, deliberately — so it is settled,
-not an oversight, and does not want revisiting on the next read. It was worth
-asking, because the same instinct to gate W1 by width was wrong: there the
-overlap existed at every width, so the breakpoint was answering the wrong
-question. Here the viewport is not what decides whether 44px is needed, and
-the five hundred and thirty-six pixels are only spent where they buy
-something.
+That gating was weighed against gating by width and kept deliberately, so it
+is a choice rather than an oversight — but it is a choice made here, not a
+decision the owner has taken, and it stays open. It was worth weighing,
+because the same instinct applied to W1 was wrong: there the overlap existed
+at every width, so the breakpoint was answering the wrong question. Here the
+viewport is not what decides whether 44px is needed, and the five hundred and
+thirty-six pixels are only spent where they buy something.
 
 ### W11 · The product card's ENQUIRE bar cannot be reached on a phone
 
