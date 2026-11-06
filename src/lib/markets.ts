@@ -19,11 +19,35 @@ import { supabase } from "@/integrations/supabase/client";
 
 const untyped = supabase as unknown as SupabaseClient;
 
+/**
+ * The high and the low an instrument has traded between, where its source
+ * publishes them.
+ *
+ * `window` is the honest part. Bitcoin's range is a genuine rolling
+ * twenty-four hours from CoinGecko; the rest is the current trading session
+ * from Yahoo, which early on a Monday is a few minutes wide. The screen says
+ * which rather than calling both "24h".
+ *
+ * `instrument` is set only when the range is not the same instrument as the
+ * price beside it. That is the metals: gold and silver are quoted here at spot,
+ * and no free spot source publishes a range, so the figures come from the COMEX
+ * contract and say so. A spot price can sit outside a futures range, which is
+ * why nothing here assumes it does not.
+ */
+export type MarketRange = {
+  high: number;
+  low: number;
+  window: "24h" | "session";
+  instrument?: string;
+};
+
 export type MarketQuote = {
   /** Price in US dollars. */
   usd: number;
   /** Move on the day, per cent, where the source gives one. */
   changePercent?: number;
+  /** The high and the low, where the source publishes them. */
+  range?: MarketRange;
   /** When the figure was taken, ISO. */
   at: string;
 };
@@ -69,6 +93,37 @@ export function formatQuote(key: keyof MarketBoard, value: number): string {
   if (key === "dollarIndex") return value.toFixed(3);
   if (key === "silver" || key === "crude") return formatUSD(value, 2);
   return formatUSD(value, 0);
+}
+
+/** What to call the window over which a range was measured. */
+export function rangeWindowLabel(window: MarketRange["window"]): string {
+  return window === "24h" ? "24-hour range" : "Range today";
+}
+
+/**
+ * Where the current price sits inside a range, 0 at the low and 1 at the high,
+ * for drawing a marker on a track.
+ *
+ * Null whenever a marker would be a lie rather than a position, and there are
+ * three ways for that to happen. A range with no width cannot place anything.
+ * A price below the low or above the high is not inside the range it is being
+ * drawn on — real for the metals, whose price is spot and whose range is the
+ * futures contract, and real for anyone whose two sources were read seconds
+ * apart. And a figure that is not a finite number cannot be placed at all.
+ *
+ * The caller shows the two numbers either way. It is only the marker that
+ * needs the price to actually be somewhere.
+ */
+export function rangePosition(price: number, range: MarketRange): number | null {
+  if (!Number.isFinite(price) || !Number.isFinite(range.high) || !Number.isFinite(range.low)) {
+    return null;
+  }
+
+  const span = range.high - range.low;
+  if (span <= 0) return null;
+  if (price < range.low || price > range.high) return null;
+
+  return (price - range.low) / span;
 }
 
 export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
