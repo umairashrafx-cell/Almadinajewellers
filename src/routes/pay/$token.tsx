@@ -215,18 +215,32 @@ function Payable({ intent, token }: { intent: PaymentIntent; token: string }) {
           — we confirm on WhatsApp instead, the same day.
         </p>
 
-        <div className="mt-6 flex flex-col items-center gap-5 border border-gold/25 bg-white/70 p-5 sm:flex-row sm:items-start">
+        {/*
+          The card runs the full width of the column rather than sitting in a
+          thumbnail beside the figures. It is landscape, and the code itself is
+          under a third of it — boxed into a square it would render at about
+          fifty pixels, which is a picture of a QR rather than one anybody's
+          camera can read.
+
+          The number is printed again underneath it even though the card
+          carries its own. The card's digits are small on a phone and are a
+          photograph of a number; the ones below are text, they line up under
+          tabular figures, and they go to the clipboard with the amount and the
+          reference. Having both also lets a customer check one against the
+          other, which on a page asking for money is worth the repetition.
+        */}
+        <div className="mt-6 overflow-hidden border border-gold/25 bg-white/70">
           {EASYPAISA.qr ? (
             <img
               src={EASYPAISA.qr}
-              alt={`Easypaisa payment QR code for ${SITE.name}`}
-              width={160}
-              height={160}
-              className="h-40 w-40 shrink-0 border border-gold/20 bg-white p-1"
+              alt={`Easypaisa payment card for ${SITE.name}, merchant till number ${EASYPAISA.till}`}
+              width={1080}
+              height={675}
+              className="block w-full border-b border-gold/20"
             />
           ) : null}
 
-          <dl className="w-full">
+          <dl className="w-full p-5">
             <dt className="text-[11px] tracking-[0.2em] text-warmgrey uppercase">
               Merchant till number
             </dt>

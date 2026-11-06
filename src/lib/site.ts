@@ -51,12 +51,19 @@ export const EASYPAISA = {
   /** Merchant Till Number, in the form the customer types into the app. */
   till: "993114848",
   /**
-   * The shop's printed QR card, as an image under public/. Null until that
-   * file exists, and the pay page then shows the till number by itself rather
-   * than a broken picture — which is the honest failure, since the number is
-   * the part that moves the money and the QR is only a shortcut to typing it.
+   * The shop's own printed card, exactly as it is given out: the bytes are the
+   * file the shop supplied, re-encoded by nothing. That is deliberate. It is a
+   * payment instrument, a QR tolerates compression badly at its edges, and the
+   * file had already been through one lossy pass before it arrived — a second
+   * one buys nothing and risks a code that scans slowly or not at all. It is
+   * why this is a .jpg beside a folder of .webp.
+   *
+   * Set to null if the card is ever withdrawn: the block then shows the till
+   * number by itself rather than a broken picture, which is the honest
+   * failure, since the number is the part that moves the money and the QR is
+   * only a shortcut to typing it.
    */
-  qr: null as string | null,
+  qr: "/images/easypaisa-qr.jpg" as string | null,
 };
 
 /**
