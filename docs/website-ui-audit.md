@@ -59,12 +59,18 @@ so nothing could be scrolled back to: the circle was sitting on the first
 impression and staying there until the customer worked out they had to move
 the page to read it.
 
-**Fixed in this change.** On phones the button keeps off the first screen and
-fades in once the page has moved 120px — about the height of the button and
-its pulse ring, so whatever the arrival view put in that corner has cleared
-the band by then. A page too short to scroll that far shows it at once. From
-640px up nothing changes: the circle sits in the margin beside the content and
-overlaps nothing, so there is nothing to wait for.
+**Fixed in this change.** The button keeps off the first screen and fades in
+once the page has moved 120px — about the height of the button and its pulse
+ring, so whatever the arrival view put in that corner has cleared the band by
+then. A page too short to scroll that far shows it at once.
+
+At every width, not only on phones. The margin the circle would need in order
+to sit beside the content rather than inside it does not appear until roughly
+1400px: the column is `max-w-7xl` inside `px-4 sm:px-6 lg:px-8`, so on
+`/collections/bridal-sets` the circle still covers the first card's ENQUIRE
+button at 640, 768, 900, 1024, 1180 and 1280px. Where it clears depends on
+what a page puts in that corner as much as on the viewport, so there is no
+breakpoint worth picking.
 
 Waiting costs the shop no reach. WhatsApp is not only this button: the
 announcement bar carries the number and the header carries the same icon, both

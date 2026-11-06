@@ -42,8 +42,15 @@ const SHOW_AFTER_PX = 120;
  * both of them on the first screen of every page, above whatever this button
  * was covering.
  *
- * Phones only. From 640px up the circle sits in the margin beside the content
- * and overlaps nothing, so there is nothing to wait for.
+ * Every width, not phones only. The margin the circle would need in order to
+ * sit beside the content rather than inside it does not exist until the
+ * viewport passes about 1400px — the column is max-w-7xl inside
+ * px-4 sm:px-6 lg:px-8, so at 1280px the circle is still over the grid, and
+ * on /collections/bridal-sets it is still over the first card’s ENQUIRE
+ * button. Where it clears depends on what a page puts in that corner as much
+ * as on the viewport, which makes any breakpoint here a guess, so there is
+ * none: one behaviour everywhere, and the reason it costs nothing holds
+ * everywhere too.
  */
 export function FloatingWhatsApp() {
   const [moved, setMoved] = useState(false);
@@ -91,7 +98,7 @@ export function FloatingWhatsApp() {
          * circle nobody can see and a screen reader is not offered a third
          * WhatsApp link that is not on the screen.
          */
-        !moved && "max-sm:invisible max-sm:translate-y-3 max-sm:opacity-0",
+        !moved && "invisible translate-y-3 opacity-0",
       )}
     >
       <WhatsAppIcon className="relative h-6 w-6" />
