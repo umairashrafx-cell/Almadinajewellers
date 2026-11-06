@@ -100,14 +100,20 @@
   --radius: 2px;
 
   --ivory: oklch(0.975 0.006 85); /* #F9F6F2 */
-  --ink: oklch(0.22 0.006 80); /* #1C1A18 */
+  --ink: oklch(0.22 0.006 80); /* #1C1A17 */
   /*
    * Secondary text. Was oklch(0.6 …) — #857F77 — which measured 3.7:1 on the
    * ivory ground and 4.0:1 on white: under the 4.5:1 AA minimum for the small
    * print it is used for (weights, dates, labels, captions). Taken down to 0.5
-   * lightness on the same warm hue, it clears 5.3:1 on every light surface
-   * the site uses — white, ivory, the champagne band and muted — and still
-   * reads as grey beside the ink.
+   * lightness on the same warm hue, it measures 6.0:1 on white, 5.6:1 on
+   * ivory and 5.2:1 on --muted, and still reads as grey beside the ink.
+   *
+   * Not on the champagne band. There it is 4.3:1 — under AA — because
+   * champagne is much the darkest of the light grounds, and it is where
+   * this and --gold-deep below both fall short. Small secondary text on a
+   * full-strength champagne section wants --ink or --primary instead.
+   * Nothing does that today: the only such section is Testimonials, which
+   * is --primary throughout.
    */
   --warmgrey: oklch(0.5 0.014 80); /* #67635A */
   /*
@@ -124,9 +130,10 @@
    *                 (4.8:1), while staying light enough to read as gold
    *                 against ivory (3.3:1) for icons and borders. The header's
    *                 hover gradient ends here.
-   *   --gold-deep   gold to write in on a light ground: 5.6:1 on ivory, 5.3:1
-   *                 on the champagne band, and 6.1:1 under white text, which
-   *                 is what the cart badge needs.
+   *   --gold-deep   gold to write in on a light ground: 5.6:1 on ivory, and
+   *                 6.1:1 under white text, which is what the cart badge
+   *                 needs. Not on champagne — 4.4:1 there, under AA. See
+   *                 the note on --warmgrey above.
    *
    * --gold-mid and --gold-deep cannot be the same colour. Ink needs its ground
    * no darker than about L 0.61 to clear AA; white needs it no lighter than
