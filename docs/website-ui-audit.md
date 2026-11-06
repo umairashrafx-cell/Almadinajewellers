@@ -58,8 +58,9 @@ two golds differ by one hex digit — close enough that nobody will spot it and
 far enough that they will never quite match.
 
 The `rate-*` fork has a defensible reason: the board is also the picture the
-shop forwards on WhatsApp, so it is a self-contained artwork. It is used
-across 21 files.
+shop forwards on WhatsApp, so it is a self-contained artwork. It is used in
+nine files — the three `components/rate/` pieces, the four
+`components/sell/` ones, and the two routes that embed them.
 
 The `lux-*` fork has no such reason. It is used by **exactly one component**,
 `src/components/layout/Header.tsx`, which means the site's header is drawn in
