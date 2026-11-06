@@ -29,7 +29,7 @@ import { openShop } from "../lib/shop";
  * the day's rate, and kept on the phone so they can be shown in a shop with no
  * signal — which is where somebody actually needs them.
  */
-export function SavedScreen() {
+export function SavedScreen({ showPieces }: { showPieces: () => void }) {
   const { has, toggle, ready } = useWishlist();
 
   const saved = useCached<Product[]>(SAVED_KEY, async () => {
@@ -63,13 +63,18 @@ export function SavedScreen() {
 
   return (
     <div className="px-4 pt-6 pb-10">
-      <Kept stale={saved.stale} loading={saved.loading} refresh={saved.refresh} />
+      <Kept
+        stale={saved.stale}
+        loading={saved.loading}
+        savedAt={saved.savedAt}
+        refresh={saved.refresh}
+      />
 
       <h1 className="font-display text-2xl font-light tracking-wide text-primary">Saved pieces</h1>
       <div className="hairline mt-5 max-w-24" />
 
       {pieces.length === 0 ? (
-        <Empty />
+        <Empty showPieces={showPieces} />
       ) : (
         <>
           <ul className="mt-7 grid gap-4">
@@ -87,7 +92,19 @@ export function SavedScreen() {
   );
 }
 
-function Empty() {
+/**
+ * Nothing kept yet, and somewhere to go about it.
+ *
+ * The one offer used to be the shop, which is the website: a tap that needs a
+ * connection, on a screen whose whole promise is that the saved pieces are
+ * there without one. Somebody who opens this in the bazaar on one bar was
+ * shown a door that does not open.
+ *
+ * So the Pieces screen goes first — the app's own catalogue, kept on the
+ * phone, with the same hearts — and the shop stays underneath as the wider
+ * choice for anybody who does have signal.
+ */
+function Empty({ showPieces }: { showPieces: () => void }) {
   return (
     <div className="mt-10 border border-gold/30 bg-champagne/20 px-6 py-10 text-center">
       <Heart className="mx-auto h-6 w-6 text-gold-deep" aria-hidden />
@@ -98,8 +115,11 @@ function Empty() {
         Tap the heart on a piece — on the Pieces screen or in the shop — and it will be here, with
         its price at the day&rsquo;s rate, whether or not you have a signal.
       </p>
-      <div className="mt-7">
-        <ActionButton onClick={() => openShop("/collections")}>Browse the shop</ActionButton>
+      <div className="mt-7 grid justify-center gap-3">
+        <ActionButton onClick={showPieces}>See the pieces</ActionButton>
+        <ActionButton variant="outline" onClick={() => openShop("/collections")}>
+          Browse the whole shop
+        </ActionButton>
       </div>
     </div>
   );
@@ -114,7 +134,7 @@ function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
       <button
         type="button"
         onClick={() => openShop(`/products/${piece.slug}`)}
-        className="flex w-full items-center gap-4 border border-gold/25 bg-white/70 p-3 pr-14 text-left transition-colors hover:border-gold/60"
+        className="flex w-full items-center gap-4 border border-gold/25 bg-white/70 p-3 pr-16 text-left transition-colors hover:border-gold/60"
       >
         {/*
           The photograph comes from the shop's storage, so with no connection
@@ -157,9 +177,9 @@ function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${piece.name} from saved pieces`}
-        className="absolute top-1/2 right-3 grid h-9 w-9 -translate-y-1/2 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold"
+        className="absolute top-1/2 right-3 grid h-11 w-11 -translate-y-1/2 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold"
       >
-        <Heart className="h-4 w-4 fill-rose text-rose" strokeWidth={1.4} aria-hidden />
+        <Heart className="h-5 w-5 fill-rose text-rose" strokeWidth={1.4} aria-hidden />
       </button>
     </li>
   );

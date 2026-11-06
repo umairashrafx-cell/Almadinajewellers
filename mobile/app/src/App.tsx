@@ -74,6 +74,49 @@ export function App() {
   };
 
   /*
+   * A new screen starts at its top.
+   *
+   * The screens are one document under one scroller, so arriving at a tab
+   * inherited wherever the last one had been scrolled to. Reading the rate
+   * board to the foot and tapping Pieces landed somebody halfway down the
+   * grid, under a blank page-end, with no sign that anything was above them —
+   * it read as a broken screen rather than as a scroll position.
+   *
+   * On the view, not inside the handler, so a back press is answered the same
+   * way a tab tap is. The screens are short enough that restoring a position
+   * on the way back would buy less than the confusion it costs.
+   *
+   * "instant" spelled out, because the site sets `scroll-behavior: smooth` on
+   * html and that is what a bare scrollTo would inherit: a tab tap would scrub
+   * the whole height of the screen you just left and then the whole height of
+   * the one you arrived at, in front of somebody who asked to be somewhere
+   * else. Arriving is not a journey.
+   */
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [view]);
+
+  /**
+   * The tab you are already on, tapped again: back to the top.
+   *
+   * What every phone does, and the only way out of a long screen that does not
+   * involve a dozen thumb strokes — the rate board and the catalogue are both
+   * taller than a few screens.
+   *
+   * Smooth here, unlike the arrival above, and for the opposite reason: the
+   * content is not changing, so the scroll is the whole of what happened and
+   * seeing it is what says the tap was understood. The site turns this off
+   * for anyone who has asked for reduced motion, through the html rule.
+   */
+  const onTab = (next: View) => {
+    if (next === view) {
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    go(next);
+  };
+
+  /*
    * One snapshot, two screens. The board and the calculator must never show
    * different figures, and fetching twice is how that starts.
    */
@@ -126,13 +169,19 @@ export function App() {
             aria-label="Saved pieces"
             aria-pressed={view === "saved"}
             className={cn(
-              "inline-grid h-9 w-9 place-items-center border transition-colors",
+              /*
+               * 44px square, not 36. These two sit side by side in the top
+               * right corner of a 375px screen — the farthest corner from a
+               * thumb and the easiest pair in the app to fumble between.
+               * Android asks for 48dp and WCAG for 44; 36 was neither.
+               */
+              "inline-grid h-11 w-11 place-items-center border transition-colors",
               view === "saved"
                 ? "border-gold bg-gold text-primary"
                 : "border-gold/45 text-gold-deep hover:bg-gold hover:text-primary",
             )}
           >
-            <Heart className={cn("h-4 w-4", view === "saved" && "fill-current")} aria-hidden />
+            <Heart className={cn("h-5 w-5", view === "saved" && "fill-current")} aria-hidden />
           </button>
 
           {/*
@@ -145,7 +194,7 @@ export function App() {
           <button
             type="button"
             onClick={() => openShop("/collections")}
-            className="inline-flex items-center gap-2 border border-gold/45 px-3 py-2 text-[11px] font-semibold tracking-widest text-gold-deep uppercase transition-colors hover:bg-gold hover:text-primary"
+            className="inline-flex h-11 items-center gap-2 border border-gold/45 px-3 text-[11px] font-semibold tracking-widest text-gold-deep uppercase transition-colors hover:bg-gold hover:text-primary"
           >
             <ExternalLink className="h-4 w-4" aria-hidden />
             Website
@@ -157,7 +206,7 @@ export function App() {
         {view === "rate" && <RateScreen rates={rates} />}
         {view === "pieces" && <PiecesScreen />}
         {view === "calculator" && <CalculatorScreen rates={rates} />}
-        {view === "saved" && <SavedScreen />}
+        {view === "saved" && <SavedScreen showPieces={() => go("pieces")} />}
         {view === "store" && <StoreScreen />}
       </main>
 
@@ -169,7 +218,7 @@ export function App() {
           <button
             key={id}
             type="button"
-            onClick={() => go(id)}
+            onClick={() => onTab(id)}
             aria-current={view === id ? "page" : undefined}
             className={cn(
               /*

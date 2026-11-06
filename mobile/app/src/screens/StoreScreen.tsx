@@ -49,26 +49,37 @@ function Branch({ store }: { store: (typeof STORES)[number] }) {
           {store.hours}
           <span className="mt-1 block font-semibold text-ink">{store.closed}</span>
         </Line>
-
-        <Line icon={Phone} label={store.phones.length > 1 ? "Phones" : "Phone"}>
-          {store.phones.map((phone) => (
-            <a
-              key={phone}
-              href={`tel:${phone.replace(/\s/g, "")}`}
-              className="block py-0.5 text-ink underline decoration-gold/50 underline-offset-4"
-            >
-              {phone}
-            </a>
-          ))}
-        </Line>
       </dl>
 
       {/*
-        Both of these leave the app, which is what they are for: Capacitor hands
+        All of these leave the app, which is what they are for: Capacitor hands
         a tel:, a wa.me or a maps link to whatever the phone uses for it, since
         neither host is in allowNavigation.
+
+        Calling comes first, and is a button rather than a line of underlined
+        text in the list above.
+
+        Ringing a jeweller is the commonest thing anybody does with a shop's
+        details — more than route-finding, in a town where everybody knows
+        where Sarafa Market is — and it was the only one of the three that was
+        not a button. It was a 20px underlined line in a definition list, the
+        smallest target on a screen built for somebody who has stopped needing
+        a website and started needing to reach the shop. Both numbers get their
+        own button, because a single Call button would have to choose one and
+        would choose wrong half the time.
       */}
       <div className="grid gap-3 px-4 py-5">
+        {store.phones.map((phone) => (
+          <a
+            key={phone}
+            href={`tel:${phone.replace(/\s/g, "")}`}
+            className="inline-flex w-full items-center justify-center gap-2 border border-gold px-7 py-3.5 text-[12px] font-semibold tracking-widest text-ink uppercase transition-colors hover:bg-champagne/50"
+          >
+            <Phone className="h-4 w-4" aria-hidden />
+            {phone}
+          </a>
+        ))}
+
         <a
           href={directionsUrl(store.mapQuery, store.placeId)}
           className="inline-flex w-full items-center justify-center gap-2 bg-gold px-7 py-3.5 text-[12px] font-semibold tracking-widest text-primary uppercase transition-colors hover:bg-gold-deep"
