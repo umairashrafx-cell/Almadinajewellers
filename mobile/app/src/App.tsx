@@ -93,7 +93,29 @@ export function App() {
    * else. Arriving is not a journey.
    */
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
+    try {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } catch {
+      /*
+       * WebView below 97 does not know the "instant" enum, and WebIDL rejects
+       * an unknown enum rather than ignoring it: this throws there. It would
+       * take the app with it — this effect runs on mount, and there is no
+       * error boundary above it to catch anything, so the first screen would
+       * be a blank one on every launch. minSdkVersion is 24, so those devices
+       * are a supported target even though a WebView updated any time since
+       * 2022 is fine.
+       *
+       * The fallback clears the inherited smooth scroll for the length of one
+       * jump rather than animating it, so the old WebView arrives the same
+       * way the new one does. Restoring the previous value hands the property
+       * back to the stylesheet.
+       */
+      const root = document.documentElement;
+      const previous = root.style.scrollBehavior;
+      root.style.scrollBehavior = "auto";
+      window.scrollTo(0, 0);
+      root.style.scrollBehavior = previous;
+    }
   }, [view]);
 
   /**
