@@ -648,7 +648,17 @@ export { whatsappNumber } from "@/lib/phone";
 // Orders
 // ---------------------------------------------------------------------------
 
-export type OrderStatus = "new" | "confirmed" | "completed" | "cancelled";
+export type OrderStatus =
+  | "new"
+  | "confirmed"
+  /* A pay link has been issued for an agreed amount, and not yet paid. */
+  | "awaiting_payment"
+  /* Set by the Easypaisa function, from Easypaisa's own server. Choosing it
+     by hand here is allowed — a counter payment is still a payment — but it
+     is the one status the shop sets knowing no money came through the site. */
+  | "paid"
+  | "completed"
+  | "cancelled";
 
 export type OrderItem = {
   sku: string;
@@ -672,6 +682,10 @@ export type AdminOrder = {
   item_count: number;
   total_pkr: number;
   status: OrderStatus;
+  /** What the shop agreed after weighing, which is what a pay link charges. */
+  amount_due_pkr: number | null;
+  /** Present once a link has been issued; the secret half of its URL. */
+  pay_token: string | null;
   created_at: string;
 };
 
@@ -694,6 +708,23 @@ export async function fetchOrders(): Promise<AdminOrder[]> {
 export async function setOrderStatus(id: string, status: OrderStatus): Promise<void> {
   const { error } = await untyped.from("orders").update({ status }).eq("id", id);
   if (error) throw readableError(error, "Could not update that order");
+}
+
+/**
+ * Issues the pay link for an order, at the amount the shop agreed.
+ *
+ * The amount is set here and only here. Asking again for the same order
+ * returns the same token, so a link already sent on WhatsApp keeps working
+ * and a re-quote simply changes what it charges.
+ */
+export async function issuePaymentLink(id: string, amountPkr: number): Promise<string> {
+  const { data, error } = await untyped.rpc("issue_payment_link", {
+    p_order_id: id,
+    p_amount_pkr: amountPkr,
+  });
+
+  if (error) throw readableError(error, "Could not create a payment link");
+  return data as string;
 }
 
 /** One step in how an order got to where it is. */

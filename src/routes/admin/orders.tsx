@@ -5,18 +5,20 @@ import { History, Loader2, Package, Phone, Wallet } from "lucide-react";
 
 import { Banner, Card, Chip, PageHeading, StatCard, toneBar } from "@/components/admin/ui";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
+import { CopyTextButton } from "@/components/ui/CopyTextButton";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   fetchOrderStatusHistory,
   fetchOrders,
   formatEnquiryDate,
+  issuePaymentLink,
   setOrderStatus,
   whatsappNumber,
   type AdminOrder,
   type OrderStatus,
 } from "@/lib/admin";
-import { formatPKR } from "@/lib/site";
+import { SITE, formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/orders")({
@@ -26,6 +28,8 @@ export const Route = createFileRoute("/admin/orders")({
 const STATUSES: { key: OrderStatus; label: string }[] = [
   { key: "new", label: "New" },
   { key: "confirmed", label: "Confirmed" },
+  { key: "awaiting_payment", label: "Awaiting payment" },
+  { key: "paid", label: "Paid" },
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
 ];
@@ -34,7 +38,8 @@ const STATUSES: { key: OrderStatus; label: string }[] = [
 function toneForStatus(status: string) {
   if (status === "new") return "bridal" as const;
   if (status === "confirmed") return "contact" as const;
-  if (status === "completed") return "settled" as const;
+  if (status === "awaiting_payment") return "bridal" as const;
+  if (status === "paid" || status === "completed") return "settled" as const;
   return "neutral" as const;
 }
 
@@ -66,7 +71,7 @@ function OrdersScreen() {
     <>
       <PageHeading
         title="Orders"
-        hint="Requests placed through the cart. No payment is taken on the website — confirm the weights and the day's rate, then settle in store, or in full before the piece is posted."
+        hint="Requests placed through the cart. No payment is taken on the website — confirm the weights and the day's rate, then settle in store or on delivery."
       />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -208,6 +213,8 @@ function OrderCard({
             </p>
           ) : null}
 
+          <PayLink order={order} />
+
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <a
               href={`tel:${order.phone.replace(/\s/g, "")}`}
@@ -255,6 +262,82 @@ function OrderCard({
         </div>
       </Card>
     </li>
+  );
+}
+
+/**
+ * The pay link for an order, and the amount it charges.
+ *
+ * Deliberately not automatic. The quote on the order was rebuilt from the
+ * day's rate against a catalogue weight; the figure that matters is the one
+ * agreed at the counter after the piece was weighed, and only a person knows
+ * it. So the amount starts at the quote and is typed over.
+ *
+ * Issuing twice is safe and is the point: the link does not change, so one
+ * already sent on WhatsApp keeps working, and a re-quote just changes what
+ * it asks for.
+ */
+function PayLink({ order }: { order: AdminOrder }) {
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState(String(order.amount_due_pkr ?? order.total_pkr));
+
+  const issue = useMutation({
+    mutationFn: () => issuePaymentLink(order.id, Number(amount)),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin", "orders"] }),
+  });
+
+  const url = order.pay_token ? `${SITE.origin}/pay/${order.pay_token}` : null;
+  const typed = Number(amount);
+  const usable = Number.isFinite(typed) && typed >= 1;
+
+  return (
+    <div className="mt-5 rounded-lg border border-gold/30 bg-champagne/15 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="text-sm text-ink" htmlFor={`amount-${order.id}`}>
+          Agreed amount
+        </label>
+        <input
+          id={`amount-${order.id}`}
+          inputMode="numeric"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
+          className="nums h-9 w-40 rounded-lg border border-input bg-card px-3 text-sm"
+        />
+        <button
+          type="button"
+          disabled={!usable || issue.isPending}
+          onClick={() => issue.mutate()}
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-ivory transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {issue.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+          {url ? "Update the amount" : "Create a pay link"}
+        </button>
+      </div>
+
+      {order.amount_due_pkr != null && url ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="nums break-all text-xs text-warmgrey">{url}</span>
+          <CopyTextButton
+            text={url}
+            label="Copy link"
+            announce="Payment link copied to the clipboard"
+            className="h-8 px-3 text-xs"
+          />
+          <span className="nums text-xs text-ink">asks for {formatPKR(order.amount_due_pkr)}</span>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs leading-relaxed text-warmgrey">
+          Send this to the customer once the weight and the day's rate are agreed. Nothing is
+          charged until they pay it, and Easypaisa tells us — not the customer's browser.
+        </p>
+      )}
+
+      {issue.isError ? (
+        <p className="mt-2 text-xs text-destructive">
+          {issue.error instanceof Error ? issue.error.message : "That did not work."}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
