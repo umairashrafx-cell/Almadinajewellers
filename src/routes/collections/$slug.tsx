@@ -425,6 +425,14 @@ function CollectionPage() {
                 )
               ) : (
                 <>
+                  {/*
+                    The grid is the other half of this page and had no name, so
+                    the cards' own h3s had nothing to hang from. It is named
+                    for a screen reader rather than on screen: the h1 above
+                    already says which collection this is, and repeating it in
+                    the layout would be furniture.
+                  */}
+                  <h2 className="sr-only">Pieces in {heading}</h2>
                   <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:gap-x-6 xl:grid-cols-4">
                     {shown.map((product, i) => (
                       <Reveal key={product.id} delay={(i % 4) * 80}>

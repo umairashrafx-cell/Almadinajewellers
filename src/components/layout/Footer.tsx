@@ -54,6 +54,23 @@ const FOOTER_LINK =
   "inline-flex items-center transition-colors hover:text-gold pointer-coarse:min-h-11 pointer-coarse:min-w-11";
 
 /** Deep forest footer with four columns, over a photographic ground. */
+/**
+ * Footer column labels are labels, not headings.
+ *
+ * They were four h3s, which put COLLECTIONS / INFORMATION / VISIT US / CONNECT
+ * at the end of every document outline on the site — so a screen-reader user
+ * moving by heading, on any page, finished in site furniture, and the outline
+ * Google reads ended there too.
+ *
+ * Dropping them to <p> takes them out of the outline without taking anything
+ * away from a reader: each list and the address now point at their own label
+ * with aria-labelledby, so the grouping is announced when you reach it. That is
+ * stronger than the h3s were, which named nothing in particular.
+ */
+function columnId(title: string) {
+  return `footer-${title.toLowerCase().replace(/\s+/g, "-")}`;
+}
+
 export function Footer() {
   return (
     <footer className="relative isolate overflow-hidden bg-primary-deep text-champagne">
@@ -128,9 +145,12 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {COLUMNS.map((col) => (
             <div key={col.title}>
-              <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+              <p
+                id={columnId(col.title)}
+                className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold"
+              >
                 {col.title}
-              </h3>
+              </p>
               {/*
                 On a touch device each row is a real 44px tall, and the gap
                 between rows closes to pay for it — the rows are tall enough
@@ -143,7 +163,10 @@ export function Footer() {
                 three hundred pixels of extra footer on every page, which buys
                 a cursor nothing.
               */}
-              <ul className="mt-6 space-y-3 text-sm text-champagne/75 pointer-coarse:space-y-0">
+              <ul
+                aria-labelledby={columnId(col.title)}
+                className="mt-6 space-y-3 text-sm text-champagne/75 pointer-coarse:space-y-0"
+              >
                 {col.links.map((l) => (
                   <li key={l.label}>
                     {/* Anchor links need a plain <a>; Link would not scroll to the hash. */}
@@ -163,10 +186,16 @@ export function Footer() {
           ))}
 
           <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+            <p
+              id="footer-visit"
+              className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold"
+            >
               Visit Us
-            </h3>
-            <address className="mt-6 space-y-2 text-sm not-italic text-champagne/75">
+            </p>
+            <address
+              aria-labelledby="footer-visit"
+              className="mt-6 space-y-2 text-sm not-italic text-champagne/75"
+            >
               <p>{SITE.address}</p>
               <p className="nums">Sat – Thu, 11:00am – 8:00pm</p>
               <p>Closed on Friday</p>
@@ -185,10 +214,16 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+            <p
+              id="footer-connect"
+              className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold"
+            >
               Connect
-            </h3>
-            <ul className="mt-6 space-y-3 text-sm text-champagne/75 pointer-coarse:space-y-0">
+            </p>
+            <ul
+              aria-labelledby="footer-connect"
+              className="mt-6 space-y-3 text-sm text-champagne/75 pointer-coarse:space-y-0"
+            >
               <li>
                 <a
                   href={whatsappLink(

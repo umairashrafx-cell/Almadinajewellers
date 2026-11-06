@@ -25,11 +25,26 @@ type Props = {
   onClear: () => void;
 };
 
+/**
+ * A facet's name — Metal, Purity, Price — sitting under the panel's own
+ * heading, which is why these are h3 and `PanelHeading` below is h2. They were
+ * both h3, so the collection page went from its h1 straight to six h3s with no
+ * h2 anywhere in between.
+ */
 function FacetHeading({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold-deep">
       {children}
     </h3>
+  );
+}
+
+/** The panel itself: one of the collection page's two sections. */
+function PanelHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold-deep">
+      {children}
+    </h2>
   );
 }
 
@@ -79,7 +94,7 @@ export function FilterPanel({ products, filters, bounds, onChange, onClear }: Pr
   return (
     <div className="space-y-9">
       <div className="flex items-center justify-between">
-        <FacetHeading>Refine</FacetHeading>
+        <PanelHeading>Refine</PanelHeading>
         {dirty && (
           <button
             type="button"
