@@ -33,8 +33,13 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
   const ageNote = rateAgeNote(rates.data);
 
   return (
-    <div className="px-4 pb-10 pt-6">
-      <Kept stale={rates.stale} loading={rates.loading} refresh={rates.refresh} />
+    <div className="px-4 pt-6 pb-10">
+      <Kept
+        stale={rates.stale}
+        loading={rates.loading}
+        savedAt={rates.savedAt}
+        refresh={rates.refresh}
+      />
 
       <h1 className="font-display text-2xl font-light tracking-wide text-primary">
         What is my gold worth?
@@ -78,9 +83,13 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         </p>
       ) : null}
 
-      <div className="mt-8">
-        <GoldValueCalculator snapshot={rates.data} side="buy" />
-      </div>
+      {/*
+        No margin of our own. The calculator carries mt-12 for the page it sits
+        on in the website, where it follows a whole section; stacking another
+        mt-8 on top of that put 80px of ivory between the rate line and the
+        purity buttons — nearly a sixth of a phone screen spent on nothing.
+      */}
+      <GoldValueCalculator snapshot={rates.data} side="buy" />
     </div>
   );
 }

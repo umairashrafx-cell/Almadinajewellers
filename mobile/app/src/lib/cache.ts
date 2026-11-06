@@ -42,9 +42,34 @@ export async function remembered<T>(key: string): Promise<T | undefined> {
 export async function remember(key: string, value: unknown): Promise<void> {
   try {
     await Preferences.set({ key, value: JSON.stringify(value) });
+    await Preferences.set({ key: stampKey(key), value: String(Date.now()) });
   } catch {
     // The screen still has what it just fetched; it simply will not survive
     // being closed. Not worth telling anybody about.
+  }
+}
+
+/**
+ * When an entry was written, kept beside it rather than wrapped around it.
+ *
+ * A sibling key, not a `{ value, at }` envelope, because an app is upgraded
+ * over the cache the old build left: an envelope would make every kept board
+ * unreadable on the first launch after an update, which is exactly the launch
+ * most likely to happen on a bad connection. A missing stamp simply means the
+ * age is unknown, and the screens say the shorter true thing instead.
+ */
+function stampKey(key: string): string {
+  return `${key}:at`;
+}
+
+/** When the entry under this key was last written, if that is known. */
+export async function rememberedAt(key: string): Promise<number | undefined> {
+  try {
+    const { value } = await Preferences.get({ key: stampKey(key) });
+    const at = value ? Number(value) : Number.NaN;
+    return Number.isFinite(at) ? at : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -61,6 +86,13 @@ export type Cached<T> = {
   /** Nothing kept and nothing fetched — the only state with nothing to show. */
   empty: boolean;
   loading: boolean;
+  /**
+   * When what is on screen was fetched, if the phone knows.
+   *
+   * Undefined on a cache written by a build older than the stamp. The screens
+   * say the shorter true thing then rather than guessing an age — lib/kept.ts.
+   */
+  savedAt: number | undefined;
   refresh: () => void;
 };
 
@@ -77,6 +109,7 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
   const [stale, setStale] = useState(false);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  const [savedAt, setSavedAt] = useState<number>();
 
   /** When the last successful fetch landed, so a return to the app can tell. */
   const freshAt = useRef<number | undefined>(undefined);
@@ -92,6 +125,8 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
       if (kept !== undefined) {
         setData(kept);
         setStale(true);
+        setSavedAt(await rememberedAt(key));
+        if (cancelled) return;
       }
 
       try {
@@ -99,7 +134,9 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
         if (cancelled) return;
         setData(fresh);
         setStale(false);
-        freshAt.current = Date.now();
+        const landed = Date.now();
+        freshAt.current = landed;
+        setSavedAt(landed);
         await remember(key, fresh);
       } catch {
         /*
@@ -177,5 +214,5 @@ export function useCached<T>(key: string, load: () => Promise<T>, everyMs?: numb
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [everyMs]);
 
-  return { data, stale, empty: data === undefined && !loading, loading, refresh };
+  return { data, stale, empty: data === undefined && !loading, loading, savedAt, refresh };
 }

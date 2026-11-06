@@ -1,5 +1,3 @@
-import { RefreshCcw } from "lucide-react";
-
 import { RateAlerts } from "@/components/app/RateAlerts";
 import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
 import { ActionButton, ActionLink } from "@/components/ui/ActionButton";
@@ -35,9 +33,31 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
   if (!rates.data) return <Waiting />;
 
   return (
-    <div className="px-4 pb-10 pt-6">
-      <Kept stale={rates.stale} loading={rates.loading} refresh={rates.refresh} />
-      <GoldRateBoard snapshot={rates.data} showBrand showFooter={false} />
+    <div className="px-4 pt-6 pb-10">
+      <Kept
+        stale={rates.stale}
+        loading={rates.loading}
+        savedAt={rates.savedAt}
+        refresh={rates.refresh}
+      />
+
+      {/*
+        showBrand false, which is what the board's own documentation asks for
+        on "a page whose own heading already said so".
+
+        It was true here, and it cost the app its first screen. The board's
+        brand block is a logo, a wordmark and a TRUST · PURITY · TIMELESS
+        BEAUTY ribbon — right on the website's rate page, where the board
+        stands alone and has to introduce itself, and right in the picture the
+        shop forwards on WhatsApp. In the app it sat two centimetres under the
+        header's own AL-MADINA JEWELLERS, so the name was said twice and the
+        24K figure — the one thing anybody opens this app for — started below
+        the fold of a 375×812 phone and well below it on a shorter one.
+
+        Dropping it lifts the first rate to around 290px: visible on launch, on
+        every phone, with the stamp and the staleness line above it.
+      */}
+      <GoldRateBoard snapshot={rates.data} showBrand={false} showFooter={false} />
 
       {/*
         The offer to be told tomorrow, on the screen somebody opened to find
@@ -63,10 +83,45 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
   );
 }
 
+/**
+ * The board's own shape, drawn empty, while the first one is fetched.
+ *
+ * A line of centred text in the middle of an otherwise blank screen is what
+ * the app showed here, and on a bad connection it is indistinguishable from a
+ * screen that has failed. The shape of the thing that is coming says the
+ * opposite — it is on its way, and it is a board — and it holds the layout
+ * still, so nothing jumps when the figures land.
+ *
+ * `animate-pulse` only; Tailwind's own reduced-motion handling covers anyone
+ * who has asked for less, and there is nothing moving here but opacity.
+ */
 function Waiting() {
   return (
-    <div className="grid min-h-[60vh] place-items-center px-6">
-      <p className="text-sm tracking-widest text-warmgrey uppercase">Reading the board…</p>
+    <div className="px-4 pt-6 pb-10" aria-busy="true" aria-live="polite">
+      <p className="sr-only">Reading the board</p>
+
+      <div className="animate-pulse">
+        <div className="rounded-xl border border-rate-gold/40 bg-rate-emerald/90 px-5 py-6">
+          <div className="mx-auto h-7 w-48 rounded bg-rate-ivory/25" />
+          <div className="mx-auto mt-3 h-3 w-32 rounded bg-rate-ivory/20" />
+        </div>
+
+        <ul className="mt-7 grid gap-3">
+          {[0, 1, 2].map((row) => (
+            <li
+              key={row}
+              className="flex items-center gap-4 rounded-xl border border-rate-gold/35 bg-white/70 px-4 py-5"
+            >
+              <span className="h-12 w-12 shrink-0 rounded-full border border-rate-gold/40 bg-champagne/40" />
+              <span className="flex-1">
+                <span className="block h-5 w-28 rounded bg-champagne/60" />
+                <span className="mt-2 block h-3 w-16 rounded bg-champagne/45" />
+              </span>
+              <span className="h-7 w-24 shrink-0 rounded bg-champagne/60" />
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -107,20 +162,5 @@ function NoRatesYet({ refresh, loading }: { refresh: () => void; loading: boolea
         </div>
       </div>
     </div>
-  );
-}
-
-/** Exported for the Calculator screen, which shows the same line. */
-export function Refresh({ refresh, loading }: { refresh: () => void; loading: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={refresh}
-      disabled={loading}
-      className="inline-flex items-center gap-2 text-[11px] tracking-widest text-gold-deep uppercase disabled:opacity-50"
-    >
-      <RefreshCcw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} aria-hidden />
-      {loading ? "Checking" : "Check again"}
-    </button>
   );
 }

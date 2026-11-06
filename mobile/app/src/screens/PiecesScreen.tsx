@@ -97,7 +97,12 @@ export function PiecesScreen() {
 
   return (
     <div className="px-4 pt-6 pb-10">
-      <Kept stale={pieces.stale} loading={pieces.loading} refresh={pieces.refresh} />
+      <Kept
+        stale={pieces.stale}
+        loading={pieces.loading}
+        savedAt={pieces.savedAt}
+        refresh={pieces.refresh}
+      />
 
       <h1 className="font-display text-2xl font-light tracking-wide text-primary">The pieces</h1>
       <div className="hairline mt-5 max-w-24" />
@@ -111,7 +116,14 @@ export function PiecesScreen() {
           <Filters categories={categories} category={category} setCategory={setCategory} />
 
           {shown.length === 0 ? (
-            <NothingMatches query={query} />
+            <NothingMatches
+              query={query}
+              category={category}
+              clear={() => {
+                setQuery("");
+                setCategory(null);
+              }}
+            />
           ) : (
             <ul className="mt-6 grid grid-cols-2 gap-3">
               {shown.map((piece) => (
@@ -167,7 +179,7 @@ function Filters({
      * the shop's business, not the layout's, and six of them must not push the
      * first piece off the screen.
      */
-    <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
+    <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
       <Chip active={category === null} onClick={() => setCategory(null)}>
         All
       </Chip>
@@ -195,7 +207,10 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "shrink-0 border px-3 py-1.5 text-[11px] font-semibold tracking-widest whitespace-nowrap uppercase transition-colors",
+        // h-11, not py-1.5: a 28px-tall chip in a row that scrolls sideways is
+        // the easiest thing in the app to miss with a thumb, and missing it
+        // scrolls the row instead of choosing the category.
+        "inline-flex h-11 shrink-0 items-center border px-4 text-[11px] font-semibold tracking-widest whitespace-nowrap uppercase transition-colors",
         active
           ? "border-gold bg-gold text-primary"
           : "border-gold/35 text-warmgrey hover:border-gold/60",
@@ -256,8 +271,11 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
  *
  * It sits outside whatever button opens the piece, because a button inside a
  * button is not something a browser will render — the same arrangement the
- * website's product card uses, and for the same reason. Its own 36px target,
- * so at 375px keeping a piece and opening it are not one fumbled tap.
+ * website's product card uses, and for the same reason. Its own 44px target,
+ * so at 375px keeping a piece and opening it are not one fumbled tap — 36px
+ * was under both Android's 48dp and WCAG's 44, and it sits on top of a tile
+ * that is itself a button, which is the worst place in the app to be a few
+ * pixels short.
  */
 function Keep({ piece, className }: { piece: Product; className?: string }) {
   const { has, toggle } = useWishlist();
@@ -270,12 +288,12 @@ function Keep({ piece, className }: { piece: Product; className?: string }) {
       aria-label={saved ? `Remove ${piece.name} from saved pieces` : `Save ${piece.name}`}
       aria-pressed={saved}
       className={cn(
-        "grid h-9 w-9 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold",
+        "grid h-11 w-11 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold",
         className,
       )}
     >
       <Heart
-        className={cn("h-4 w-4", saved ? "fill-rose text-rose" : "text-primary")}
+        className={cn("h-5 w-5", saved ? "fill-rose text-rose" : "text-primary")}
         strokeWidth={1.4}
         aria-hidden
       />
@@ -321,9 +339,9 @@ function Detail({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="inline-grid h-9 w-9 place-items-center border border-gold/40 text-gold-deep transition-colors hover:bg-gold hover:text-primary"
+            className="inline-grid h-11 w-11 place-items-center border border-gold/40 text-gold-deep transition-colors hover:bg-gold hover:text-primary"
           >
-            <X className="h-4 w-4" aria-hidden />
+            <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
       </div>
@@ -398,20 +416,87 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+/**
+ * The grid's own shape, drawn empty, while the first pieces are fetched.
+ *
+ * Six tiles rather than a sentence in the middle of a blank screen: a
+ * photograph-led grid on a bad connection takes a visible while, and the
+ * difference between "coming" and "broken" is whether anything holds the
+ * shape of what is coming. It also stops the page jumping when the real tiles
+ * land, because the skeleton is the size of a real tile.
+ */
 function Waiting() {
   return (
-    <div className="grid min-h-[60vh] place-items-center px-6">
-      <p className="text-sm tracking-widest text-warmgrey uppercase">Fetching the pieces…</p>
+    <div className="px-4 pt-6 pb-10" aria-busy="true" aria-live="polite">
+      <p className="sr-only">Fetching the pieces</p>
+
+      <h1 className="font-display text-2xl font-light tracking-wide text-primary">The pieces</h1>
+      <div className="hairline mt-5 max-w-24" />
+
+      <div className="mt-6 grid animate-pulse grid-cols-2 gap-3">
+        {[0, 1, 2, 3, 4, 5].map((tile) => (
+          <div key={tile} className="border border-gold/25 bg-white/70">
+            <div className="aspect-square w-full bg-champagne/40" />
+            <div className="p-3">
+              <div className="h-3.5 w-4/5 rounded bg-champagne/60" />
+              <div className="mt-2 h-2.5 w-1/2 rounded bg-champagne/45" />
+              <div className="mt-3 h-3.5 w-3/5 rounded bg-champagne/60" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function NothingMatches({ query }: { query: string }) {
+/**
+ * A search, or a filter, that matched nothing.
+ *
+ * It used to say one sentence and offer one way out: the shop, which is the
+ * website and needs a connection — a dead end on the screen whose whole point
+ * is working without one. The way out of a filter is the filter, so that is
+ * what is offered first, and it is a button rather than a sentence telling
+ * somebody to go and find the chips they scrolled past.
+ *
+ * It also now says which of the two narrowed things down. "Nothing here
+ * matches that" was wrong when the search box was empty and a category chip
+ * was doing the hiding, and wrong in the confusing direction: it blamed a
+ * search nobody had typed.
+ */
+function NothingMatches({
+  query,
+  category,
+  clear,
+}: {
+  query: string;
+  category: string | null;
+  clear: () => void;
+}) {
+  const typed = query.trim();
+
   return (
-    <p className="mt-10 text-center text-sm leading-relaxed text-warmgrey">
-      Nothing here matches {query.trim() ? <q>{query.trim()}</q> : "that"}. The whole catalogue is
-      in the shop, and the search there looks wider.
-    </p>
+    <div className="mt-10 text-center">
+      <p className="text-sm leading-relaxed text-warmgrey">
+        {typed && category ? (
+          <>
+            Nothing in {category} matches <q>{typed}</q>.
+          </>
+        ) : typed ? (
+          <>
+            Nothing here matches <q>{typed}</q>.
+          </>
+        ) : (
+          <>Nothing in {category} is on this phone yet.</>
+        )}{" "}
+        The whole catalogue is in the shop, and the search there looks wider.
+      </p>
+
+      <div className="mt-6 grid justify-center gap-3">
+        <ActionButton onClick={clear}>
+          {typed && category ? "Clear search and filter" : typed ? "Clear the search" : "Show all"}
+        </ActionButton>
+      </div>
+    </div>
   );
 }
 
