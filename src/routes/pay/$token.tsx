@@ -202,83 +202,96 @@ function Payable({ intent, token }: { intent: PaymentIntent; token: string }) {
         an order once it arrives: an Easypaisa receipt carries a figure and a
         time, and on a day with two bridal sets at a similar weight that is not
         enough to tell which is which.
+
+        It is gone once Easypaisa has sent the customer back, because at that
+        moment a payment is already in flight and this page cannot yet see it.
+        Offering a second way to pay there is an invitation to pay twice, and an
+        Easypaisa transfer does not come back: it would have to be refunded by
+        hand, from the till, by somebody who first worked out that it happened.
+        The banner above says what is going on instead.
       */}
-      <div className="mt-10 border-t border-gold/20 pt-8">
-        <h2 className="font-display text-lg font-light tracking-wide text-primary">
-          Or pay by scanning, in the Easypaisa app
-        </h2>
+      {state !== "returned" && (
+        <div className="mt-10 border-t border-gold/20 pt-8">
+          <h2 className="font-display text-lg font-light tracking-wide text-primary">
+            Or pay by scanning, in the Easypaisa app
+          </h2>
 
-        <p className="mt-3 text-xs leading-relaxed text-warmgrey">
-          Send the exact figure below to the shop's own Easypaisa account, then send us the receipt.
-          This way is checked by hand at the counter, so{" "}
-          <strong className="font-semibold text-ink">this page will not change once you pay</strong>{" "}
-          — we confirm on WhatsApp instead, the same day.
-        </p>
+          <p className="mt-3 text-xs leading-relaxed text-warmgrey">
+            Send the exact figure below to the shop's own Easypaisa account, then send us the
+            receipt. This way is checked by hand at the counter, so{" "}
+            <strong className="font-semibold text-ink">
+              this page will not change once you pay
+            </strong>{" "}
+            — we confirm on WhatsApp instead, the same day.
+          </p>
 
-        {/*
-          The card runs the full width of the column rather than sitting in a
-          thumbnail beside the figures. It is landscape, and the code itself is
-          under a third of it — boxed into a square it would render at about
-          fifty pixels, which is a picture of a QR rather than one anybody's
-          camera can read.
+          {/*
+            The card runs the full width of the column rather than sitting in a
+            thumbnail beside the figures. It is landscape, and the code itself is
+            under a third of it — boxed into a square it would render at about
+            fifty pixels, which is a picture of a QR rather than one anybody's
+            camera can read.
 
-          The number is printed again underneath it even though the card
-          carries its own. The card's digits are small on a phone and are a
-          photograph of a number; the ones below are text, they line up under
-          tabular figures, and they go to the clipboard with the amount and the
-          reference. Having both also lets a customer check one against the
-          other, which on a page asking for money is worth the repetition.
-        */}
-        <div className="mt-6 overflow-hidden border border-gold/25 bg-white/70">
-          {EASYPAISA.qr ? (
-            <img
-              src={EASYPAISA.qr}
-              alt={`Easypaisa payment card for ${SITE.name}, merchant till number ${EASYPAISA.till}`}
-              width={1080}
-              height={675}
-              className="block w-full border-b border-gold/20"
-            />
-          ) : null}
+            The number is printed again underneath it even though the card
+            carries its own. The card's digits are small on a phone and are a
+            photograph of a number; the ones below are text, they line up under
+            tabular figures, and they go to the clipboard with the amount and the
+            reference. Having both also lets a customer check one against the
+            other, which on a page asking for money is worth the repetition.
+          */}
+          <div className="mt-6 overflow-hidden border border-gold/25 bg-white/70">
+            {EASYPAISA.qr ? (
+              <img
+                src={EASYPAISA.qr}
+                alt={`Easypaisa payment card for ${SITE.name}, merchant till number ${EASYPAISA.till}`}
+                width={1080}
+                height={675}
+                className="block w-full border-b border-gold/20"
+              />
+            ) : null}
 
-          <dl className="w-full p-5">
-            <dt className="text-[11px] tracking-[0.2em] text-warmgrey uppercase">
-              Merchant till number
-            </dt>
-            <dd className="nums mt-1 text-xl tracking-wider text-primary">{EASYPAISA.till}</dd>
+            <dl className="w-full p-5">
+              <dt className="text-[11px] tracking-[0.2em] text-warmgrey uppercase">
+                Merchant till number
+              </dt>
+              <dd className="nums mt-1 text-xl tracking-wider text-primary">{EASYPAISA.till}</dd>
 
-            <dt className="mt-4 text-[11px] tracking-[0.2em] text-warmgrey uppercase">
-              Amount to send
-            </dt>
-            <dd className="nums mt-1 text-xl text-primary">{formatPKR(intent.amountPkr)}</dd>
+              <dt className="mt-4 text-[11px] tracking-[0.2em] text-warmgrey uppercase">
+                Amount to send
+              </dt>
+              <dd className="nums mt-1 text-xl text-primary">{formatPKR(intent.amountPkr)}</dd>
 
-            <dt className="mt-4 text-[11px] tracking-[0.2em] text-warmgrey uppercase">
-              Reference to quote
-            </dt>
-            <dd className="nums mt-1 text-sm text-ink">{intent.reference}</dd>
-          </dl>
+              <dt className="mt-4 text-[11px] tracking-[0.2em] text-warmgrey uppercase">
+                Reference to quote
+              </dt>
+              <dd className="nums mt-1 text-sm text-ink">{intent.reference}</dd>
+            </dl>
+          </div>
+
+          <CopyTextButton
+            variant="outline"
+            className="mt-4 w-full"
+            text={`${SITE.name} — Easypaisa till ${EASYPAISA.till}, ${formatPKR(
+              intent.amountPkr,
+            )}, order ${intent.reference}`}
+            label="Copy these details"
+            announce="Payment details copied to the clipboard"
+          />
+
+          <ActionLink
+            variant="outline"
+            href={whatsappLink(
+              `Assalam-o-Alaikum. I have sent ${formatPKR(intent.amountPkr)} on Easypaisa for order ${intent.reference}. I will attach the receipt.`,
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 w-full"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            Send the receipt on WhatsApp
+          </ActionLink>
         </div>
-
-        <CopyTextButton
-          variant="outline"
-          className="mt-4 w-full"
-          text={`${SITE.name} — Easypaisa till ${EASYPAISA.till}, ${formatPKR(
-            intent.amountPkr,
-          )}, order ${intent.reference}`}
-          label="Copy these details"
-          announce="Payment details copied to the clipboard"
-        />
-
-        <ActionLink
-          variant="outline"
-          href={whatsappLink(
-            `Assalam-o-Alaikum. I have sent ${formatPKR(intent.amountPkr)} on Easypaisa for order ${intent.reference}. The receipt is attached.`,
-          )}
-          className="mt-3 w-full"
-        >
-          <WhatsAppIcon className="h-4 w-4" />
-          Send the receipt on WhatsApp
-        </ActionLink>
-      </div>
+      )}
     </Sheet>
   );
 }

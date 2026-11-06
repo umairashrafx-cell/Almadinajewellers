@@ -43,9 +43,11 @@ export const SITE = {
  *
  * A till number is safe to publish — it is the shop's own address for
  * receiving money, in the same class as the phone number above it, and a
- * customer cannot take anything out with it. It still wants checking against
- * the printed card before it ships, because a wrong digit does not fail: it
- * quietly pays somebody else.
+ * customer cannot take anything out with it. The owner checked this number
+ * against the printed card on 6 November 2026. Anybody changing it has to do
+ * the same, because a wrong digit does not fail: it quietly pays somebody
+ * else, and the shop only finds out when a customer says they have paid and
+ * nothing has arrived.
  */
 export const EASYPAISA = {
   /** Merchant Till Number, in the form the customer types into the app. */
