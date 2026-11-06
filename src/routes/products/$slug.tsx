@@ -209,12 +209,19 @@ function ProductDetailPage() {
                 </ActionLink>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-6">
+              {/*
+                Each of these was a line of 11px uppercase — seventeen pixels
+                tall — on the page the shop most wants used. They are real
+                44px rows now; the horizontal rhythm is unchanged and only the
+                gap between wrapped rows gives way, because the rows carry
+                their own height.
+              */}
+              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1">
                 <button
                   type="button"
                   onClick={() => toggle(product.sku)}
                   aria-pressed={wished}
-                  className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
+                  className="inline-flex min-h-11 items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
                 >
                   <Heart
                     className={cn("h-4 w-4", wished ? "fill-rose text-rose" : "text-primary")}
@@ -227,7 +234,7 @@ function ProductDetailPage() {
                   href={shareOnWhatsApp(productShareMessage(product, listed))}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
+                  className="inline-flex min-h-11 items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
                 >
                   <WhatsAppIcon className="h-4 w-4 text-primary" />
                   Share this piece
@@ -239,7 +246,7 @@ function ProductDetailPage() {
                   title={product.name}
                   text={productShareMessage(product, listed)}
                   filename={`${product.slug}.jpg`}
-                  className="px-0 py-0 text-[11px] tracking-widest text-ink hover:text-gold"
+                  className="min-h-11 px-0 py-0 text-[11px] tracking-widest text-ink hover:text-gold"
                 >
                   Share as picture
                 </ShareCardButton>
@@ -250,9 +257,9 @@ function ProductDetailPage() {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="border-b border-gold pb-0.5 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
+                  className="inline-flex min-h-11 items-center text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
                 >
-                  Book a store viewing
+                  <span className="border-b border-gold pb-0.5">Book a store viewing</span>
                 </a>
               </div>
 

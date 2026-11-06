@@ -6,6 +6,7 @@ import adminIcon from "@/assets/icons/admin.png";
 import { GooglePlayIcon } from "@/components/ui/GooglePlayIcon";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, whatsappLink } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 /**
  * Footer navigation. Every entry resolves to a real page that answers it —
@@ -41,6 +42,16 @@ const COLUMNS = [
     ],
   },
 ];
+
+/**
+ * A footer link, sized for whatever is pointing at it.
+ *
+ * `inline-flex items-center` so the row has a height to set; `min-h-11` only
+ * where the pointer is coarse, which is the honest test for "a finger is
+ * doing this" and leaves the desktop footer exactly as it was.
+ */
+const FOOTER_LINK =
+  "inline-flex items-center transition-colors hover:text-gold pointer-coarse:min-h-11 pointer-coarse:min-w-11";
 
 /** Deep forest footer with four columns, over a photographic ground. */
 export function Footer() {
@@ -120,16 +131,28 @@ export function Footer() {
               <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
                 {col.title}
               </h3>
-              <ul className="mt-6 space-y-3 text-sm text-champagne/75">
+              {/*
+                On a touch device each row is a real 44px tall, and the gap
+                between rows closes to pay for it — the rows are tall enough
+                to separate themselves. A hit area reaching past the ink would
+                not do here: these sit twelve pixels apart, so a 44px box
+                around each would overlap its neighbours by fifteen and the
+                bottom of "Rings" would open Earrings.
+
+                Left alone where a mouse is pointing. Eleven links at 44px is
+                three hundred pixels of extra footer on every page, which buys
+                a cursor nothing.
+              */}
+              <ul className="mt-6 space-y-3 text-sm text-champagne/75 pointer-coarse:space-y-0">
                 {col.links.map((l) => (
                   <li key={l.label}>
                     {/* Anchor links need a plain <a>; Link would not scroll to the hash. */}
                     {l.to.includes("#") ? (
-                      <a href={l.to} className="transition-colors hover:text-gold">
+                      <a href={l.to} className={FOOTER_LINK}>
                         {l.label}
                       </a>
                     ) : (
-                      <Link to={l.to} className="transition-colors hover:text-gold">
+                      <Link to={l.to} className={FOOTER_LINK}>
                         {l.label}
                       </Link>
                     )}
@@ -152,7 +175,7 @@ export function Footer() {
                   <a
                     // Strip spaces: a dialler will not parse "+92 321 7759959".
                     href={`tel:${phone.replace(/\s/g, "")}`}
-                    className="nums transition-colors hover:text-gold"
+                    className={cn(FOOTER_LINK, "nums")}
                   >
                     {phone}
                   </a>
@@ -165,7 +188,7 @@ export function Footer() {
             <h3 className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
               Connect
             </h3>
-            <ul className="mt-6 space-y-3 text-sm text-champagne/75">
+            <ul className="mt-6 space-y-3 text-sm text-champagne/75 pointer-coarse:space-y-0">
               <li>
                 <a
                   href={whatsappLink(
@@ -173,7 +196,7 @@ export function Footer() {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2.5 transition-colors hover:text-gold"
+                  className="group inline-flex items-center gap-2.5 transition-colors hover:text-gold pointer-coarse:min-h-11"
                 >
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gold/15 text-gold transition-colors group-hover:bg-gold group-hover:text-primary">
                     <WhatsAppIcon className="h-4 w-4" />
@@ -186,7 +209,7 @@ export function Footer() {
                   href={SITE.tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-gold nums"
+                  className={cn(FOOTER_LINK, "nums")}
                 >
                   Tiktok
                 </a>
@@ -196,7 +219,7 @@ export function Footer() {
                   href={SITE.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-gold nums"
+                  className={cn(FOOTER_LINK, "nums")}
                 >
                   Instagram
                 </a>
@@ -206,7 +229,7 @@ export function Footer() {
                   href={SITE.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-gold nums"
+                  className={cn(FOOTER_LINK, "nums")}
                 >
                   Facebook
                 </a>
@@ -266,7 +289,7 @@ export function Footer() {
               rel="nofollow"
               aria-label="Admin"
               title="Admin"
-              className="hide-in-app inline-grid h-8 w-8 place-items-center rounded-full transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+              className="hide-in-app inline-grid h-11 w-11 place-items-center rounded-full transition-colors hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               {/*
                 The icon is a mask, not an image, so it takes the text colour
@@ -310,7 +333,7 @@ export function Footer() {
               href="https://www.automa8.co"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+              className="tap-44 inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
               <img
                 src={automa8Wordmark}

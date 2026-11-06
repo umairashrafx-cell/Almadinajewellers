@@ -35,9 +35,9 @@ export function StorySplit() {
           </p>
           <Link
             to="/our-story"
-            className="mt-8 inline-block border-b border-gold pb-1 text-[12px] font-semibold uppercase tracking-widest text-primary transition-colors hover:text-gold"
+            className="mt-8 inline-flex min-h-11 items-center text-[12px] font-semibold uppercase tracking-widest text-primary transition-colors hover:text-gold"
           >
-            Our Story
+            <span className="border-b border-gold pb-1">Our Story</span>
           </Link>
         </Reveal>
       </div>

@@ -70,7 +70,21 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         )}
 
-        {/* Wishlist */}
+        {/*
+          Wishlist.
+
+          Shown outright where there is no hover to reveal it with. It used to
+          be opacity-0 until the card was hovered, which on a phone meant an
+          invisible button sitting on every product photograph: measured on a
+          touch viewport it was opacity 0 with pointer-events auto, and a tap
+          at its centre reached it. So a thumb brushing the top-right of a
+          picture silently saved the piece, and there was no visible way to
+          save one on purpose. The one place the card's only wishlist control
+          could not be seen was the one place it could be touched.
+
+          Forty-four pixels square rather than thirty-six, which also puts it
+          over the badge-free corner of the image properly.
+        */}
         <button
           type="button"
           onClick={() => toggle(product.sku)}
@@ -78,10 +92,10 @@ export function ProductCard({ product }: { product: Product }) {
             wished ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`
           }
           aria-pressed={wished}
-          className="absolute right-2 top-9 grid h-9 w-9 place-items-center bg-ivory/90 opacity-0 transition-opacity duration-300 focus-visible:opacity-100 group-hover:opacity-100"
+          className="absolute right-2 top-9 grid h-11 w-11 place-items-center bg-ivory/90 transition-opacity duration-300 focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:hover)]:opacity-0"
         >
           <Heart
-            className={cn("h-4 w-4", wished ? "fill-rose text-rose" : "text-primary")}
+            className={cn("h-5 w-5", wished ? "fill-rose text-rose" : "text-primary")}
             strokeWidth={1.4}
           />
         </button>
@@ -91,7 +105,7 @@ export function ProductCard({ product }: { product: Product }) {
           href={productEnquiryLink(product.name, product.sku)}
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute inset-x-0 bottom-0 translate-y-full bg-gold py-3 text-center text-[11px] font-semibold uppercase tracking-widest text-primary transition-transform duration-300 ease-out focus-visible:translate-y-0 group-hover:translate-y-0"
+          className="absolute inset-x-0 bottom-0 translate-y-full bg-gold py-3.5 text-center text-[11px] font-semibold uppercase tracking-widest text-primary transition-transform duration-300 ease-out focus-visible:translate-y-0 group-hover:translate-y-0"
         >
           Enquire
         </a>

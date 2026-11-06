@@ -126,7 +126,7 @@ function StoresPage() {
                             <li key={phone}>
                               <a
                                 href={`tel:${phone.replace(/\s/g, "")}`}
-                                className="nums text-ink transition-colors hover:text-gold"
+                                className="nums inline-flex min-h-11 items-center text-ink transition-colors hover:text-gold"
                               >
                                 {phone}
                               </a>
@@ -140,7 +140,7 @@ function StoresPage() {
                           href={`https://wa.me/${store.whatsapp}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="nums text-ink transition-colors hover:text-gold"
+                          className="nums inline-flex min-h-11 items-center text-ink transition-colors hover:text-gold"
                         >
                           {SITE.whatsappDisplay}
                         </a>

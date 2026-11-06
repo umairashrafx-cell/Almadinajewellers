@@ -91,7 +91,15 @@ function ReviewQuote({ review, delay }: { review: FeaturedReview; delay: number 
         <Link
           to="/products/$slug"
           params={{ slug: review.product.slug }}
-          className="mt-2 inline-block text-xs text-primary/80 underline-offset-4 transition-colors hover:text-primary hover:underline"
+          /*
+            tap-44 rather than real height: the home page carries twenty-two
+            of these, one under each review, and giving every one of them a
+            44px box added six hundred pixels to a page that is already
+            twelve screens tall. Nothing around this link takes a tap — the
+            attribution above it and the card's padding below are both plain
+            text — so the target reaches out and the page does not move.
+          */
+          className="tap-44 mt-2 inline-block text-xs text-primary/80 underline-offset-4 transition-colors hover:text-primary hover:underline"
         >
           {cut ? "Read the full review on " : "On "}
           {review.product.name}

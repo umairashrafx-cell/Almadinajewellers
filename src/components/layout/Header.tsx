@@ -80,7 +80,7 @@ const PILL_GLASS =
   "border-white/25 bg-gradient-to-br from-white/15 to-white/5 text-ivory backdrop-blur-sm";
 
 const ICON_BUTTON =
-  "relative grid h-10 w-10 place-items-center rounded-full transition-colors duration-[250ms] hover:text-lux-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lux-gold [&>svg]:transition-transform [&>svg]:duration-[250ms] hover:[&>svg]:scale-[1.08] motion-reduce:hover:[&>svg]:scale-100";
+  "relative grid h-11 w-11 place-items-center rounded-full transition-colors duration-[250ms] hover:text-lux-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lux-gold [&>svg]:transition-transform [&>svg]:duration-[250ms] hover:[&>svg]:scale-[1.08] motion-reduce:hover:[&>svg]:scale-100";
 
 const BADGE =
   "nums absolute right-0 top-0.5 grid h-[19px] min-w-[19px] place-items-center rounded-full bg-lux-gold-dark px-1 text-[10px] font-semibold leading-none text-white";
@@ -252,9 +252,14 @@ export function Header({ overHero = false }: { overHero?: boolean }) {
         </nav>
 
         {/*
-          Utilities. Each sits in a forty-pixel target, the size a fingertip
-          needs. On a phone the wishlist moves into the drawer — with its count
-          — which is what makes room for WhatsApp beside search and the bag.
+          Utilities. Each sits in a forty-four-pixel target: what WCAG asks
+          for, and four more pixels than these had. They are transparent
+          circles around an icon, so nothing moved on screen but the focus
+          ring; what changed under a thumb is the four pixels it was missing
+          by, in the corner of the screen farthest from it.
+
+          On a phone the wishlist moves into the drawer — with its count —
+          which is what makes room for WhatsApp beside search and the bag.
         */}
         <div className="ml-auto flex shrink-0 items-center gap-0.5 min-[768px]:gap-1.5 min-[1280px]:ml-0 min-[1280px]:gap-2 min-[1400px]:gap-3">
           <span
