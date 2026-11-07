@@ -30,6 +30,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAppointmentsRouteImport } from './routes/admin/appointments'
 import { Route as AdminCalculatorRouteImport } from './routes/admin/calculator'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
 import { Route as AdminCustomOrdersRouteImport } from './routes/admin/custom-orders'
@@ -41,7 +42,6 @@ import { Route as ApiInternationalGoldRouteImport } from './routes/api/internati
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as OurStoryFounderRouteImport } from './routes/our-story_.founder'
-import { Route as PayTokenRouteImport } from './routes/pay/$token'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -150,6 +150,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAppointmentsRoute = AdminAppointmentsRouteImport.update({
+  id: '/appointments',
+  path: '/appointments',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCalculatorRoute = AdminCalculatorRouteImport.update({
   id: '/calculator',
   path: '/calculator',
@@ -205,11 +210,6 @@ const OurStoryFounderRoute = OurStoryFounderRouteImport.update({
   path: '/our-story/founder',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PayTokenRoute = PayTokenRouteImport.update({
-  id: '/pay/$token',
-  path: '/pay/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products/$slug',
   path: '/products/$slug',
@@ -237,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/appointments': typeof AdminAppointmentsRoute
   '/admin/calculator': typeof AdminCalculatorRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/custom-orders': typeof AdminCustomOrdersRoute
@@ -247,7 +248,6 @@ export interface FileRoutesByFullPath {
   '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
-  '/pay/$token': typeof PayTokenRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -272,6 +272,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/appointments': typeof AdminAppointmentsRoute
   '/admin/calculator': typeof AdminCalculatorRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/custom-orders': typeof AdminCustomOrdersRoute
@@ -282,7 +283,6 @@ export interface FileRoutesByTo {
   '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
-  '/pay/$token': typeof PayTokenRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/collections': typeof CollectionsIndexRoute
@@ -309,6 +309,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/appointments': typeof AdminAppointmentsRoute
   '/admin/calculator': typeof AdminCalculatorRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/custom-orders': typeof AdminCustomOrdersRoute
@@ -319,7 +320,6 @@ export interface FileRoutesById {
   '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story_/founder': typeof OurStoryFounderRoute
-  '/pay/$token': typeof PayTokenRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -347,6 +347,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/appointments'
     | '/admin/calculator'
     | '/admin/categories'
     | '/admin/custom-orders'
@@ -357,7 +358,6 @@ export interface FileRouteTypes {
     | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
-    | '/pay/$token'
     | '/products/$slug'
     | '/admin/'
     | '/collections/'
@@ -382,6 +382,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/appointments'
     | '/admin/calculator'
     | '/admin/categories'
     | '/admin/custom-orders'
@@ -392,7 +393,6 @@ export interface FileRouteTypes {
     | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
-    | '/pay/$token'
     | '/products/$slug'
     | '/admin'
     | '/collections'
@@ -418,6 +418,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/stores'
     | '/wishlist'
+    | '/admin/appointments'
     | '/admin/calculator'
     | '/admin/categories'
     | '/admin/custom-orders'
@@ -428,7 +429,6 @@ export interface FileRouteTypes {
     | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story_/founder'
-    | '/pay/$token'
     | '/products/$slug'
     | '/admin/'
     | '/collections/'
@@ -458,7 +458,6 @@ export interface RootRouteChildren {
   ApiInternationalGoldRoute: typeof ApiInternationalGoldRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   OurStoryFounderRoute: typeof OurStoryFounderRoute
-  PayTokenRoute: typeof PayTokenRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
 }
@@ -612,6 +611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/appointments': {
+      id: '/admin/appointments'
+      path: '/appointments'
+      fullPath: '/admin/appointments'
+      preLoaderRoute: typeof AdminAppointmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/calculator': {
       id: '/admin/calculator'
       path: '/calculator'
@@ -689,13 +695,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OurStoryFounderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pay/$token': {
-      id: '/pay/$token'
-      path: '/pay/$token'
-      fullPath: '/pay/$token'
-      preLoaderRoute: typeof PayTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/products/$slug': {
       id: '/products/$slug'
       path: '/products/$slug'
@@ -707,6 +706,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAppointmentsRoute: typeof AdminAppointmentsRoute
   AdminCalculatorRoute: typeof AdminCalculatorRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCustomOrdersRoute: typeof AdminCustomOrdersRoute
@@ -718,6 +718,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAppointmentsRoute: AdminAppointmentsRoute,
   AdminCalculatorRoute: AdminCalculatorRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCustomOrdersRoute: AdminCustomOrdersRoute,
@@ -754,7 +755,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternationalGoldRoute: ApiInternationalGoldRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   OurStoryFounderRoute: OurStoryFounderRoute,
-  PayTokenRoute: PayTokenRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
 }

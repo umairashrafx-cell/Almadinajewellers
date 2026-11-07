@@ -7,9 +7,9 @@ import {
   APPOINTMENT_SLOTS,
   appointmentDay,
   appointmentSchema,
-  submitAppointment,
+  requestAppointment,
   type Appointment,
-} from "@/lib/enquiries";
+} from "@/lib/appointments";
 import { whatsappLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +112,15 @@ type Fields = {
   message: string;
 };
 
+/**
+ * What the screen shows back.
+ *
+ * `reference` is null when the request went to the enquiries list instead of
+ * the appointments table, which happens only in the window between a deploy
+ * and its migration. There is no reference to quote then, so none is shown.
+ */
+type Sent = { day: string; slot: string; reference: string | null };
+
 const EMPTY: Fields = {
   name: "",
   phone: "",
@@ -133,7 +142,7 @@ function Form() {
   const [problems, setProblems] = useState<Partial<Record<keyof Fields, string>>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<{ day: string; slot: string } | null>(null);
+  const [sent, setSent] = useState<Sent | null>(null);
 
   const today = useMemo(todayValue, []);
 
@@ -166,8 +175,8 @@ function Form() {
 
     setSending(true);
     try {
-      await submitAppointment(parsed.data satisfies Appointment);
-      setSent({ day: parsed.data.day, slot: parsed.data.slot });
+      const reference = await requestAppointment(parsed.data satisfies Appointment);
+      setSent({ day: parsed.data.day, slot: parsed.data.slot, reference });
     } catch (error) {
       setFailure(
         error instanceof Error
@@ -189,6 +198,11 @@ function Form() {
         <p className="mt-2 text-[13px] leading-relaxed text-ink">
           {appointmentDay(sent.day)}, {sent.slot}
         </p>
+        {sent.reference ? (
+          <p className="nums mt-1.5 text-[11px] tracking-widest text-warmgrey uppercase">
+            {sent.reference}
+          </p>
+        ) : null}
         {/*
           Said again, at the one moment somebody might otherwise stop reading
           and write the day in their diary.

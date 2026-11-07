@@ -1,6 +1,15 @@
 import { describe, expect, test } from "vitest";
 
-import { APPOINTMENT_SLOTS, appointmentDay, appointmentSchema, localDate } from "@/lib/enquiries";
+import {
+  APPOINTMENT_SLOTS,
+  appointmentDay,
+  appointmentSchema,
+  localDate,
+  settledDay,
+  settledSlot,
+  wasMoved,
+  type AdminAppointment,
+} from "@/lib/appointments";
 
 /**
  * Asking to come in on a particular day.
@@ -79,6 +88,23 @@ describe("an appointment request", () => {
     );
   });
 
+  test("refuses a day years away, which is a slipped finger and not a plan", () => {
+    const typo = new Date();
+    typo.setFullYear(typo.getFullYear() + 5);
+    expect(problemFor("day", { ...GOOD, day: iso(typo) })).toBe(
+      "Please choose a day in the next six months.",
+    );
+  });
+
+  test("still takes a day a few months out, which is a wedding", () => {
+    const soon = new Date();
+    soon.setMonth(soon.getMonth() + 3);
+    // Nudged off Friday rather than tested on one: the point here is the
+    // ceiling, and three months from today lands wherever it lands.
+    while (soon.getDay() === 5) soon.setTime(soon.getTime() + DAY);
+    expect(appointmentSchema.safeParse({ ...GOOD, day: iso(soon) }).success).toBe(true);
+  });
+
   test("asks for a day and a time before anything else can be wrong with them", () => {
     expect(problemFor("day", { ...GOOD, day: "" })).toBe("Please choose a day.");
     expect(problemFor("slot", { ...GOOD, day: iso(next(6)), slot: "" })).toBe(
@@ -94,10 +120,10 @@ describe("an appointment request", () => {
     );
   });
 
-  test("keeps every window inside what the enquiries table will store", () => {
-    // preferred_time is capped at 40 characters by a CHECK constraint, and a
-    // row refused by the database is a customer told to try again for no
-    // reason they can see.
+  test("keeps every window inside what the appointments table will store", () => {
+    // slot is capped at 40 characters by a CHECK constraint, and a row refused
+    // by the database is a customer told to try again for no reason they can
+    // see.
     for (const slot of APPOINTMENT_SLOTS) {
       expect(slot.length).toBeLessThanOrEqual(40);
     }
@@ -111,5 +137,43 @@ describe("appointmentDay", () => {
 
   test("hands back anything it cannot read rather than inventing a date", () => {
     expect(appointmentDay("not a day")).toBe("not a day");
+  });
+});
+
+describe("a booking the shop has moved", () => {
+  const asked: AdminAppointment = {
+    id: "a",
+    reference: "AMJ-V-2611-0001",
+    name: "Ayesha",
+    phone: "0321-7759959",
+    day: "2026-11-14",
+    slot: APPOINTMENT_SLOTS[0],
+    reason: null,
+    message: null,
+    status: "requested",
+    agreed_day: null,
+    agreed_slot: null,
+    note: null,
+    created_at: "2026-11-08T09:00:00Z",
+  };
+
+  test("stands at what was asked for until somebody agrees otherwise", () => {
+    expect(settledDay(asked)).toBe("2026-11-14");
+    expect(settledSlot(asked)).toBe(APPOINTMENT_SLOTS[0]);
+    expect(wasMoved(asked)).toBe(false);
+  });
+
+  test("stands at what was agreed, and says it was moved", () => {
+    const moved = { ...asked, agreed_day: "2026-11-16", agreed_slot: APPOINTMENT_SLOTS[2] };
+    expect(settledDay(moved)).toBe("2026-11-16");
+    expect(settledSlot(moved)).toBe(APPOINTMENT_SLOTS[2]);
+    expect(wasMoved(moved)).toBe(true);
+  });
+
+  test("is not moved by being confirmed at the time that was asked for", () => {
+    // The shop rings, says yes, and changes nothing. Showing that as a move
+    // would have the customer looking for what changed.
+    const agreed = { ...asked, agreed_day: asked.day, agreed_slot: asked.slot };
+    expect(wasMoved(agreed)).toBe(false);
   });
 });
