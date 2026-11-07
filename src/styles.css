@@ -23,6 +23,17 @@
   --radius-xl: 2px;
   --radius-2xl: 2px;
 
+  /*
+   * The corner an action control takes: a button, or something shaped like
+   * one. Square here, like everything else on the site, and a separate token
+   * only so the app can disagree about it in one place instead of fifteen --
+   * see mobile/app/src/index.css. Written as a token rather than rounded-[2px]
+   * because an arbitrary value is compiled literally and no theme can reach
+   * it, which is how the app ended up with square buttons among its round
+   * ones.
+   */
+  --radius-action: 2px;
+
   /* Brand palette */
   --color-background: var(--background);
   --color-foreground: var(--foreground);

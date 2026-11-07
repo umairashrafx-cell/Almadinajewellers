@@ -53,7 +53,7 @@ const label = "text-xs font-semibold uppercase tracking-[0.2em] text-ink/80";
  * only what it looks like. Forty-four pixels tall, for a thumb.
  */
 const segment =
-  "grid h-11 cursor-pointer select-none place-items-center rounded-[2px] border border-gold/55 bg-white text-sm font-semibold tracking-wide text-ink transition-colors hover:border-gold hover:bg-champagne/30 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-ivory peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold";
+  "grid h-11 cursor-pointer select-none place-items-center rounded-md border border-gold/55 bg-white text-sm font-semibold tracking-wide text-ink transition-colors hover:border-gold hover:bg-champagne/30 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-ivory peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold";
 
 const money = (n: number) => n.toLocaleString("en-US");
 
@@ -271,7 +271,7 @@ export function GoldValueCalculator({
                 aria-describedby={`${id}-custom-purity-help`}
                 placeholder="Karat, e.g. 19.5"
                 className={cn(
-                  "nums h-11 w-full rounded-[2px] border bg-white px-4 pr-12 text-sm text-ink transition-colors placeholder:text-ink/45 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
+                  "nums h-11 w-full rounded-md border bg-white px-4 pr-12 text-sm text-ink transition-colors placeholder:text-ink/45 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
                   usingCustomPurity ? "border-primary" : "border-gold/55",
                   customPurityInvalid && "border-destructive",
                 )}
@@ -314,7 +314,7 @@ export function GoldValueCalculator({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 aria-describedby={`${id}-weight-unit`}
-                className="nums h-12 w-full rounded-[2px] border border-gold/60 bg-white px-4 pr-20 text-lg text-ink transition-colors focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+                className="nums h-12 w-full rounded-md border border-gold/60 bg-white px-4 pr-20 text-lg text-ink transition-colors focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
               />
               <span
                 id={`${id}-weight-unit`}

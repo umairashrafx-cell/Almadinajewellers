@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 type Variant = "primary" | "outline" | "ghostLight";
 
 const base =
-  "btn-surface inline-flex items-center justify-center gap-2 rounded-[2px] px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest hover:-translate-y-px active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:pointer-events-none disabled:opacity-55";
+  "btn-surface inline-flex items-center justify-center gap-2 rounded-action px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest hover:-translate-y-px active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:pointer-events-none disabled:opacity-55";
 
 const variants: Record<Variant, string> = {
   primary:

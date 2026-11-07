@@ -33,14 +33,29 @@ body,
  *
  * So the two diverge here, deliberately and only here. This block cannot reach
  * the website: the site compiles its CSS from src/styles.css through the root
- * Vite config, and this file is the app's own entry, compiled separately. The
- * values are the ones Tailwind inlines into the utility classes, so overriding
- * them re-rounds every rounded-* already written in the shared components the
- * app renders, without a line of those components changing.
+ * Vite config, and this file is the app's own entry, compiled separately.
+ * Re-declaring a token the site declared with `@theme inline` is what makes
+ * the difference -- inlined, the site's utilities carry the literal 2px;
+ * re-declared here, the app's carry var(--radius-*) and pick these values up.
+ * So every rounded-sm/md/lg/xl/2xl already written in the shared components
+ * the app renders is re-rounded, without a line of those components changing.
  *
- * Checked rather than assumed: with this block the app's built CSS emits
+ * What this cannot reach is an arbitrary value. `rounded-[2px]` compiles to a
+ * literal, not to a var, so no theme can touch it -- which is how the app came
+ * to show square ActionButtons on the rate and saved screens next to the round
+ * ones here. The six such corners in the shared components the app renders are
+ * tokens now: --radius-action for the two that are buttons, rounded-lg and
+ * rounded-md for the tile and the calculator's fields. They stay 2px on the
+ * site, which declares --radius-action as 2px, and bend here.
+ *
+ * Checked rather than assumed, in both bundles: the app's built CSS emits
  * border-radius:var(--radius-lg) where it emitted border-radius:2px, and the
- * website's own stylesheet is untouched by the build.
+ * website's still emits the literal 2px for those same classes. A
+ * .rounded-\[2px\] rule is still emitted into the app's CSS -- @source below
+ * scans the whole shared src tree, and the site's own routes still use it --
+ * but nothing the app renders carries that class any more. Counted by walking
+ * the imports out of mobile/app/src: 44 modules reachable, none of them with a
+ * rounded-[2px] left in it.
  */
 @theme {
   --radius-sm: 6px;
@@ -48,6 +63,7 @@ body,
   --radius-lg: 14px;
   --radius-xl: 18px;
   --radius-2xl: 24px;
+  --radius-action: 9999px;
 }
 
 /*
