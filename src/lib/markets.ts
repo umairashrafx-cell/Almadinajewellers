@@ -48,6 +48,24 @@ export type MarketRange = {
   change?: number;
 };
 
+/**
+ * Where an instrument closed a week and a month ago.
+ *
+ * `last` is the series' own most recent close and every move is measured
+ * against it, never against the live price beside it. For the metals the two
+ * come from different places — spot from gold-api, history from the COMEX
+ * contract — and measuring one against the other would fold a source
+ * difference and a contract roll into a figure shown as a market move.
+ */
+export type MarketTrail = {
+  /** What was measured, where it is not the instrument the price came from. */
+  instrument?: string;
+  last: number;
+  week?: number;
+  month?: number;
+  at: string;
+};
+
 export type MarketQuote = {
   /** Price in US dollars. */
   usd: number;
@@ -62,6 +80,8 @@ export type MarketQuote = {
   change?: number;
   /** The high and the low, where the source publishes them. */
   range?: MarketRange;
+  /** Where the instrument was a week and a month back. */
+  trail?: MarketTrail;
   /** When the figure was taken, ISO. */
   at: string;
 };
@@ -347,4 +367,126 @@ export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
     fetchedAt: snapshot.fetchedAt ?? new Date().toISOString(),
     ...(calendar ? { calendar } : {}),
   };
+}
+
+/* -------------------------------------------------------------- what moved */
+
+/**
+ * Why the rupee price of a tola is where it is.
+ *
+ * Two things set it and only two: the dollar price of the metal, and the
+ * number of rupees in a dollar. The tola price is their product, so a move in
+ * it is the product of their moves — and a customer who has watched the local
+ * rate climb for a month is owed the answer to which of the two did it, since
+ * the two have very different implications for whether it keeps climbing.
+ *
+ * The split is exact rather than approximate. Per cent changes do not add up:
+ * gold +5% and the rupee +5% is +10.25% on the tola, not +10%. Logarithms do
+ * add up, so the attribution below compares log moves while the figures shown
+ * stay as the per cent changes a reader expects. That is also why `metalPct`
+ * and `rupeePct` will not sum to `tolaPct` and are not meant to.
+ */
+export type TrailWindow = "week" | "month";
+
+export type RateDrivers = {
+  window: TrailWindow;
+  /** The metal, in dollars, per cent. */
+  metalPct: number;
+  /** The dollar against the rupee, per cent. A rise is a weaker rupee. */
+  rupeePct: number;
+  /** The two together, on the rupee price of a tola. */
+  tolaPct: number;
+  /** Which did the greater part of the work. */
+  mostly: "metal" | "rupee" | "evenly";
+  /** One pushed the tola price up while the other pulled it down. */
+  opposed: boolean;
+  /** What the metal move was measured on, where it was not spot. */
+  instrument?: string;
+};
+
+/**
+ * One is "mostly" responsible at half as much again as the other.
+ *
+ * A judgement, and a deliberately unfussy one. Below it the honest answer is
+ * that both moved, and saying "mostly the metal" about 0.9% against 0.8%
+ * would be a precision the reader would reasonably take for a finding.
+ */
+const MOSTLY = 1.5;
+
+/** Under this, in log terms, nothing happened worth attributing. */
+const FLAT = 0.0005;
+
+function ratio(then: number | undefined, now: number): number | null {
+  if (typeof then !== "number" || !Number.isFinite(then) || then <= 0) return null;
+  if (!Number.isFinite(now) || now <= 0) return null;
+  return now / then;
+}
+
+/**
+ * The metal and the rupee over one window, or nothing.
+ *
+ * Nothing, rather than a partial answer, when either half is missing: half of
+ * this is not a smaller truth but a different and misleading one, since "gold
+ * is up 3%" with no rupee beside it invites the reader to assume the rupee
+ * held still.
+ */
+export function driversFor(
+  board: MarketBoard,
+  key: "gold" | "silver",
+  window: TrailWindow,
+): RateDrivers | null {
+  const metalTrail = board[key]?.trail;
+  const rupeeTrail = board.usdPkr?.trail;
+  if (!metalTrail || !rupeeTrail) return null;
+
+  const metal = ratio(metalTrail[window], metalTrail.last);
+  const rupee = ratio(rupeeTrail[window], rupeeTrail.last);
+  if (metal === null || rupee === null) return null;
+
+  const metalLog = Math.log(metal);
+  const rupeeLog = Math.log(rupee);
+  const metalSize = Math.abs(metalLog);
+  const rupeeSize = Math.abs(rupeeLog);
+
+  const mostly =
+    metalSize < FLAT && rupeeSize < FLAT
+      ? "evenly"
+      : metalSize > rupeeSize * MOSTLY
+        ? "metal"
+        : rupeeSize > metalSize * MOSTLY
+          ? "rupee"
+          : "evenly";
+
+  return {
+    window,
+    metalPct: (metal - 1) * 100,
+    rupeePct: (rupee - 1) * 100,
+    tolaPct: (metal * rupee - 1) * 100,
+    mostly,
+    opposed: metalSize >= FLAT && rupeeSize >= FLAT && metalLog * rupeeLog < 0,
+    ...(metalTrail.instrument === undefined ? {} : { instrument: metalTrail.instrument }),
+  };
+}
+
+/** "+3.1%", "-0.4%", "0.0%" — a move, signed, to one decimal place. */
+export function formatPct(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  const rounded = Math.round(value * 10) / 10;
+  if (rounded === 0) return "0.0%";
+  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(1)}%`;
+}
+
+/**
+ * The gap between what the shop sells a tola at and what it pays for one.
+ *
+ * The number that actually decides whether waiting a week is worth it. It is
+ * not margin: it is the melting and the making that has to be done again
+ * before bought-back gold is jewellery, which is what the sell screen says in
+ * those words. Returned as a per cent of the selling rate.
+ */
+export function spreadPct(sellPerTola: number, buyPerTola: number): number | null {
+  if (!Number.isFinite(sellPerTola) || sellPerTola <= 0) return null;
+  if (!Number.isFinite(buyPerTola) || buyPerTola <= 0) return null;
+  if (buyPerTola > sellPerTola) return null;
+  return ((sellPerTola - buyPerTola) / sellPerTola) * 100;
 }

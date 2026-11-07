@@ -108,6 +108,32 @@ type Range = {
   change?: number;
 };
 
+/**
+ * Where an instrument was a week and a month ago.
+ *
+ * Not for drawing a chart -- the app draws none -- but for answering the one
+ * question a customer in the bazaar actually asks, which is whether the rupee
+ * price of a tola moved because gold moved or because the rupee did. That
+ * needs the same two instruments over the same two windows, and nothing else.
+ *
+ * `last` is the series' own latest close, and every move is measured against
+ * it rather than against the live spot price. The two come from different
+ * sources for the metals -- spot from gold-api, history from the COMEX
+ * contract -- and mixing them would put a roll gap and a source difference
+ * into a figure presented as a market move.
+ */
+type Trail = {
+  /** The instrument measured, where it is not the one the price came from. */
+  instrument?: string;
+  /** The series' own most recent close. */
+  last: number;
+  /** The close about seven days back, and about thirty. */
+  week?: number;
+  month?: number;
+  /** When the trail was read, ISO. It is refetched hourly, not every poll. */
+  at: string;
+};
+
 type Quote = {
   /** Price in US dollars. */
   usd: number;
@@ -121,6 +147,8 @@ type Quote = {
   change?: number;
   /** The high and the low, where the source publishes them. */
   range?: Range;
+  /** Where this instrument was a week and a month ago. */
+  trail?: Trail;
   /** When this figure was taken, ISO. */
   at: string;
 };
@@ -235,6 +263,113 @@ function sessionChange(meta: YahooMeta): number | undefined {
   return typeof meta.fulldayChange === "number" ? meta.fulldayChange : undefined;
 }
 
+/**
+ * How long a trail stays good for.
+ *
+ * An hour, against the board's fifteen seconds. Where gold closed a month ago
+ * does not change between two polls, and fetching three months of daily
+ * candles four times a minute would be three extra upstream calls a poll for
+ * a figure that moves once a day.
+ */
+const TRAIL_SECONDS = 3600;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Daily closes out of Yahoo's chart endpoint, oldest first, gaps dropped. */
+async function yahooCloses(symbol: string): Promise<Array<{ at: number; close: number }>> {
+  const body = (await get(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=3mo`,
+  )) as {
+    chart?: {
+      result?: Array<{
+        timestamp?: number[];
+        indicators?: { quote?: Array<{ close?: Array<number | null> }> };
+      }>;
+    };
+  };
+
+  const result = body?.chart?.result?.[0];
+  const stamps = result?.timestamp;
+  const closes = result?.indicators?.quote?.[0]?.close;
+  if (!Array.isArray(stamps) || !Array.isArray(closes)) {
+    throw new Error(`${symbol}: no candles in the answer`);
+  }
+
+  const out: Array<{ at: number; close: number }> = [];
+  for (let i = 0; i < stamps.length; i++) {
+    const close = closes[i];
+    if (typeof close === "number" && Number.isFinite(close) && close > 0) {
+      out.push({ at: stamps[i] * 1000, close });
+    }
+  }
+  return out;
+}
+
+/**
+ * The close around a given day, as the middle of the three nearest to it.
+ *
+ * The median rather than the nearest single close, because a free FX series
+ * prints the occasional bad candle and one of them landing on the day being
+ * measured from would turn a quiet month for the rupee into a three per cent
+ * move. Three points cannot be dragged by one of them.
+ */
+function closeAround(
+  series: Array<{ at: number; close: number }>,
+  when: number,
+): number | undefined {
+  if (series.length === 0) return undefined;
+
+  const near = [...series]
+    .sort((a, b) => Math.abs(a.at - when) - Math.abs(b.at - when))
+    .slice(0, 3);
+  if (near.length === 0) return undefined;
+
+  // Nothing within a fortnight of the day asked for is not that day's close.
+  if (Math.abs(near[0].at - when) > 14 * DAY_MS) return undefined;
+
+  const values = near.map((point) => point.close).sort((a, b) => a - b);
+  return values[Math.floor(values.length / 2)];
+}
+
+/**
+ * A week and a month of an instrument, kept for an hour.
+ *
+ * `previous` is the trail the board already had. Reusing it inside the hour is
+ * the whole reason this is cheap enough to run on a board four phones are
+ * polling; a failure also falls back to it, so a trail outlives a bad fetch
+ * the same way a price does.
+ */
+async function trailFor(
+  symbol: string,
+  instrument: string | undefined,
+  previous: Trail | undefined,
+): Promise<Trail | undefined> {
+  if (previous && Date.now() - new Date(previous.at).getTime() < TRAIL_SECONDS * 1000) {
+    return previous;
+  }
+
+  try {
+    const series = await yahooCloses(symbol);
+    const last = series[series.length - 1]?.close;
+    if (typeof last !== "number") throw new Error(`${symbol}: no last close`);
+
+    const now = Date.now();
+    const week = closeAround(series, now - 7 * DAY_MS);
+    const month = closeAround(series, now - 30 * DAY_MS);
+
+    return {
+      ...(instrument === undefined ? {} : { instrument }),
+      last,
+      ...(week === undefined ? {} : { week }),
+      ...(month === undefined ? {} : { month }),
+      at: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.warn(`market-rates: no trail for ${symbol}:`, error);
+    return previous;
+  }
+}
+
 async function yahoo(symbol: string): Promise<Quote> {
   const meta = await yahooMeta(symbol);
   if (typeof meta.regularMarketPrice !== "number") {
@@ -252,6 +387,14 @@ async function yahoo(symbol: string): Promise<Quote> {
   };
 }
 
+/** A Yahoo quote with its own history behind it. Used for the rupee. */
+async function yahooWithTrail(symbol: string, previous: Quote | undefined): Promise<Quote> {
+  const quote = await yahoo(symbol);
+  const trail = await trailFor(symbol, undefined, previous?.trail);
+  if (trail) quote.trail = trail;
+  return quote;
+}
+
 /**
  * A metal's spot price, with the matching COMEX contract's session range.
  *
@@ -260,7 +403,11 @@ async function yahoo(symbol: string): Promise<Quote> {
  * courtesy from a second source, and a failure there costs only the range. The
  * contract is named on the way out so the screen can say whose range it is.
  */
-async function metalWithRange(symbol: "XAU" | "XAG", contract: "GC=F" | "SI=F"): Promise<Quote> {
+async function metalWithRange(
+  symbol: "XAU" | "XAG",
+  contract: "GC=F" | "SI=F",
+  previous: Quote | undefined,
+): Promise<Quote> {
   const quote = await metal(symbol);
 
   try {
@@ -277,6 +424,14 @@ async function metalWithRange(symbol: "XAU" | "XAG", contract: "GC=F" | "SI=F"):
   } catch (error) {
     console.warn(`market-rates: no range for ${symbol} from ${contract}:`, error);
   }
+
+  /*
+   * The trail comes from the contract too, for the same reason the range
+   * does: spot has no history anybody publishes free, and the contract has
+   * three months of it. Named on the way out, so the screen can say whose.
+   */
+  const trail = await trailFor(contract, `COMEX ${contract}`, previous?.trail);
+  if (trail) quote.trail = trail;
 
   return quote;
 }
@@ -343,12 +498,12 @@ async function bitcoin(): Promise<Quote> {
  */
 async function fetchBoard(previous: Board): Promise<Board> {
   const work = {
-    gold: metalWithRange("XAU", "GC=F"),
-    silver: metalWithRange("XAG", "SI=F"),
+    gold: metalWithRange("XAU", "GC=F", previous.gold),
+    silver: metalWithRange("XAG", "SI=F", previous.silver),
     dollarIndex: yahoo("DX-Y.NYB"),
     bitcoin: bitcoin(),
     crude: yahoo("CL=F"),
-    usdPkr: yahoo("USDPKR=X"),
+    usdPkr: yahooWithTrail("USDPKR=X", previous.usdPkr),
   } satisfies Record<keyof Board, Promise<Quote>>;
 
   const names = Object.keys(work) as Array<keyof Board>;

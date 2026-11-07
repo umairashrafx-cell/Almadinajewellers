@@ -1,18 +1,23 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  type MarketBoard,
   type MarketCalendar,
   type MarketEvent,
   type MarketRange,
+  type MarketTrail,
   TOLA_PER_TROY_OUNCE,
   calendarCurrencies,
   convertsToTola,
+  driversFor,
   eventTime,
   eventsToday,
   formatChange,
+  formatPct,
   perTolaPKR,
   rangePosition,
   rangeWindowLabel,
+  spreadPct,
 } from "@/lib/markets";
 import { TOLA_IN_GRAMS } from "@/lib/rates";
 
@@ -302,5 +307,144 @@ describe("convertsToTola", () => {
     expect(convertsToTola("bitcoin")).toBe(false);
     expect(convertsToTola("crude")).toBe(false);
     expect(convertsToTola("usdPkr")).toBe(false);
+  });
+});
+
+describe("driversFor", () => {
+  /** A board carrying just the two trails the attribution needs. */
+  function board(
+    metal: Partial<MarketTrail> & { last: number },
+    rupee: Partial<MarketTrail> & { last: number },
+  ) {
+    return {
+      gold: { usd: metal.last, at: NOW, trail: { at: NOW, ...metal } },
+      usdPkr: { usd: rupee.last, at: NOW, trail: { at: NOW, ...rupee } },
+    } satisfies MarketBoard;
+  }
+
+  const NOW = "2026-11-08T00:00:00.000Z";
+
+  test("multiplies the two moves rather than adding them", () => {
+    // +5% and +5% is +10.25% on a tola, not +10%. The difference is small
+    // here and is not small over a year, and a figure that is nearly right
+    // is the kind that gets quoted back at the counter.
+    const drivers = driversFor(
+      board({ last: 105, month: 100 }, { last: 105, month: 100 }),
+      "gold",
+      "month",
+    );
+    expect(drivers).not.toBeNull();
+    expect(drivers?.metalPct).toBeCloseTo(5, 6);
+    expect(drivers?.rupeePct).toBeCloseTo(5, 6);
+    expect(drivers?.tolaPct).toBeCloseTo(10.25, 6);
+  });
+
+  test("names the metal when the metal did the work", () => {
+    const drivers = driversFor(
+      board({ last: 110, month: 100 }, { last: 100.2, month: 100 }),
+      "gold",
+      "month",
+    );
+    expect(drivers?.mostly).toBe("metal");
+    expect(drivers?.opposed).toBe(false);
+  });
+
+  test("names the rupee when the rupee did the work", () => {
+    const drivers = driversFor(
+      board({ last: 100.2, month: 100 }, { last: 110, month: 100 }),
+      "gold",
+      "month",
+    );
+    expect(drivers?.mostly).toBe("rupee");
+  });
+
+  test("refuses to pick a winner between two moves of a size", () => {
+    // 3% against 2.5%: both moved, and calling it "mostly the metal" would
+    // dress up a coin toss as a finding.
+    const drivers = driversFor(
+      board({ last: 103, month: 100 }, { last: 102.5, month: 100 }),
+      "gold",
+      "month",
+    );
+    expect(drivers?.mostly).toBe("evenly");
+  });
+
+  test("says evenly, not metal, when neither moved at all", () => {
+    const drivers = driversFor(
+      board({ last: 100, month: 100 }, { last: 100, month: 100 }),
+      "gold",
+      "month",
+    );
+    expect(drivers?.mostly).toBe("evenly");
+    expect(drivers?.opposed).toBe(false);
+    expect(drivers?.tolaPct).toBeCloseTo(0, 9);
+  });
+
+  test("spots the two pulling against each other", () => {
+    // Gold up, rupee stronger. The tola price barely moves, and saying only
+    // "gold is up 5%" would leave somebody expecting a rise that is not there.
+    const drivers = driversFor(
+      board({ last: 105, month: 100 }, { last: 95, month: 100 }),
+      "gold",
+      "month",
+    );
+    expect(drivers?.opposed).toBe(true);
+    expect(drivers?.tolaPct).toBeCloseTo(-0.25, 6);
+  });
+
+  test("is nothing when either half of the answer is missing", () => {
+    // Half of this is not a smaller truth: "gold is up 3%" with no rupee
+    // beside it invites the reader to assume the rupee held still.
+    expect(driversFor(board({ last: 105 }, { last: 105, month: 100 }), "gold", "month")).toBeNull();
+    expect(driversFor(board({ last: 105, month: 100 }, { last: 105 }), "gold", "month")).toBeNull();
+    expect(driversFor({ gold: { usd: 1, at: NOW } }, "gold", "month")).toBeNull();
+  });
+
+  test("is nothing for a close of zero, rather than infinity", () => {
+    expect(
+      driversFor(board({ last: 105, month: 0 }, { last: 105, month: 100 }), "gold", "month"),
+    ).toBeNull();
+  });
+
+  test("reads the window it was asked for", () => {
+    const b = board({ last: 110, week: 105, month: 100 }, { last: 100, week: 100, month: 100 });
+    expect(driversFor(b, "gold", "week")?.metalPct).toBeCloseTo(4.7619, 3);
+    expect(driversFor(b, "gold", "month")?.metalPct).toBeCloseTo(10, 6);
+  });
+
+  test("carries the instrument the history came from", () => {
+    const b = {
+      gold: {
+        usd: 1,
+        at: NOW,
+        trail: { at: NOW, last: 110, month: 100, instrument: "COMEX GC=F" },
+      },
+      usdPkr: { usd: 1, at: NOW, trail: { at: NOW, last: 100, month: 100 } },
+    } satisfies MarketBoard;
+    expect(driversFor(b, "gold", "month")?.instrument).toBe("COMEX GC=F");
+  });
+});
+
+describe("formatPct", () => {
+  test("signs a move and rounds it to one place", () => {
+    expect(formatPct(3.14)).toBe("+3.1%");
+    expect(formatPct(-0.44)).toBe("−0.4%");
+    expect(formatPct(0)).toBe("0.0%");
+    // Rounds to nothing, so it says nothing happened rather than "+0.0%".
+    expect(formatPct(0.04)).toBe("0.0%");
+  });
+});
+
+describe("spreadPct", () => {
+  test("is the gap between selling and buying, over the selling rate", () => {
+    // The shop's own published figures on the day this was written.
+    expect(spreadPct(387000, 351900)).toBeCloseTo(9.069, 2);
+  });
+
+  test("is nothing when the figures cannot be a spread", () => {
+    expect(spreadPct(0, 100)).toBeNull();
+    expect(spreadPct(100, 0)).toBeNull();
+    // Buying above selling is a data error, not a negative spread to draw.
+    expect(spreadPct(100, 120)).toBeNull();
   });
 });
