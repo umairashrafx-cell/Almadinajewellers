@@ -53,7 +53,7 @@ import {
 } from "@/lib/rates";
 import { RomanUrduAnswers } from "@/components/page/RomanUrduAnswers";
 import { SELL_ANSWERS } from "@/lib/roman-urdu";
-import { SITE, STORES, directionsUrl, placeUrl, reviewUrl, whatsappLink } from "@/lib/site";
+import { SITE, STORES, directionsUrl, openPlaceUrl, reviewUrl, whatsappLink } from "@/lib/site";
 import { STORE_SCHEMA_ID, storeSchemaNode } from "@/lib/store-schema";
 
 /**
@@ -737,7 +737,7 @@ function SellYourGoldPage({ snapshot: override }: { snapshot?: RateSnapshot }) {
             <Reveal className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
               <ActionLink
                 variant="outline"
-                href={placeUrl(store.placeId)}
+                href={openPlaceUrl(store.mapEmbedQuery, store.placeId)}
                 target="_blank"
                 rel="noopener noreferrer"
               >
