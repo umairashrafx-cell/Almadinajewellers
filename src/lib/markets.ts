@@ -39,6 +39,12 @@ export type MarketRange = {
   low: number;
   window: "24h" | "session";
   instrument?: string;
+  /**
+   * The move over the same window, from the same instrument as the range.
+   * Present only where that instrument differs from the one the price came
+   * from — the metals — since otherwise it is the quote's own `change` again.
+   */
+  change?: number;
 };
 
 export type MarketQuote = {
@@ -46,6 +52,13 @@ export type MarketQuote = {
   usd: number;
   /** Move on the day, per cent, where the source gives one. */
   changePercent?: number;
+  /**
+   * The same move in the instrument's own units: dollars for the metals,
+   * bitcoin and crude, index points for the dollar index — which is why this
+   * is formatted through formatChange rather than with a dollar sign bolted
+   * on. Set only where it comes from the same quote as the price.
+   */
+  change?: number;
   /** The high and the low, where the source publishes them. */
   range?: MarketRange;
   /** When the figure was taken, ISO. */
@@ -93,6 +106,19 @@ export function formatQuote(key: keyof MarketBoard, value: number): string {
   if (key === "dollarIndex") return value.toFixed(3);
   if (key === "silver" || key === "crude") return formatUSD(value, 2);
   return formatUSD(value, 0);
+}
+
+/**
+ * A move, signed, in the instrument's own units.
+ *
+ * Routed through formatQuote so each instrument keeps its own convention: the
+ * dollar index moves in index points and must not be given a dollar sign,
+ * gold and bitcoin round to the dollar, silver and crude to the cent. A move
+ * of exactly nothing gets no sign.
+ */
+export function formatChange(key: keyof MarketBoard, value: number): string {
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  return `${sign}${formatQuote(key, Math.abs(value))}`;
 }
 
 /** What to call the window over which a range was measured. */

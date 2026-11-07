@@ -2,7 +2,13 @@ import { useState } from "react";
 
 import { ChevronDown, Globe, TrendingDown, TrendingUp } from "lucide-react";
 
-import { MARKET_ROWS, formatQuote, rangePosition, rangeWindowLabel } from "@/lib/markets";
+import {
+  MARKET_ROWS,
+  formatChange,
+  formatQuote,
+  rangePosition,
+  rangeWindowLabel,
+} from "@/lib/markets";
 import type { MarketBoard as Board, MarketQuote, MarketRange, MarketSnapshot } from "@/lib/markets";
 import { cn } from "@/lib/utils";
 
@@ -134,6 +140,21 @@ function Row({
   const range = quote.range;
   const panelId = `market-range-${rowKey}`;
 
+  /*
+   * The cash figure leads and the percentage follows it in brackets, because
+   * "down four hundred dollars" is the sentence somebody standing at a counter
+   * actually says. Where a source gives a percentage but no cash figure the
+   * percentage stands alone exactly as it did before, rather than sitting in
+   * brackets after nothing.
+   */
+  const percent = typeof move === "number" ? `${move > 0 ? "+" : ""}${move.toFixed(2)}%` : null;
+  const moved =
+    percent === null
+      ? null
+      : typeof quote.change === "number"
+        ? `${formatChange(rowKey, quote.change)} (${percent})`
+        : percent;
+
   const face = (
     <>
       <span className="min-w-0 text-left">
@@ -159,7 +180,7 @@ function Row({
           <span className="block text-sm font-semibold text-ink tabular-nums">
             {formatQuote(rowKey, quote.usd)}
           </span>
-          {typeof move === "number" ? (
+          {moved === null ? null : (
             <span
               className={cn(
                 "mt-0.5 flex items-center justify-end gap-1 text-[11px] tabular-nums",
@@ -170,10 +191,9 @@ function Row({
             >
               {rising ? <TrendingUp className="h-3 w-3" aria-hidden /> : null}
               {falling ? <TrendingDown className="h-3 w-3" aria-hidden /> : null}
-              {move > 0 ? "+" : ""}
-              {move.toFixed(2)}%
+              {moved}
             </span>
-          ) : null}
+          )}
         </span>
 
         {/*
@@ -269,6 +289,18 @@ function RangeBar({
           {formatQuote(rowKey, range.high)}
         </span>
       </div>
+
+      {/*
+        The metals only. Their row carries no move at all — the spot source
+        publishes a price and nothing else — so this is the one place gold and
+        silver can say what the day has done, and it says whose day it was.
+      */}
+      {range.instrument && typeof range.change === "number" ? (
+        <p className="mt-2 text-[11px] text-ink tabular-nums">
+          {formatChange(rowKey, range.change)}{" "}
+          <span className="text-warmgrey">on the contract today</span>
+        </p>
+      ) : null}
 
       <p className="mt-2 text-[10px] leading-relaxed text-warmgrey">{provenance(range)}</p>
     </div>

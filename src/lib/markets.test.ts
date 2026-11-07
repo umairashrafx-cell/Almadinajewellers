@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { type MarketRange, rangePosition, rangeWindowLabel } from "@/lib/markets";
+import { type MarketRange, formatChange, rangePosition, rangeWindowLabel } from "@/lib/markets";
 
 /**
  * The marker on a range bar, and what the range is called.
@@ -50,6 +50,32 @@ describe("rangePosition", () => {
     // The dollar index moves in thousandths, and silver in cents.
     expect(rangePosition(101.9555, range(101.553, 102.358))).toBeCloseTo(0.5, 5);
     expect(rangePosition(51.785, range(51.2, 52.37))).toBeCloseTo(0.5, 5);
+  });
+});
+
+describe("formatChange", () => {
+  test("signs the move and keeps each instrument's own rounding", () => {
+    // Figures measured off the live upstreams while this was written.
+    expect(formatChange("gold", -38.6)).toBe("-$39");
+    expect(formatChange("silver", -0.434)).toBe("-$0.43");
+    expect(formatChange("crude", 0.31)).toBe("+$0.31");
+    expect(formatChange("bitcoin", 451.39)).toBe("+$451");
+  });
+
+  test("never puts a dollar sign on the dollar index", () => {
+    // It moves in index points. "$-0.019" would be a different claim.
+    expect(formatChange("dollarIndex", -0.019)).toBe("-0.019");
+    expect(formatChange("dollarIndex", 0.696)).toBe("+0.696");
+    expect(formatChange("dollarIndex", -0.019)).not.toContain("$");
+  });
+
+  test("a move of nothing gets no sign", () => {
+    expect(formatChange("gold", 0)).toBe("$0");
+    expect(formatChange("dollarIndex", 0)).toBe("0.000");
+  });
+
+  test("groups thousands, so a big bitcoin move stays readable", () => {
+    expect(formatChange("bitcoin", -1234.5)).toBe("-$1,235");
   });
 });
 
