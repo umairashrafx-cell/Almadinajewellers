@@ -36,6 +36,12 @@ import type { View } from "../lib/views";
  * alternative is a menu where two taps that look identical do very different
  * things, one of them costing a page load on a phone in a bazaar.
  *
+ * The app's own screens come first for that reason. Selling gold, the story
+ * and contact used to be the second kind and are now the first: all three are
+ * things a customer reaches for while standing somewhere with one bar of
+ * signal, and all three were a page load away. Buy-back and the full
+ * catalogue are still the website, because neither has been built here.
+ *
  * Opening and closing is history, not state — see App.tsx. Android's back
  * button closes this drawer because the drawer is an entry, which is the same
  * arrangement as a piece opened over the grid.
@@ -46,11 +52,11 @@ type Entry =
 
 const ENTRIES: readonly Entry[] = [
   { kind: "view", id: "calculator", label: "Gold calculator", icon: Calculator },
+  { kind: "view", id: "sell", label: "Sell your gold", icon: Coins },
   { kind: "view", id: "store", label: "Our store", icon: Store },
-  { kind: "page", path: "/sell-your-gold", label: "Sell your gold", icon: Coins },
+  { kind: "view", id: "story", label: "Our story", icon: BookOpen },
+  { kind: "view", id: "contact", label: "Contact", icon: Phone },
   { kind: "page", path: "/buy-back-exchange", label: "Buy-back & exchange", icon: RefreshCcw },
-  { kind: "page", path: "/our-story", label: "Our story", icon: BookOpen },
-  { kind: "page", path: "/contact", label: "Contact", icon: Phone },
   { kind: "page", path: "/collections", label: "The full website", icon: Globe },
 ];
 

@@ -9,12 +9,15 @@ import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
 import { viewFromHistory, type View } from "./lib/views";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
+import { ContactScreen } from "./screens/ContactScreen";
 import { CustomOrderScreen } from "./screens/CustomOrderScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { PiecesScreen } from "./screens/PiecesScreen";
 import { RateScreen } from "./screens/RateScreen";
 import { SavedScreen } from "./screens/SavedScreen";
+import { SellGoldScreen } from "./screens/SellGoldScreen";
 import { StoreScreen } from "./screens/StoreScreen";
+import { StoryScreen } from "./screens/StoryScreen";
 
 /**
  * The app's own screens, and a door to the rest of the shop.
@@ -323,6 +326,15 @@ export function App() {
         {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
         {view === "store" && <StoreScreen />}
         {view === "custom" && <CustomOrderScreen />}
+        {view === "sell" && <SellGoldScreen rates={rates} />}
+        {/*
+          Both of these offer a way to the shop's address rather than
+          reprinting it. Going by `go` and not `goFromDrawer`: the drawer has
+          closed by now, so this is an ordinary move between screens and back
+          should return to the one the customer came from.
+        */}
+        {view === "story" && <StoryScreen showStore={() => go("store")} />}
+        {view === "contact" && <ContactScreen showStore={() => go("store")} />}
       </main>
 
       <nav
