@@ -313,7 +313,16 @@ export function CustomOrderScreen() {
 
         <AppButton type="submit" disabled={sending} className="mt-6">
           {sending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-          {sending ? "Sending…" : "Send my idea"}
+          {/*
+            "Send it to the shop" rather than "Send my idea".
+
+            Two reasons. It says where the thing goes, which on a form that
+            takes a photograph and a voice note is the question somebody
+            actually has; and it is the same sentence as the line underneath,
+            "Send it on WhatsApp instead", so the two read as one choice
+            between two doors rather than as two unrelated offers.
+          */}
+          {sending ? "Sending…" : "Send it to the shop"}
         </AppButton>
 
         <p className="mt-4 text-[11px] leading-relaxed text-warmgrey">
