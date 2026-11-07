@@ -61,7 +61,7 @@ const ENTRIES: readonly Entry[] = [
   { kind: "view", id: "store", label: "Our store", icon: Store },
   { kind: "view", id: "story", label: "Our story", icon: BookOpen },
   { kind: "view", id: "contact", label: "Contact", icon: Phone },
-  { kind: "page", path: "/collections", label: "The full website", icon: Globe },
+  { kind: "page", path: "/collections", label: "Our website", icon: Globe },
 ];
 
 type Props = {
