@@ -110,6 +110,30 @@ export function App() {
   };
 
   /**
+   * The whole catalogue, with nothing filtered.
+   *
+   * Every route that offers the catalogue rather than one collection comes
+   * through here, and there are four of them: the Shop tab, the front door's
+   * own invitation to look, the "see all" above the collections, and "See the
+   * pieces" on an empty Saved screen — which is offered there beside the
+   * website as the app's own whole catalogue, not as a corner of it.
+   *
+   * It is a function rather than four copies of two statements because the
+   * three that were `go("pieces")` on its own were a silent bug: a collection
+   * picked on the front door survives in this state until something clears
+   * it, so those buttons offered the whole shop and delivered whatever was
+   * last filtered. Nobody reports that. They just stop believing the button.
+   *
+   * Clearing the value is enough on its own only because PiecesScreen is
+   * keyed on it: that screen owns the filter once it is built, so the key is
+   * what builds it again.
+   */
+  const showAllPieces = () => {
+    setCollection(null);
+    go("pieces");
+  };
+
+  /**
    * The drawer, opened and closed through history.
    *
    * The entry names the screen it was opened over, so `viewFromHistory` reads
@@ -203,10 +227,11 @@ export function App() {
    */
   const onTab = (next: View) => {
     /*
-     * The Shop tab is the whole catalogue. A collection picked on the front
-     * door is a filter the customer asked for once, and leaving it applied
-     * would make the tab quietly mean something different for the rest of the
-     * visit.
+     * The Shop tab is the whole catalogue, the same as every other route in
+     * `showAllPieces`. Cleared here rather than through that function because
+     * this is also the one route that can already be on the screen: tapping
+     * Shop while standing in a filtered catalogue has to drop the filter, and
+     * `go` would refuse the navigation that otherwise does it.
      */
     if (next === "pieces") setCollection(null);
 
@@ -276,7 +301,7 @@ export function App() {
           <HomeScreen
             rates={rates}
             showRates={() => go("rate")}
-            showPieces={() => go("pieces")}
+            showPieces={showAllPieces}
             showCollection={(category) => {
               setCollection(category);
               go("pieces");
@@ -295,7 +320,7 @@ export function App() {
         */}
         {view === "pieces" && <PiecesScreen key={collection ?? "all"} collection={collection} />}
         {view === "calculator" && <CalculatorScreen rates={rates} />}
-        {view === "saved" && <SavedScreen showPieces={() => go("pieces")} />}
+        {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
         {view === "store" && <StoreScreen />}
         {view === "custom" && <CustomOrderScreen />}
       </main>
