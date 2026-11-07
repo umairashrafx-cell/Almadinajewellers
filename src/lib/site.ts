@@ -107,6 +107,9 @@ export const STORES = [
      * The city stays in the string deliberately: it is what keeps the result
      * correct for someone opening the page from Dubai or London rather than
      * from down the road.
+     *
+     * Also the fallback openPlaceUrl is built on, for the same reason: it is
+     * the one string here that names the shop rather than the street.
      */
     mapEmbedQuery: "Al-Madina Jewellers, Sarafa Market, Mandi Bahauddin",
     /** Coordinates from the Business Profile, for the GeoCoordinates schema. */
@@ -140,9 +143,37 @@ export function directionsUrl(query: string, placeId?: string) {
   return `https://www.google.com/maps/dir/?api=1&${destination}${place}`;
 }
 
-/** Canonical public link to a branch's Google Business Profile. */
+/**
+ * Canonical public identifier for a branch's Google Business Profile.
+ *
+ * **For structured data, not for links a person taps.** This form resolves
+ * correctly in a browser, which is where a crawler reads it, but it is not
+ * part of Google's documented Maps URLs scheme and the Google Maps app on
+ * Android does not honour it: handed this link, the app drops the `place_id:`
+ * prefix and searches for the bare ID as though it were a shop name, which
+ * finds nothing at all. Anything tappable goes through openPlaceUrl.
+ */
 export function placeUrl(placeId: string) {
   return `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(placeId)}`;
+}
+
+/**
+ * Opens a branch's listing in the visitor's maps app — reviews, photographs,
+ * hours and all.
+ *
+ * Google's documented `api=1` scheme, the same family as directionsUrl above,
+ * and the only form the Android Maps app honours. `query_place_id` is the
+ * authoritative part and `query` is the label beside it.
+ *
+ * Pass a query that **names the business**, never a bare address. The query is
+ * all that is left if the place ID is ever ignored, and an address-only search
+ * on this street lands on a neighbouring jeweller — mapEmbedQuery tells that
+ * story in full. Named, the worst case is still the right shop.
+ */
+export function openPlaceUrl(query: string, placeId: string) {
+  const q = `query=${encodeURIComponent(query)}`;
+  const place = `query_place_id=${encodeURIComponent(placeId)}`;
+  return `https://www.google.com/maps/search/?api=1&${q}&${place}`;
 }
 
 /** Opens the Google review box for a branch directly, already addressed to it. */
