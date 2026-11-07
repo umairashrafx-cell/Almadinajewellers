@@ -8,6 +8,7 @@ import { PushHousekeeping } from "./components/PushHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
 import { viewFromHistory, type View } from "./lib/views";
+import { AppointmentScreen } from "./screens/AppointmentScreen";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
 import { ContactScreen } from "./screens/ContactScreen";
 import { CustomOrderScreen } from "./screens/CustomOrderScreen";
@@ -327,6 +328,7 @@ export function App() {
         {view === "store" && <StoreScreen />}
         {view === "custom" && <CustomOrderScreen />}
         {view === "sell" && <SellGoldScreen rates={rates} />}
+        {view === "appointment" && <AppointmentScreen />}
         {/*
           Both of these offer a way to the shop's address rather than
           reprinting it. Going by `go` and not `goFromDrawer`: the drawer has

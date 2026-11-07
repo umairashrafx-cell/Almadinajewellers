@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Calculator,
+  CalendarCheck,
   ChevronRight,
   Coins,
   Globe,
@@ -56,6 +57,7 @@ type Entry =
   | { kind: "page"; path: string; label: string; icon: LucideIcon };
 
 const ENTRIES: readonly Entry[] = [
+  { kind: "view", id: "appointment", label: "Book an appointment", icon: CalendarCheck },
   { kind: "view", id: "calculator", label: "Gold calculator", icon: Calculator },
   { kind: "view", id: "sell", label: "Sell your gold", icon: Coins },
   { kind: "view", id: "store", label: "Our store", icon: Store },
