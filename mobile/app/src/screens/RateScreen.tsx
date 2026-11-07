@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { RateAlerts } from "@/components/app/RateAlerts";
 import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
 import { ActionButton, ActionLink } from "@/components/ui/ActionButton";
@@ -5,6 +7,7 @@ import { fetchMarketSnapshot } from "@/lib/markets";
 import type { MarketSnapshot } from "@/lib/markets";
 import { SITE, whatsappLink } from "@/lib/site";
 import type { RateSnapshot } from "@/lib/rates";
+import { cn } from "@/lib/utils";
 
 import { Kept } from "../components/Kept";
 import { MarketsBoard } from "../components/MarketsBoard";
@@ -21,19 +24,83 @@ import type { Cached } from "../lib/cache";
  */
 export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
   /*
-   * Fetched here rather than in App, because this is the only screen that
-   * shows them, and before the early returns below, because a hook cannot be
-   * called conditionally. It costs nothing when there is no board to draw: the
-   * request is made either way and the markets block renders nothing until it
-   * has something to say.
+   * Opens on the shop's own board, every time.
+   *
+   * Not remembered between visits, and deliberately: somebody who opened the
+   * world prices once on a Tuesday is not asking to be shown Comex instead of
+   * the shop's rate for the rest of the month. The figure this app exists for
+   * is the local one, and it is what the tab should land on.
    */
-  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 15000);
+  const [board, setBoard] = useState<Board>("local");
 
   if (rates.empty) return <NoRatesYet refresh={rates.refresh} loading={rates.loading} />;
   if (!rates.data) return <Waiting />;
 
   return (
     <div className="px-4 pt-6 pb-10">
+      <Toggle board={board} onChange={setBoard} />
+
+      {board === "international" ? (
+        <International />
+      ) : (
+        <Local snapshot={rates.data} rates={rates} />
+      )}
+    </div>
+  );
+}
+
+type Board = "local" | "international";
+
+/**
+ * The shop's board, or the world's.
+ *
+ * Two boards stacked was the screen before this: the shop's rate, the alerts
+ * card, a paragraph, and then the international prices — a customer who
+ * wanted Comex scrolled past everything they had already read, and one who
+ * wanted the 22K figure had the rest of the world underneath it whether they
+ * asked or not. They are different questions and now they are two answers.
+ *
+ * Tabs rather than a pair of toggle buttons, because that is what this is: a
+ * control that swaps the panel under it, which a screen reader should say out
+ * loud rather than leave somebody to discover.
+ */
+const BOARDS: ReadonlyArray<{ id: Board; label: string }> = [
+  { id: "local", label: "Local" },
+  { id: "international", label: "International" },
+];
+
+function Toggle({ board, onChange }: { board: Board; onChange: (next: Board) => void }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Which rates"
+      className="card-lift-sm grid grid-cols-2 gap-1 rounded-full border border-gold/20 bg-white p-1"
+    >
+      {BOARDS.map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          id={`rates-tab-${id}`}
+          aria-selected={board === id}
+          aria-controls={`rates-panel-${id}`}
+          onClick={() => onChange(id)}
+          className={cn(
+            "rounded-full py-2.5 text-[11px] font-semibold tracking-widest uppercase transition-colors",
+            board === id ? "bg-primary text-ivory" : "text-warmgrey",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The shop's own board, and the offer to be told about tomorrow's. */
+function Local({ snapshot, rates }: { snapshot: RateSnapshot; rates: Cached<RateSnapshot> }) {
+  return (
+    <div role="tabpanel" id="rates-panel-local" aria-labelledby="rates-tab-local" className="mt-5">
       <Kept
         stale={rates.stale}
         loading={rates.loading}
@@ -57,7 +124,7 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         Dropping it lifts the first rate to around 290px: visible on launch, on
         every phone, with the stamp and the staleness line above it.
       */}
-      <GoldRateBoard snapshot={rates.data} showBrand={false} showFooter={false} />
+      <GoldRateBoard snapshot={snapshot} showBrand={false} showFooter={false} />
 
       {/*
         The offer to be told tomorrow, on the screen somebody opened to find
@@ -71,13 +138,29 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         Rates move through the day. Your price is confirmed against the rate at the time of
         purchase, and every piece is weighed in front of you before it is billed.
       </p>
+    </div>
+  );
+}
 
-      {/*
-        The world's prices, after the shop's own and after the sentence that
-        ends them. A customer in the Sarafa follows gold in dollars and the
-        rupee against it; this is that context, kept visibly separate from the
-        figure they are actually being quoted.
-      */}
+/**
+ * The world's prices, which a customer in the Sarafa follows alongside the
+ * shop's.
+ *
+ * The fetch lives in here rather than in the screen, so it starts when
+ * somebody asks for these figures and not while they are reading the shop's.
+ * It repolls every fifteen seconds, which is worth doing for a board somebody
+ * is watching and not worth doing in the background of a different one.
+ */
+function International() {
+  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 15000);
+
+  return (
+    <div
+      role="tabpanel"
+      id="rates-panel-international"
+      aria-labelledby="rates-tab-international"
+      className="mt-1"
+    >
       <MarketsBoard markets={markets} />
     </div>
   );
