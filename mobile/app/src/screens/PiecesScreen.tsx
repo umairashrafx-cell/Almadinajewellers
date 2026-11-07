@@ -34,11 +34,22 @@ import { openShop } from "../lib/shop";
  * shows up on the Saved screen and on the website's own wishlist, and one
  * removed in either place stays removed. src/lib/wishlist.ts has the why.
  */
-export function PiecesScreen() {
+export function PiecesScreen({ collection }: { collection?: string | null }) {
   const pieces = useCached<Product[]>(PIECES_KEY, fetchAllProducts);
 
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+
+  /*
+   * The collection chosen on the front door, if the customer came that way.
+   *
+   * An initial value rather than a prop this screen keeps reading: the chip row
+   * below is still in charge of the filter once the screen is up, and a prop
+   * that kept overwriting it would make the chips feel broken. The shell
+   * unmounts this screen whenever another tab is showing, so the chosen
+   * collection arrives on a fresh mount every time and there is nothing stale
+   * to reconcile — App.tsx holds the value and clears it on a Shop tap.
+   */
+  const [category, setCategory] = useState<string | null>(collection ?? null);
   const [open, setOpen] = useState<Product | null>(null);
 
   /*
