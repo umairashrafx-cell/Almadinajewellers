@@ -49,11 +49,35 @@ const CORS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
+/**
+ * The high and the low, where a source publishes them.
+ *
+ * `window` is not decoration. CoinGecko gives bitcoin a genuine rolling
+ * twenty-four hours; Yahoo gives the others the range of the current trading
+ * session, which on a Monday morning is twenty minutes long. Calling both
+ * "24h" would be the kind of small lie this board exists not to tell, so the
+ * window travels with the figures and the screen says which it is.
+ *
+ * `instrument` is set only when the range belongs to something other than the
+ * price beside it, which happens for the metals: their spot source publishes
+ * no range at all, so the range quoted is the COMEX contract's. Named, because
+ * an unnamed futures range under a spot price is a different number pretending
+ * to be the same one.
+ */
+type Range = {
+  high: number;
+  low: number;
+  window: "24h" | "session";
+  instrument?: string;
+};
+
 type Quote = {
   /** Price in US dollars. */
   usd: number;
   /** Move on the day, per cent, where the source gives one. */
   changePercent?: number;
+  /** The high and the low, where the source publishes them. */
+  range?: Range;
   /** When this figure was taken, ISO. */
   at: string;
 };
@@ -97,43 +121,120 @@ async function metal(symbol: "XAU" | "XAG"): Promise<Quote> {
   return { usd: body.price, at: body.updatedAt ?? new Date().toISOString() };
 }
 
+type YahooMeta = {
+  regularMarketPrice?: number;
+  regularMarketChangePercent?: number;
+  regularMarketTime?: number;
+  regularMarketDayHigh?: number;
+  regularMarketDayLow?: number;
+};
+
 /**
- * Yahoo's chart endpoint, which carries the last price and the day's move in
- * its meta block. Unofficial, and treated as such: if the shape changes this
- * throws, the instrument keeps its previous figure, and the board survives.
+ * Yahoo's chart endpoint, which carries the last price, the day's move and the
+ * session's high and low in its meta block. Unofficial, and treated as such:
+ * if the shape changes this throws, the instrument keeps its previous figure,
+ * and the board survives.
  */
-async function yahoo(symbol: string): Promise<Quote> {
+async function yahooMeta(symbol: string): Promise<YahooMeta> {
   const body = (await get(
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`,
-  )) as {
-    chart?: {
-      result?: Array<{
-        meta?: {
-          regularMarketPrice?: number;
-          regularMarketChangePercent?: number;
-          regularMarketTime?: number;
-        };
-      }>;
-    };
-  };
+  )) as { chart?: { result?: Array<{ meta?: YahooMeta }> } };
 
   const meta = body?.chart?.result?.[0]?.meta;
-  if (typeof meta?.regularMarketPrice !== "number") {
+  if (!meta) throw new Error(`${symbol}: no meta in the answer`);
+  return meta;
+}
+
+/**
+ * The session range out of a meta block, or nothing.
+ *
+ * A high at or below its low is not a range, it is a source having a bad
+ * morning, and it is dropped rather than drawn.
+ */
+function sessionRange(meta: YahooMeta): Range | undefined {
+  const high = meta.regularMarketDayHigh;
+  const low = meta.regularMarketDayLow;
+  if (typeof high !== "number" || typeof low !== "number") return undefined;
+  if (!(high > low)) return undefined;
+  return { high, low, window: "session" };
+}
+
+async function yahoo(symbol: string): Promise<Quote> {
+  const meta = await yahooMeta(symbol);
+  if (typeof meta.regularMarketPrice !== "number") {
     throw new Error(`${symbol}: no price in the answer`);
   }
 
   return {
     usd: meta.regularMarketPrice,
     changePercent: meta.regularMarketChangePercent,
+    range: sessionRange(meta),
     at: meta.regularMarketTime
       ? new Date(meta.regularMarketTime * 1000).toISOString()
       : new Date().toISOString(),
   };
 }
 
-/** CoinGecko's free endpoint. Sends CORS headers, unlike the others, but it
- *  comes along for the ride so the whole board has one timestamp and one cache. */
+/**
+ * A metal's spot price, with the matching COMEX contract's session range.
+ *
+ * Two calls, deliberately unequal. The price is the spot figure the board has
+ * always shown, and a failure there fails the instrument; the range is a
+ * courtesy from a second source, and a failure there costs only the range. The
+ * contract is named on the way out so the screen can say whose range it is.
+ */
+async function metalWithRange(symbol: "XAU" | "XAG", contract: "GC=F" | "SI=F"): Promise<Quote> {
+  const quote = await metal(symbol);
+
+  try {
+    const range = sessionRange(await yahooMeta(contract));
+    if (range) quote.range = { ...range, instrument: `COMEX ${contract}` };
+  } catch (error) {
+    console.warn(`market-rates: no range for ${symbol} from ${contract}:`, error);
+  }
+
+  return quote;
+}
+
+/**
+ * CoinGecko's free endpoints. Sends CORS headers, unlike the others, but it
+ * comes along for the ride so the whole board has one timestamp and one cache.
+ *
+ * Two of them, in order of what they carry. `coins/markets` adds the rolling
+ * twenty-four hour high and low; `simple/price` does not, and is kept as the
+ * floor, because a bitcoin price with no range beats no bitcoin price.
+ */
 async function bitcoin(): Promise<Quote> {
+  try {
+    const rows = (await get(
+      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin",
+    )) as Array<{
+      current_price?: number;
+      price_change_percentage_24h?: number;
+      high_24h?: number;
+      low_24h?: number;
+      last_updated?: string;
+    }>;
+
+    const row = rows?.[0];
+    if (typeof row?.current_price !== "number") throw new Error("no price in the answer");
+
+    const high = row.high_24h;
+    const low = row.low_24h;
+
+    return {
+      usd: row.current_price,
+      changePercent: row.price_change_percentage_24h,
+      range:
+        typeof high === "number" && typeof low === "number" && high > low
+          ? { high, low, window: "24h" }
+          : undefined,
+      at: row.last_updated ?? new Date().toISOString(),
+    };
+  } catch (error) {
+    console.warn("market-rates: bitcoin markets call failed, falling back:", error);
+  }
+
   const body = (await get(
     "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true",
   )) as { bitcoin?: { usd?: number; usd_24h_change?: number } };
@@ -155,8 +256,8 @@ async function bitcoin(): Promise<Quote> {
  */
 async function fetchBoard(previous: Board): Promise<Board> {
   const work = {
-    gold: metal("XAU"),
-    silver: metal("XAG"),
+    gold: metalWithRange("XAU", "GC=F"),
+    silver: metalWithRange("XAG", "SI=F"),
     dollarIndex: yahoo("DX-Y.NYB"),
     bitcoin: bitcoin(),
     crude: yahoo("CL=F"),
@@ -188,9 +289,12 @@ async function readCache(): Promise<CacheRow | null> {
   if (!url || !key) return null;
 
   try {
-    const response = await fetch(`${url}/rest/v1/market_snapshot?select=payload,fetched_at&id=eq.true`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-    });
+    const response = await fetch(
+      `${url}/rest/v1/market_snapshot?select=payload,fetched_at&id=eq.true`,
+      {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+      },
+    );
     if (!response.ok) return null;
     const rows = (await response.json()) as CacheRow[];
     return rows[0] ?? null;
