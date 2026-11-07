@@ -9,10 +9,10 @@
  * reading the entry landed on rather than keeping a stack of our own.
  *
  * Still not a router. A router decides what to render from a URL; this decides
- * nothing. It is six strings and a comparison, kept in their own file so the
+ * nothing. It is seven strings and a comparison, kept in their own file so the
  * back-button arithmetic can be tested without a DOM.
  */
-export const VIEWS = ["home", "rate", "pieces", "calculator", "store", "saved"] as const;
+export const VIEWS = ["home", "rate", "pieces", "calculator", "store", "saved", "custom"] as const;
 
 export type View = (typeof VIEWS)[number];
 
