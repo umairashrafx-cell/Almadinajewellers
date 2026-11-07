@@ -5,10 +5,11 @@ import { ChevronDown, Globe, TrendingDown, TrendingUp } from "lucide-react";
 import {
   MARKET_ROWS,
   calendarCurrencies,
+  convertsToTola,
   eventTime,
   eventsToday,
-  formatChange,
   formatQuote,
+  perTolaPKR,
   rangePosition,
   rangeWindowLabel,
 } from "@/lib/markets";
@@ -19,6 +20,7 @@ import type {
   MarketRange,
   MarketSnapshot,
 } from "@/lib/markets";
+import { formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 import { useLiveBitcoin } from "../lib/btc-stream";
@@ -42,6 +44,65 @@ import type { Cached } from "../lib/cache";
  * the face of the board, because five rows of three figures each is a trading
  * terminal and this is a jeweller's rate screen.
  */
+/**
+ * Which units the two metals are shown in.
+ *
+ * Only the metals move. A tola of the dollar index is not a thing, and nobody
+ * weighs a barrel of crude or a bitcoin in one, so those three stay in their
+ * own units whichever way this is set -- which is why the control says
+ * "metals in" rather than pretending to convert the whole board.
+ */
+type Unit = "usd" | "tola";
+
+/** What one dollar buys, when the board is carrying a usable figure for it. */
+function interbank(board: Board): number | null {
+  const quote = board.usdPkr?.usd;
+  return typeof quote === "number" && Number.isFinite(quote) && quote > 0 ? quote : null;
+}
+
+/**
+ * A price formatter that knows which units the board is in.
+ *
+ * Built once and handed down, so the row and the range bar do not each have
+ * to decide what to do about tolas -- they ask for a figure formatted and get
+ * one. Anything it cannot honestly convert comes back in dollars rather than
+ * coming back wrong: a row that is not a metal, a board with no dollar rate,
+ * and a figure perTolaPKR refuses all take the same path out.
+ */
+function priceIn(unit: Unit, usdPkr: number | null) {
+  return (key: keyof Board, value: number): string => {
+    if (unit === "usd" || usdPkr === null || !convertsToTola(key)) return formatQuote(key, value);
+    const converted = perTolaPKR(value, usdPkr);
+    if (converted === null) return formatQuote(key, value);
+    // To the rupee. The paisa on a figure this size is noise, and the shop's
+    // own board next door is quoted whole.
+    return formatPKR(Math.round(converted));
+  };
+}
+
+/**
+ * The same, for a move: sign first, magnitude formatted like a price.
+ *
+ * Kept here rather than reusing formatChange because the sign has to sit
+ * outside whichever currency the magnitude ends up in. In dollars it produces
+ * exactly what formatChange always did.
+ */
+function changeIn(price: (key: keyof Board, value: number) => string) {
+  return (key: keyof Board, value: number): string => {
+    const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+    return `${sign}${price(key, Math.abs(value))}`;
+  };
+}
+
+/** What to call a metal's unit once it is being quoted by weight. */
+function unitLabel(key: keyof Board, unit: Unit, usdPkr: number | null, fallback: string): string {
+  if (unit === "usd" || usdPkr === null || !convertsToTola(key)) return fallback;
+  // 24K said out loud on the gold only. Spot gold is pure metal and the shop's
+  // own headline rate is 22K, so the two figures are not the same thing and
+  // the board must not let them be read as though they were.
+  return key === "gold" ? "per tola, 24K" : "per tola";
+}
+
 export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   const live = useLiveBitcoin();
 
@@ -52,6 +113,16 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
    * the next.
    */
   const [open, setOpen] = useState<keyof Board | null>(null);
+
+  /*
+   * Dollars an ounce until somebody asks otherwise.
+   *
+   * That is the board's own language and the one its sources quote in, and
+   * switching it by default would quietly turn a reference panel into a second
+   * rupee rate sitting under the shop's own. The rupee view is the answer to a
+   * question somebody chose to ask.
+   */
+  const [unit, setUnit] = useState<Unit>("usd");
 
   /*
    * The streamed price wins over the fetched one whenever the socket is up.
@@ -96,6 +167,17 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   const anyRange = rows.some((row) => row.quote.range);
   const anyEvents = rows.some((row) => row.events !== null);
 
+  /*
+   * No dollar rate, no choice to offer. An older deployment of the edge
+   * function sends five instruments and no rupee, and against one of those
+   * this board has to read exactly as it did before rather than showing a
+   * control that cannot do anything.
+   */
+  const usdPkr = interbank(board);
+  const showing: Unit = usdPkr === null ? "usd" : unit;
+  const price = priceIn(showing, usdPkr);
+  const change = changeIn(price);
+
   return (
     <section className="mt-10 border border-warmgrey/25 bg-white/50">
       <header className="flex items-center justify-between gap-3 border-b border-warmgrey/20 px-4 py-3">
@@ -106,12 +188,16 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         <span className="text-[10px] tracking-widest text-warmgrey/80 uppercase">Indicative</span>
       </header>
 
+      {usdPkr === null ? null : <UnitToggle unit={showing} usdPkr={usdPkr} onChange={setUnit} />}
+
       <ul className="divide-y divide-warmgrey/15">
         {rows.map((row) => (
           <Row
             key={row.key}
             label={row.label}
-            unit={row.unit}
+            unit={unitLabel(row.key, showing, usdPkr, row.unit)}
+            price={price}
+            change={change}
             quote={row.quote}
             rowKey={row.key}
             events={row.events}
@@ -132,7 +218,13 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
           <>Streamed from the exchange. The rest of the board is not reachable just now.</>
         )}{" "}
         {tapHint(anyRange, anyEvents)} The shop&rsquo;s own rate is the one that settles a
-        transaction.
+        transaction.{" "}
+        {showing === "tola" && usdPkr !== null ? (
+          <>
+            Gold and silver are converted at Rs.&nbsp;{usdPkr.toFixed(2)} to the dollar, the
+            interbank rate — pure metal, before duty, premium or making.
+          </>
+        ) : null}
       </p>
     </section>
   );
@@ -148,10 +240,70 @@ function tapHint(anyRange: boolean, anyEvents: boolean): string | null {
   return null;
 }
 
+/**
+ * Dollars an ounce, or rupees a tola.
+ *
+ * Two buttons rather than a switch, because a switch has to be read to find
+ * out which way it is pointing and a pair of labels says it outright. The
+ * dollar rate itself sits beside them, unlabelled in the rupee view and named
+ * in neither: a customer who wants to check the conversion can see what it was
+ * done at, and one who does not is reading two short words.
+ *
+ * Styled grey, like everything else in this block. A gold control here would
+ * make the converted figure look like the shop quoting a price.
+ */
+function UnitToggle({
+  unit,
+  usdPkr,
+  onChange,
+}: {
+  unit: Unit;
+  usdPkr: number;
+  onChange: (unit: Unit) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-warmgrey/20 px-4 py-2.5">
+      <span className="text-[10px] tracking-widest text-warmgrey uppercase">Metals in</span>
+
+      <span className="flex items-center gap-2">
+        {unit === "tola" ? (
+          <span className="text-[10px] text-warmgrey/80 tabular-nums">
+            $1 = Rs.&nbsp;{usdPkr.toFixed(2)}
+          </span>
+        ) : null}
+
+        <span className="flex overflow-hidden rounded-full border border-warmgrey/30">
+          {(
+            [
+              { id: "usd", label: "$ / oz" },
+              { id: "tola", label: "Rs / tola" },
+            ] as ReadonlyArray<{ id: Unit; label: string }>
+          ).map((choice) => (
+            <button
+              key={choice.id}
+              type="button"
+              aria-pressed={unit === choice.id}
+              onClick={() => onChange(choice.id)}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-semibold tracking-wide transition-colors",
+                unit === choice.id ? "bg-ink text-white" : "text-warmgrey active:bg-warmgrey/10",
+              )}
+            >
+              {choice.label}
+            </button>
+          ))}
+        </span>
+      </span>
+    </div>
+  );
+}
+
 function Row({
   rowKey,
   label,
   unit,
+  price,
+  change,
   quote,
   events,
   live,
@@ -161,6 +313,10 @@ function Row({
   rowKey: keyof Board;
   label: string;
   unit: string;
+  /** Formats a figure in whichever units the board is currently showing. */
+  price: (key: keyof Board, value: number) => string;
+  /** The same, signed, for a move. */
+  change: (key: keyof Board, value: number) => string;
   quote: MarketQuote;
   events: MarketEvent[] | null;
   live: boolean;
@@ -189,7 +345,7 @@ function Row({
     percent === null
       ? null
       : typeof quote.change === "number"
-        ? `${formatChange(rowKey, quote.change)} (${percent})`
+        ? `${change(rowKey, quote.change)} (${percent})`
         : percent;
 
   const face = (
@@ -215,7 +371,7 @@ function Row({
       <span className="flex shrink-0 items-center gap-2">
         <span className="text-right">
           <span className="block text-sm font-semibold text-ink tabular-nums">
-            {formatQuote(rowKey, quote.usd)}
+            {price(rowKey, quote.usd)}
           </span>
           {moved === null ? null : (
             <span
@@ -275,7 +431,9 @@ function Row({
 
       {open ? (
         <div id={panelId} className="space-y-3 px-4 pb-4">
-          {range ? <RangeBar rowKey={rowKey} price={quote.usd} range={range} /> : null}
+          {range ? (
+            <RangeBar rowKey={rowKey} usd={quote.usd} range={range} price={price} change={change} />
+          ) : null}
           {events ? <Releases rowKey={rowKey} events={events} /> : null}
         </div>
       ) : null}
@@ -293,14 +451,27 @@ function Row({
  */
 function RangeBar({
   rowKey,
-  price,
+  usd,
   range,
+  price,
+  change,
 }: {
   rowKey: keyof Board;
-  price: number;
+  /** The live price in dollars, which is what places the marker. */
+  usd: number;
   range: MarketRange;
+  price: (key: keyof Board, value: number) => string;
+  change: (key: keyof Board, value: number) => string;
 }) {
-  const position = rangePosition(price, range);
+  /*
+   * Placed on the dollar figures, always.
+   *
+   * The marker is a ratio, and converting both ends and the price by the same
+   * rate cannot move it -- but it can introduce rounding that nudges a price
+   * sitting exactly on its high to the wrong side of it. The arithmetic stays
+   * where the source put it; only the labels change units.
+   */
+  const position = rangePosition(usd, range);
 
   return (
     <div className="border-l-2 border-warmgrey/25 pl-3">
@@ -311,7 +482,7 @@ function RangeBar({
       <div className="mt-2 flex items-center gap-3">
         <span className="text-[11px] text-ink tabular-nums">
           <span className="sr-only">Low </span>
-          {formatQuote(rowKey, range.low)}
+          {price(rowKey, range.low)}
         </span>
 
         <span className="relative h-1 flex-1 rounded-full bg-warmgrey/25" aria-hidden>
@@ -325,7 +496,7 @@ function RangeBar({
 
         <span className="text-[11px] text-ink tabular-nums">
           <span className="sr-only">High </span>
-          {formatQuote(rowKey, range.high)}
+          {price(rowKey, range.high)}
         </span>
       </div>
 
@@ -336,7 +507,7 @@ function RangeBar({
       */}
       {range.instrument && typeof range.change === "number" ? (
         <p className="mt-2 text-[11px] text-ink tabular-nums">
-          {formatChange(rowKey, range.change)}{" "}
+          {change(rowKey, range.change)}{" "}
           <span className="text-warmgrey">on the contract today</span>
         </p>
       ) : null}

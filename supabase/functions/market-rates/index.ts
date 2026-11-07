@@ -131,6 +131,20 @@ type Board = {
   dollarIndex?: Quote;
   bitcoin?: Quote;
   crude?: Quote;
+  /**
+   * The interbank dollar, rupees to one US dollar.
+   *
+   * Not an instrument the board draws a row for -- the app has no row keyed to
+   * it -- but it travels with the five because it is fetched the same way and
+   * deserves the same treatment when it fails: the last good figure is kept
+   * rather than dropped, since a conversion is better one refresh old than
+   * absent.
+   *
+   * Interbank, which is what USDPKR=X quotes and what the website's gold page
+   * already converts at. It is not the open-market rate a money changer in the
+   * bazaar posts, and the app says so where it uses it.
+   */
+  usdPkr?: Quote;
 };
 
 async function get(url: string): Promise<unknown> {
@@ -334,6 +348,7 @@ async function fetchBoard(previous: Board): Promise<Board> {
     dollarIndex: yahoo("DX-Y.NYB"),
     bitcoin: bitcoin(),
     crude: yahoo("CL=F"),
+    usdPkr: yahoo("USDPKR=X"),
   } satisfies Record<keyof Board, Promise<Quote>>;
 
   const names = Object.keys(work) as Array<keyof Board>;

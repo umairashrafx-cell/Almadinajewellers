@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import { TOLA_IN_GRAMS } from "@/lib/rates";
 
 /**
  * The international markets, as the shop's own server last saw them.
@@ -73,6 +74,21 @@ export type MarketBoard = {
   dollarIndex?: MarketQuote;
   bitcoin?: MarketQuote;
   crude?: MarketQuote;
+  /**
+   * The interbank dollar, rupees to one US dollar.
+   *
+   * Carried on the board because it is fetched with the five and kept like
+   * them when a source will not answer, but it is not one of MARKET_ROWS and
+   * never draws a row of its own. Its only job is to turn dollars an ounce
+   * into rupees a tola, which is the figure somebody in a Sarafa bazaar can
+   * actually hold against the shop's board.
+   *
+   * Interbank, not the open market. A money changer's rate is usually a rupee
+   * or two above it, so a tola converted here sits slightly under what the
+   * same metal would cost bought with cash dollars -- before any duty,
+   * premium or making is added. Anything printing this figure has to say so.
+   */
+  usdPkr?: MarketQuote;
 };
 
 /**
@@ -139,6 +155,45 @@ export function formatUSD(value: number, decimals: number): string {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`;
+}
+
+/** A troy ounce, which is the unit every metal on this board is quoted in. */
+export const GRAMS_PER_TROY_OUNCE = 31.1034768;
+
+/**
+ * Tolas to the troy ounce.
+ *
+ * Derived rather than written down, so it can never drift from the tola the
+ * rest of the shop weighs in: TOLA_IN_GRAMS is the figure the calculator and
+ * the rate board already use, and this is that figure expressed against the
+ * unit the international market quotes. It comes out a hair under 0.375.
+ */
+export const TOLA_PER_TROY_OUNCE = TOLA_IN_GRAMS / GRAMS_PER_TROY_OUNCE;
+
+/**
+ * A dollars-an-ounce quote as rupees a tola, at the interbank dollar.
+ *
+ * Null rather than a number whenever either input is not a usable figure, and
+ * that is the whole of the error handling on purpose: a conversion is only as
+ * honest as the two numbers behind it, and a screen that gets null here is
+ * expected to show nothing rather than a zero or a dash with a currency sign
+ * in front of it.
+ *
+ * What comes out is pure metal at the market's own price, converted at the
+ * interbank rate. It is not a selling price: it carries no import duty, no
+ * dealer premium, no making, and the rupee a customer actually buys dollars
+ * with is the open-market one. Expect it to sit near the local 24K figure
+ * without matching it, and never present it as the shop's rate.
+ */
+export function perTolaPKR(usdPerOunce: number, usdPkr: number): number | null {
+  if (!Number.isFinite(usdPerOunce) || usdPerOunce <= 0) return null;
+  if (!Number.isFinite(usdPkr) || usdPkr <= 0) return null;
+  return usdPerOunce * TOLA_PER_TROY_OUNCE * usdPkr;
+}
+
+/** The metals, and only the metals: the two rows a tola means anything for. */
+export function convertsToTola(key: keyof MarketBoard): boolean {
+  return key === "gold" || key === "silver";
 }
 
 export function formatQuote(key: keyof MarketBoard, value: number): string {
