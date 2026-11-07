@@ -308,10 +308,16 @@ async function yahooCloses(symbol: string): Promise<Array<{ at: number; close: n
 /**
  * The close around a given day, as the middle of the three nearest to it.
  *
- * The median rather than the nearest single close, because a free FX series
- * prints the occasional bad candle and one of them landing on the day being
- * measured from would turn a quiet month for the rupee into a three per cent
- * move. Three points cannot be dragged by one of them.
+ * The median rather than the nearest single close, so that one bad candle
+ * landing on the day being measured from cannot drag the figure on its own.
+ * Used for the metals, whose COMEX series is sound.
+ *
+ * What it does not do is worth saying, because the rupee was once measured
+ * this way and it was not enough. A median of three is powerless against a
+ * series that is wrong half the time, which is what Yahoo's USDPKR=X turned
+ * out to be, and a plausibility band would not have caught it either -- the
+ * figure it produced was 3.3% in a week, which is a thing a currency can
+ * genuinely do. The rupee's history comes from pkrOn below instead.
  */
 function closeAround(
   series: Array<{ at: number; close: number }>,
@@ -387,10 +393,128 @@ async function yahoo(symbol: string): Promise<Quote> {
   };
 }
 
-/** A Yahoo quote with its own history behind it. Used for the rupee. */
-async function yahooWithTrail(symbol: string, previous: Quote | undefined): Promise<Quote> {
+/**
+ * The rupee's history, from a source that publishes it a day at a time.
+ *
+ * Not Yahoo. Its USDPKR=X daily series interleaves two feeds: it alternates
+ * between about 268 and about 276.7 from one day to the next, which is not a
+ * currency moving but a bad join, and it is wrong often enough that no
+ * smoothing recovers it. Taken at face value on 8 November 2026 it had the
+ * board ready to tell customers the rupee had moved 3.3% in a week when it had
+ * barely moved at all.
+ *
+ * These are the free currency-api's dated builds on jsDelivr -- one file per
+ * day, each stamped with the day it is for, and a plain 404 for a day that was
+ * never published. That stamp is the point. A source that says which day a
+ * figure belongs to can be checked; a bare series cannot, which is how the
+ * Yahoo one passed for sound.
+ */
+const FX_DAY = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api";
+
+/** How far back to walk when a day's file was never published. */
+const FX_LOOKBACK_DAYS = 5;
+
+/**
+ * How long the whole rupee trail may spend upstream before it gives up.
+ *
+ * The walk back has to be sequential, because the next day is only tried on
+ * finding the last one missing, and nothing bounds this handler as a whole. So
+ * without a ceiling three walks of five misses apiece could hold the board for
+ * the better part of a minute, and the board is what a phone is waiting for.
+ * Four seconds is many times what the walk costs when the files are there --
+ * one or two CDN hits -- so in the ordinary case this is never reached.
+ *
+ * Giving up early is cheap: the trail is refetched hourly and falls back to the
+ * one already held, so the cost is an hour-old rupee figure, not a wrong one.
+ */
+const FX_BUDGET_MS = 4000;
+
+/** yyyy-mm-dd, UTC, which is how the dated builds are named. */
+function isoDay(at: number): string {
+  return new Date(at).toISOString().slice(0, 10);
+}
+
+/**
+ * The dollar in rupees on a given day, or on the last published day before it.
+ *
+ * Walking back is ordinary rather than a workaround: the current day's file
+ * appears some hours into the day, and a weekend has no new rate to publish.
+ * Each file is then required to say it is the day it was asked for, so a
+ * request answered with something else -- a rolling tag, a redirect, a cached
+ * body -- is refused instead of being quietly measured against.
+ *
+ * `until` is the wall clock the walk stops at, shared with the other two so
+ * that the trail as a whole cannot outstay its welcome.
+ */
+async function pkrOn(when: number, until: number): Promise<number | undefined> {
+  for (let back = 0; back <= FX_LOOKBACK_DAYS; back++) {
+    if (Date.now() > until) return undefined;
+    const day = isoDay(when - back * DAY_MS);
+
+    let body: unknown;
+    try {
+      body = await get(`${FX_DAY}@${day}/v1/currencies/usd.json`);
+    } catch {
+      continue; // No file for that day; try the day before it.
+    }
+
+    const answer = body as { date?: string; usd?: { pkr?: number } };
+    if (answer?.date !== day) continue;
+
+    const rate = answer.usd?.pkr;
+    if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) continue;
+    return rate;
+  }
+  return undefined;
+}
+
+/**
+ * A week and a month of the rupee, kept for an hour like the metals' trail.
+ *
+ * `last` comes from this same series rather than from the live spot beside it,
+ * for the reason the Trail type gives: a daily close and a live quote from two
+ * different places differ a little, and measuring one against the other would
+ * show that difference as a move the rupee made.
+ */
+async function rupeeTrail(previous: Trail | undefined): Promise<Trail | undefined> {
+  if (previous && Date.now() - new Date(previous.at).getTime() < TRAIL_SECONDS * 1000) {
+    return previous;
+  }
+
+  try {
+    const now = Date.now();
+    const until = now + FX_BUDGET_MS;
+    const [last, week, month] = await Promise.all([
+      pkrOn(now, until),
+      pkrOn(now - 7 * DAY_MS, until),
+      pkrOn(now - 30 * DAY_MS, until),
+    ]);
+    if (last === undefined) throw new Error("no published day for the rupee");
+    /*
+     * A `last` with nothing to compare it against is not a trail, and keeping
+     * it would quietly replace an hour-old complete one with a useless new
+     * one. Treated as a failure so the fallback below hands back what was held.
+     */
+    if (week === undefined && month === undefined) {
+      throw new Error("no earlier day for the rupee to be measured against");
+    }
+
+    return {
+      last,
+      ...(week === undefined ? {} : { week }),
+      ...(month === undefined ? {} : { month }),
+      at: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.warn("market-rates: no trail for the rupee:", error);
+    return previous;
+  }
+}
+
+/** The rupee: Yahoo's live spot, which is sound, over its own daily history. */
+async function rupeeWithTrail(symbol: string, previous: Quote | undefined): Promise<Quote> {
   const quote = await yahoo(symbol);
-  const trail = await trailFor(symbol, undefined, previous?.trail);
+  const trail = await rupeeTrail(previous?.trail);
   if (trail) quote.trail = trail;
   return quote;
 }
@@ -503,7 +627,7 @@ async function fetchBoard(previous: Board): Promise<Board> {
     dollarIndex: yahoo("DX-Y.NYB"),
     bitcoin: bitcoin(),
     crude: yahoo("CL=F"),
-    usdPkr: yahooWithTrail("USDPKR=X", previous.usdPkr),
+    usdPkr: rupeeWithTrail("USDPKR=X", previous.usdPkr),
   } satisfies Record<keyof Board, Promise<Quote>>;
 
   const names = Object.keys(work) as Array<keyof Board>;
