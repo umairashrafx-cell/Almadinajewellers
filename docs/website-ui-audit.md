@@ -232,7 +232,7 @@ on every phone, which is a decision about how the grid should look, not a bug
 to clear. The shortcut is lost, not the route — tapping the card still opens
 the piece, which has its own enquiry buttons.
 
-### W4 · Heading hierarchy skips levels
+### W4 · Heading hierarchy skips levels — fixed
 
 - `/collections/bridal-sets`: `H1 Bridal Sets` → `H3 Refine`, `H3 Metal`,
   `H3 Purity`, `H3 Price`, `H3 Weight`, `H3 Stones`. No H2 anywhere.
@@ -244,6 +244,23 @@ the piece, which has its own enquiry buttons.
   terminates in site furniture.
 
 Costs: screen-reader navigation by heading, and the outline Google reads.
+
+**Done, and the collection page was worse than recorded above.** The five
+filter facets are listed, but the product card titles are `H3` as well — so
+nothing on `/collections/*` was ever a second-level heading. "Refine" is the
+name of the panel the facets sit inside, not a facet, and is an `H2` now; the
+grid beside it had no name at all and has gained an `sr-only` one.
+
+The product page's cause was in the primitive: **Radix wraps every accordion
+trigger in an `H3`.** That is correct on `/contact`, where the questions belong
+under the "Frequently Asked" `H2`, so the level is a prop defaulting to 3 and
+the product page asks for 2 — `/contact` is unchanged.
+
+The footer's four labels are marked up as labels now, with `aria-labelledby`
+on each list and on the address, which announces the grouping more clearly than
+the `H3`s did. Outlines pulled from the running app on seven routes: no skipped
+levels anywhere, and each page now ends on its own last section rather than on
+"Connect".
 
 ### W5 · The announcement bar costs 66px of a phone screen on every page
 
@@ -266,28 +283,58 @@ The home page carries eleven sections. None of this is wrong by itself, but
 it is the brief's "avoid overcrowding" and "weak visual hierarchy" made
 countable, and it is where a thumb-length audit should start.
 
-### W7 · Images without reserved space
+### W7 · Images without reserved space — measured, needs nothing
 
-Nine images on the home page have neither `width`/`height` attributes nor an
-aspect-ratio container, so the layout moves as they arrive. On a jewellery
-site the photographs are most of the page, which makes this the main source
-of layout shift.
+**This entry was wrong and no change was made.** Thirteen home-page images
+(not nine) carry no `width`/`height` attributes — that half is true. But every
+one of them sits in a container that already reserves its space.
+
+Tested by stripping `src` and `srcset` from all thirteen and re-measuring
+rather than by reading class names:
+
+```
+document height with images : 10609px
+document height with none   : 10609px
+containers that collapsed   : 0
+```
+
+Measured CLS on the home page is 0. The same test on `/products/:slug` showed a
+7px delta, and tracking it down found an image that **does** carry
+`width="1120" height="300"` — the delta was the test itself changing a replaced
+element's baseline, not a loading shift.
+
+So the photographs are not a source of layout shift on this site. Adding
+`width`/`height` attributes here would be work for the look of it.
 
 ---
 
 ## Low
 
-- **W8 · 33 of 55 `src/components/ui/*` primitives are unused**, carrying
-  about thirty `@radix-ui/*` entries in `package.json` (alert-dialog, avatar,
-  calendar, chart, command, menubar, pagination, resizable, sidebar, table,
-  and more). Vite tree-shakes them, so **this is not bundle weight for
-  customers** — it is install size, upgrade churn and supply-chain surface.
-  Scaffolding left from the Lovable starter.
-- **W9 · The `/custom-order` photo field** is a zero-height `<input
-type="file">` with no label; the styled trigger beside it needs to carry the
-  accessible name. The page's other five fields are 44–46px and properly
-  labelled.
-- **W10 · `/stores` embeds a Google Map iframe** — confirm it has a `title`.
+- **W8 · 37 of 55 `src/components/ui/*` primitives were unused** — the count
+  here first read 33. `separator`, `sheet`, `toggle` and `tooltip` have
+  importers, which is why they read as live; their only importers are
+  `sidebar` and `toggle-group`, which are dead themselves. Counted with the
+  import graph closed rather than one level deep it is 37, and **fixed**: 18
+  files remain, along with 29 of the 57 direct dependencies and 478 of the 557
+  packages in `bun.lock`. Vite tree-shakes unreferenced modules, so none of
+  this was bundle weight for customers — it was install size, upgrade churn and
+  supply-chain surface left from the Lovable starter.
+- **W9 · The `/custom-order` photo field — fixed, and the cause above is
+  wrong.** The file input is `display: none`, so it is out of the
+  accessibility tree entirely and needs no name, and the trigger already read
+  "Choose a photograph". What it **announced** was "Show us a picture": a
+  native `<label for>` on a `<button>` beats the button's own text in the
+  accessible-name computation, so the field's caption replaced the words
+  printed on the control. That is a **WCAG 2.5.3 (Label in Name)** failure and
+  it left voice control with nothing to say. The `id` also existed only while
+  the field was empty, so attaching a photo left the label pointing at a
+  removed element. It is a labelled group now, with the caption inline so the
+  trigger does not move. The two admin file fields use the same hidden-input
+  pattern without a `<label for>`, so they never had the fault.
+- **W10 · `/stores` embeds a Google Map iframe — already in place.** It has
+  carried a title all along, built from the shop and branch names, plus
+  `loading="lazy"` and `referrerPolicy="no-referrer-when-downgrade"`. No change
+  made.
 
 ---
 
@@ -371,12 +418,15 @@ borders, rules and one button variant, on ivory, with deep green for weight.
 3. ~~**W2 + the semantic-token gap**~~ Done. It was not smaller than it
    sounded, and not a rename: see W2 below for why the header's four golds
    could not simply collapse into the site's two.
-4. **W4, W7** — heading order and reserved image space. Quiet, mechanical,
-   good for SEO and for CLS.
+4. ~~**W4, W7** — heading order and reserved image space.~~ Done for W4, on
+   five files, with no level skips left on any route. W7 needed nothing: the
+   containers already reserve the space, and the entry's premise was wrong.
 5. **W5, W6** — the announcement bar and the length of the home page. These
    are editorial decisions about what the shop wants said first, not CSS, and
    they need the owner.
-6. **W8–W10** — housekeeping.
+6. ~~**W8–W10** — housekeeping.~~ Done. 37 dead primitives and 28
+   dependencies gone; W9 turned out to be an accessible-name fault rather than
+   a missing label, and W10 was already satisfied.
 
 Everything above Sprint 5 of the brief is covered by that list. Sprints
 touching accounts, orders and profiles are blocked on a product decision, not
