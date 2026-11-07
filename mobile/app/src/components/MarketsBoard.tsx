@@ -131,7 +131,7 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         ) : (
           <>Streamed from the exchange. The rest of the board is not reachable just now.</>
         )}{" "}
-        {tapHint(anyRange, anyEvents)} The shop&rsquo;s own rate above is the one that settles a
+        {tapHint(anyRange, anyEvents)} The shop&rsquo;s own rate is the one that settles a
         transaction.
       </p>
     </section>
