@@ -1,12 +1,15 @@
-import { Check, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { Check, ImagePlus, Loader2, Mic, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { categoryTree, fetchCategories, type Category } from "@/lib/catalogue";
 import {
   IMAGE_TYPES,
+  canRecordAudio,
   customOrderSchema,
+  formatDuration,
   needsSize,
+  pickAudioFormat,
   sizeLabel,
   submitCustomOrder,
   uploadAttachment,
@@ -28,19 +31,16 @@ import { openShop } from "../lib/shop";
  * desktop and carries the same kind of reference. Nothing was added to the
  * database for this screen and nothing here works a rule out for itself.
  *
- * Two deliberate differences from that page.
+ * All three ways of saying it are here, the voice note included: the manifest
+ * asks for the microphone, and Capacitor raises the system prompt the first
+ * time somebody presses record. The recorder is still offered only when the
+ * WebView says it can record and still falls back to WhatsApp when it cannot,
+ * because a record button that fails under a thumb is worse than one that was
+ * never there.
  *
- * The voice note is not here. The website offers one because a browser that can
- * record says so and can be taken at its word; this app's manifest asks for no
- * microphone, so `getUserMedia` would be refused on a real phone and the button
- * would fail under a thumb — which the website's own recorder has a comment
- * about, and it is right. In its place is the WhatsApp line, which is where the
- * shop's voice notes actually arrive. Putting the recorder in the app is a
- * decision about what the Play Store listing says this app wants, and that is
- * the shop's to make, not this screen's.
- *
- * And the form is one column of cards rather than three bordered fieldsets.
- * Same questions, same order, same words where the words were already right.
+ * The one difference from that page: the form is a column of cards rather than
+ * three bordered fieldsets. Same questions, same order, same words where the
+ * words were already right.
  */
 type Fields = {
   name: string;
@@ -71,6 +71,7 @@ export function CustomOrderScreen() {
 
   const [fields, setFields] = useState<Fields>(EMPTY);
   const [photo, setPhoto] = useState<{ file: File; preview: string } | null>(null);
+  const [voice, setVoice] = useState<Voice | null>(null);
   const [problems, setProblems] = useState<Partial<Record<keyof Fields, string>>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -128,17 +129,20 @@ export function CustomOrderScreen() {
       return;
     }
 
-    if (!fields.description.trim() && !photo) {
-      setFailure("Add a picture or a description so we know what to make.");
+    if (!fields.description.trim() && !photo && !voice) {
+      setFailure("Add a picture, a description or a voice note so we know what to make.");
       return;
     }
 
     setSending(true);
     try {
-      const attachments: { imagePath?: string } = {};
+      const attachments: { imagePath?: string; voicePath?: string } = {};
       if (photo) {
         const extension = photo.file.name.split(".").pop()?.toLowerCase() || "jpg";
         attachments.imagePath = await uploadAttachment(photo.file, "photo", extension);
+      }
+      if (voice) {
+        attachments.voicePath = await uploadAttachment(voice.blob, "voice", voice.extension);
       }
 
       const { reference } = await submitCustomOrder(parsed.data, attachments);
@@ -215,23 +219,7 @@ export function CustomOrderScreen() {
             />
           </Field>
 
-          {/*
-            Where the website puts its recorder. The app asks for no
-            microphone, so offering one here would be a button that fails on
-            tap; WhatsApp is where the shop's voice notes arrive anyway.
-          */}
-          <a
-            href={whatsappLink(WHATSAPP_VOICE)}
-            className="mt-5 flex items-center gap-3 rounded-xl border border-gold/20 bg-white px-4 py-3.5"
-          >
-            <WhatsAppIcon className="h-[18px] w-[18px] shrink-0 text-[#25D366]" aria-hidden />
-            <span>
-              <span className="block text-sm font-medium text-ink">Easier to say it out loud?</span>
-              <span className="mt-0.5 block text-[11px] leading-relaxed text-warmgrey">
-                Send a voice note on WhatsApp
-              </span>
-            </span>
-          </a>
+          <VoiceField voice={voice} onChange={setVoice} onError={setFailure} />
         </Card>
 
         <Card title="The piece">
@@ -372,6 +360,177 @@ function Sent({ reference }: { reference: string }) {
         </AppButton>
       </div>
     </div>
+  );
+}
+
+/** A recording, and what it has to be to be uploaded. */
+type Voice = { blob: Blob; url: string; seconds: number; extension: string };
+
+/**
+ * Saying it out loud.
+ *
+ * The hard part of ordering jewellery is describing it, and most customers
+ * would sooner say "like my mother's, but heavier" than write it. This is the
+ * website's recorder with the website's own helpers — `pickAudioFormat` finds
+ * the one container this WebView will actually produce, and the blob goes into
+ * the same private bucket under the same `voice/` folder.
+ *
+ * Offered only when the WebView says it can record, and giving up gracefully
+ * when the microphone is refused: the customer may have said no to the system
+ * prompt, and the other two ways of describing a piece still work. The
+ * WhatsApp line is what stands here on a device that cannot record at all.
+ *
+ * The microphone is released on every path out — stop, unmount, a failed
+ * start. A WebView left holding an open stream keeps the recording indicator
+ * in the status bar after the customer has moved on, which is alarming and
+ * fair enough.
+ */
+function VoiceField({
+  voice,
+  onChange,
+  onError,
+}: {
+  voice: Voice | null;
+  onChange: (v: Voice | null) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [supported] = useState(canRecordAudio);
+
+  const recorder = useRef<MediaRecorder | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  /* onstop reads this rather than `seconds`, which is the value captured when
+   * the recorder was created and would always report zero. */
+  const elapsed = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+      if (recorder.current?.state === "recording") recorder.current.stop();
+      stream.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  if (!supported) {
+    return (
+      <a
+        href={whatsappLink(WHATSAPP_VOICE)}
+        className="mt-5 flex items-center gap-3 rounded-xl border border-gold/20 bg-white px-4 py-3.5"
+      >
+        <WhatsAppIcon className="h-[18px] w-[18px] shrink-0 text-[#25D366]" aria-hidden />
+        <span>
+          <span className="block text-sm font-medium text-ink">Easier to say it out loud?</span>
+          <span className="mt-0.5 block text-[11px] leading-relaxed text-warmgrey">
+            This phone cannot record here — send a voice note on WhatsApp
+          </span>
+        </span>
+      </a>
+    );
+  }
+
+  async function start() {
+    onError(null);
+
+    const format = pickAudioFormat();
+    if (!format) {
+      onError("This phone cannot record audio. Please write it, or send it on WhatsApp.");
+      return;
+    }
+
+    try {
+      stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      // Refused at the system prompt, or no microphone. Either way the picture
+      // and the description still carry the enquiry.
+      onError("We could not reach the microphone. Allow it in Settings, or write it instead.");
+      return;
+    }
+
+    chunks.current = [];
+    elapsed.current = 0;
+
+    const rec = new MediaRecorder(stream.current, { mimeType: format.mimeType });
+    rec.ondataavailable = (e) => e.data.size > 0 && chunks.current.push(e.data);
+    rec.onstop = () => {
+      const blob = new Blob(chunks.current, { type: format.mimeType });
+      onChange({
+        blob,
+        url: URL.createObjectURL(blob),
+        seconds: elapsed.current,
+        extension: format.extension,
+      });
+      stream.current?.getTracks().forEach((t) => t.stop());
+      stream.current = null;
+    };
+
+    recorder.current = rec;
+    rec.start();
+    setRecording(true);
+    setSeconds(0);
+    timer.current = setInterval(() => {
+      elapsed.current += 1;
+      setSeconds(elapsed.current);
+    }, 1000);
+  }
+
+  function stop() {
+    if (timer.current) clearInterval(timer.current);
+    recorder.current?.stop();
+    setRecording(false);
+  }
+
+  if (voice) {
+    return (
+      <div className="mt-5 rounded-xl border border-gold/20 bg-white p-4">
+        <p className="text-[11px] font-semibold tracking-widest text-warmgrey uppercase">
+          Your voice note
+        </p>
+        <audio controls src={voice.url} className="mt-3 h-10 w-full">
+          <track kind="captions" />
+        </audio>
+        <button
+          type="button"
+          onClick={() => {
+            URL.revokeObjectURL(voice.url);
+            onChange(null);
+          }}
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide text-gold-deep uppercase"
+        >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          Record again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => (recording ? stop() : void start())}
+      aria-pressed={recording}
+      className={cn(
+        "mt-5 flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-4 text-sm font-semibold transition-colors",
+        recording
+          ? "border-destructive/40 bg-destructive/10 text-destructive"
+          : "border-gold/25 bg-white text-ink",
+      )}
+    >
+      {recording ? (
+        <>
+          <Square className="h-4 w-4 fill-current" aria-hidden />
+          <span>Stop recording</span>
+          <span className="nums tabular-nums text-warmgrey">{formatDuration(seconds)}</span>
+        </>
+      ) : (
+        <>
+          <Mic className="h-[18px] w-[18px] text-gold-deep" aria-hidden />
+          <span>Or record a voice note</span>
+        </>
+      )}
+    </button>
   );
 }
 
