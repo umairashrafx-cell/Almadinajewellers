@@ -4,12 +4,21 @@ import { ChevronDown, Globe, TrendingDown, TrendingUp } from "lucide-react";
 
 import {
   MARKET_ROWS,
+  calendarCurrencies,
+  eventTime,
+  eventsToday,
   formatChange,
   formatQuote,
   rangePosition,
   rangeWindowLabel,
 } from "@/lib/markets";
-import type { MarketBoard as Board, MarketQuote, MarketRange, MarketSnapshot } from "@/lib/markets";
+import type {
+  MarketBoard as Board,
+  MarketEvent,
+  MarketQuote,
+  MarketRange,
+  MarketSnapshot,
+} from "@/lib/markets";
 import { cn } from "@/lib/utils";
 
 import { useLiveBitcoin } from "../lib/btc-stream";
@@ -71,10 +80,21 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
       }
     : fetched;
 
-  const rows = MARKET_ROWS.filter((row) => board[row.key]);
+  /*
+   * Each row with its own two answers worked out once: the range it traded in,
+   * and the releases due today that move it. `events` being null rather than
+   * empty is the honest case — see eventsToday — and it travels as null all the
+   * way to the panel, which then says nothing instead of saying "nothing".
+   */
+  const calendar = markets.data?.calendar;
+  const rows = MARKET_ROWS.flatMap((row) => {
+    const quote = board[row.key];
+    return quote ? [{ ...row, quote, events: eventsToday(row.key, calendar) }] : [];
+  });
   if (rows.length === 0) return null;
 
-  const anyRange = rows.some((row) => board[row.key]?.range);
+  const anyRange = rows.some((row) => row.quote.range);
+  const anyEvents = rows.some((row) => row.events !== null);
 
   return (
     <section className="mt-10 border border-warmgrey/25 bg-white/50">
@@ -92,8 +112,9 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
             key={row.key}
             label={row.label}
             unit={row.unit}
-            quote={board[row.key]!}
+            quote={row.quote}
             rowKey={row.key}
+            events={row.events}
             live={row.key === "bitcoin" && Boolean(live)}
             open={open === row.key}
             onToggle={() => setOpen((current) => (current === row.key ? null : row.key))}
@@ -110,11 +131,21 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         ) : (
           <>Streamed from the exchange. The rest of the board is not reachable just now.</>
         )}{" "}
-        {anyRange ? <>Tap an instrument for its high and low. </> : null}
-        The shop&rsquo;s own rate above is the one that settles a transaction.
+        {tapHint(anyRange, anyEvents)} The shop&rsquo;s own rate above is the one that settles a
+        transaction.
       </p>
     </section>
   );
+}
+
+/** What the footnote offers, said only about what the board actually has. An
+ *  older deployment of the function sends ranges and no calendar, and this
+ *  screen has to read correctly against it. */
+function tapHint(anyRange: boolean, anyEvents: boolean): string | null {
+  if (anyRange && anyEvents) return "Tap an instrument for its range and the day's releases.";
+  if (anyRange) return "Tap an instrument for its high and low.";
+  if (anyEvents) return "Tap an instrument for the day's releases.";
+  return null;
 }
 
 function Row({
@@ -122,6 +153,7 @@ function Row({
   label,
   unit,
   quote,
+  events,
   live,
   open,
   onToggle,
@@ -130,6 +162,7 @@ function Row({
   label: string;
   unit: string;
   quote: MarketQuote;
+  events: MarketEvent[] | null;
   live: boolean;
   open: boolean;
   onToggle: () => void;
@@ -139,6 +172,10 @@ function Row({
   const falling = typeof move === "number" && move < 0;
   const range = quote.range;
   const panelId = `market-range-${rowKey}`;
+
+  /* Either half is enough to be worth opening. The metals carry both in
+   * practice, but a day when gold has releases and no range is a real day. */
+  const expandable = Boolean(range) || events !== null;
 
   /*
    * The cash figure leads and the percentage follows it in brackets, because
@@ -200,7 +237,7 @@ function Row({
           Only drawn where there is something behind it. A chevron on a row
           that cannot open is an invitation to a tap that does nothing.
         */}
-        {range ? (
+        {expandable ? (
           <ChevronDown
             className={cn(
               "h-4 w-4 shrink-0 text-warmgrey transition-transform",
@@ -214,12 +251,13 @@ function Row({
   );
 
   /*
-   * A row with no range is not a button. The instrument is still on the board
-   * with its price and its move — it simply has nothing more to say, which is
-   * the case whenever a source published a price but no high and low, or an
-   * instrument is sitting on a figure kept from an earlier fetch.
+   * A row with nothing behind it is not a button. The instrument is still on
+   * the board with its price and its move — it simply has nothing more to say,
+   * which is the case whenever a source published a price but no high and low,
+   * or an instrument is sitting on a figure kept from an earlier fetch. Crude
+   * and bitcoin are here permanently: the metals calendar is not theirs.
    */
-  if (!range) {
+  if (!expandable) {
     return <li className="flex items-baseline justify-between gap-4 px-4 py-3">{face}</li>;
   }
 
@@ -236,8 +274,9 @@ function Row({
       </button>
 
       {open ? (
-        <div id={panelId} className="px-4 pb-4">
-          <RangeBar rowKey={rowKey} price={quote.usd} range={range} />
+        <div id={panelId} className="space-y-3 px-4 pb-4">
+          {range ? <RangeBar rowKey={rowKey} price={quote.usd} range={range} /> : null}
+          {events ? <Releases rowKey={rowKey} events={events} /> : null}
         </div>
       ) : null}
     </li>
@@ -305,6 +344,90 @@ function RangeBar({
       <p className="mt-2 text-[10px] leading-relaxed text-warmgrey">{provenance(range)}</p>
     </div>
   );
+}
+
+/**
+ * The releases due today that move this instrument.
+ *
+ * What a dealer actually wants from a calendar is the next hour: at half past
+ * six this evening the American jobs figure lands, and until then the ounce is
+ * waiting. So this is a list of times and names, nothing ranked and nothing
+ * predicted — the forecast and the last reading are the feed's own figures,
+ * shown because they are the two numbers the release will be judged against.
+ *
+ * An empty list is printed as an empty day rather than hidden. Saturday has no
+ * releases on it, and "nothing is scheduled" is a useful thing to be told; it
+ * is only a day the feed never covered that this is never asked about, which
+ * eventsToday settles by returning null instead of an empty list.
+ */
+function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent[] }) {
+  return (
+    <div className="border-l-2 border-warmgrey/25 pl-3">
+      <p className="text-[10px] font-semibold tracking-widest text-warmgrey uppercase">
+        Today&rsquo;s data
+      </p>
+
+      {events.length === 0 ? (
+        <p className="mt-2 text-[11px] text-ink">Nothing is scheduled today.</p>
+      ) : (
+        <ul className="mt-2 space-y-2.5">
+          {events.map((event) => (
+            <li key={`${event.at}-${event.currency}-${event.title}`} className="flex gap-2.5">
+              <span className="w-9 shrink-0 text-[11px] text-warmgrey tabular-nums">
+                {eventTime(event.at)}
+              </span>
+
+              <span className="min-w-0">
+                <span className="block text-[11px] leading-snug text-ink">
+                  {event.title}
+                  <span className="ml-1.5 text-warmgrey">{event.currency}</span>
+                </span>
+
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-[10px] text-warmgrey">
+                  {/*
+                    High is the only thing on this list worth a colour. Marking
+                    medium as well would leave nothing unmarked, and the point
+                    of the mark is that three releases a week carry it.
+                  */}
+                  <span
+                    className={cn(
+                      "font-semibold tracking-wide uppercase",
+                      event.impact === "High" ? "text-red-700" : "text-warmgrey",
+                    )}
+                  >
+                    {event.impact === "High" ? "High impact" : "Medium"}
+                  </span>
+                  {event.forecast ? <span>Expected {event.forecast}</span> : null}
+                  {event.previous ? <span>Last {event.previous}</span> : null}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="mt-2 text-[10px] leading-relaxed text-warmgrey">
+        {scope(rowKey)} From the metals calendar at metalsmine.com, in this phone&rsquo;s own time.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Whose releases these are, said plainly.
+ *
+ * Gold is watching one country's data and the dollar index is watching the six
+ * currencies it is measured against, and a reader is entitled to know which of
+ * those they are looking at before drawing a conclusion from a short list.
+ */
+function scope(rowKey: keyof Board): string {
+  const currencies = calendarCurrencies(rowKey) ?? [];
+  if (currencies.length === 0) return "";
+  if (currencies.length === 1) {
+    return `High and medium impact ${currencies[0]} releases.`;
+  }
+
+  return `High and medium impact releases for the index basket — ${currencies.join(", ")}.`;
 }
 
 /**
