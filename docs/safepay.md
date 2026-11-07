@@ -82,8 +82,13 @@ Three calls from our edge function, all authenticated with the header
 3. **Build the checkout URL** from the tracker, that token, `source: "hosted"`,
    a `redirect_url` and a `cancel_url`, then redirect the customer to it.
 
-Hosts are `https://sandbox.api.getsafepay.com` and, live,
-`https://api.getsafepay.com`; the hosted page sits under `/embedded/` on each.
+The REST hosts are `https://sandbox.api.getsafepay.com` and, live,
+`https://api.getsafepay.com`. **The hosted checkout page does not follow that
+pattern:** sandbox is `sandbox.api.getsafepay.com/embedded/` but production is
+`getsafepay.com/embedded/`, with no `api.` at all. Safepay's guide shows only
+the sandbox URL and leaves the obvious inference, which is wrong — a mistake
+that would work all through testing and only fail on live customers. The three
+values are read from their own SDK and are now pinned by a test.
 
 Two details worth writing down because they are easy to get wrong:
 
@@ -128,19 +133,22 @@ what the thank-you page reads so it does not have to wait.
 
 ## 5. What changes in this repository
 
-Small, and mostly deletion.
+Small, and mostly deletion. The plumbing below is **built**; the pay page is
+deliberately not switched over yet, so Easypaisa keeps taking payments until a
+test card has gone through Safepay end to end.
 
-- **New** `supabase/functions/safepay/` — the three calls above, plus the
-  webhook handler. Roughly the size of the current easypaisa function, minus all
-  the hashing.
-- **`src/lib/payments.ts`** — `PaymentHandoff` is today
-  `{ action, fields }`, which assumes a form POST, because that is what Easypay
-  wanted. Safepay wants a plain redirect to a URL. The type needs a second
-  shape; `handOffToProvider` then either submits a form or sets
-  `location.href`.
-- **`payments.provider`** already exists and already distinguishes gateways. Its
-  default is `'easypaisa'`; a one-line migration changes it, or we pass
-  `'safepay'` explicitly and leave the default alone for the old rows.
+- **`supabase/functions/safepay/`** — `protocol.ts` holds the pure parts (host
+  table, URL assembly, rupees-to-paisa, signature verification, reading an
+  event) and `index.ts` the two actions, `start` and `webhook`. Roughly the size
+  of the easypaisa function, minus all the hashing.
+- **`src/lib/payments.ts`** — `PaymentHandoff` was `{ action, fields }`, which
+  assumes a form POST, because that is what Easypay wanted. It is now a union
+  with `{ url }`, and `handOffToProvider` either submits the form or navigates.
+  `startPayment` takes a provider and still defaults to Easypaisa, so nothing
+  the page does today has changed.
+- **`payments.provider`** already distinguishes gateways, so no migration: the
+  function passes `'safepay'` explicitly and the `'easypaisa'` default is left
+  alone for the old rows.
 - **No schema change for amounts.** `orders.total_pkr` and
   `orders.amount_due_pkr` are already separate columns, and `amount_due_pkr` is
   already nullable. The deposit model in section 6 is a matter of what the shop
@@ -148,8 +156,8 @@ Small, and mostly deletion.
 - **Deleted, once Safepay is proven:** `supabase/functions/easypaisa/`,
   `docs/easypaisa.md`, and the four `EASYPAISA_*` secrets.
 
-Secrets the owner would set (four, and none of them ever in this repository —
-it is public):
+Secrets the owner sets (four, and none of them ever in this repository — it is
+public):
 
 `SAFEPAY_SECRET_KEY`, `SAFEPAY_MERCHANT_API_KEY`, `SAFEPAY_WEBHOOK_SECRET`,
 `SAFEPAY_ENV`.
@@ -221,12 +229,13 @@ Safepay's own API reference and developer documentation, read 7 November 2026.
 The prices are from Safepay's public pricing page the same day. The catalogue
 figures are counted from this project's production database, not estimated.
 
-**The one thing not pinned down** is the exact query-string format of the hosted
-checkout URL. Safepay's guide says you may build it manually but then only shows
-the Node SDK doing it, and the manual steps are not on the page. The base path
-(`/embedded/`) and every parameter name are documented; their exact assembly is
-not. It is a thirty-minute question against the sandbox or the SDK's source, and
-it is the only part of this note I would not build from without checking first.
+**The one thing that was not pinned down now is.** Safepay's guide says you may
+build the checkout URL manually and then only shows its Node SDK doing it. That
+question is settled: the URL format and the three host values were read from
+`@sfpy/node-core` 0.3.5 (`cjs/Checkout.js`) and are reproduced exactly in
+`supabase/functions/safepay/protocol.ts`, down to the parameter ordering. Doing
+so turned up the production-host trap in section 3, which is the one thing here
+the documentation would have led us into.
 
 Two smaller caveats, both harmless: the guide mentions a `success: true` field on
 `payment.succeeded` that the published example payload does not contain, so the

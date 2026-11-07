@@ -59,16 +59,39 @@ export async function fetchPaymentIntent(token: string): Promise<PaymentIntent |
   };
 }
 
-/** The form Easypaisa expects, built and signed where the hash key lives. */
-export type PaymentHandoff = { action: string; fields: Record<string, string> };
+/**
+ * How a provider takes the customer: a URL to visit, or a form to post.
+ *
+ * Two shapes because the two providers differ in kind, not in detail.
+ * Easypaisa's hosted page is reached by POSTing signed fields and has no URL
+ * to visit; Safepay's is a URL carrying a tracker and a one-hour token, with
+ * nothing to post. Both are built server-side, where the keys are, and neither
+ * is anything the browser could usefully alter.
+ */
+export type PaymentHandoff = { url: string } | { action: string; fields: Record<string, string> };
 
-export async function startPayment(token: string): Promise<PaymentHandoff> {
+export type PaymentProvider = "easypaisa" | "safepay";
+
+/** What to call the provider when something goes wrong and a person reads it. */
+const PROVIDER_NAMES: Record<PaymentProvider, string> = {
+  easypaisa: "Easypaisa",
+  safepay: "Safepay",
+};
+
+export async function startPayment(
+  token: string,
+  provider: PaymentProvider = "easypaisa",
+): Promise<PaymentHandoff> {
   const { data, error } = await untyped.functions.invoke<PaymentHandoff | { error: string }>(
-    "easypaisa/start",
+    `${provider}/start`,
     { body: { token } },
   );
 
-  if (error) throw new Error("We could not reach Easypaisa. Please try again in a moment.");
+  if (error) {
+    throw new Error(
+      `We could not reach ${PROVIDER_NAMES[provider]}. Please try again in a moment.`,
+    );
+  }
   if (!data || "error" in data) {
     throw new Error((data as { error?: string })?.error ?? "That payment link is not usable.");
   }
@@ -77,19 +100,24 @@ export async function startPayment(token: string): Promise<PaymentHandoff> {
 }
 
 /**
- * Hands the customer to Easypaisa.
+ * Hands the customer to the provider's own page.
  *
- * Their hosted page is reached by form POST rather than by a URL, so there is
- * nothing to navigate to — the fields have to be submitted. Built and
- * submitted rather than rendered, because it exists for one instant and
- * nothing on the page should be able to hold a reference to it.
+ * A URL is navigated to. Fields have to be submitted, because Easypaisa's
+ * hosted page is reached by POST and there is nothing to navigate to — that
+ * form is built and submitted rather than rendered, because it exists for one
+ * instant and nothing on the page should be able to hold a reference to it.
  */
-export function handOffToProvider({ action, fields }: PaymentHandoff): void {
+export function handOffToProvider(handoff: PaymentHandoff): void {
+  if ("url" in handoff) {
+    window.location.assign(handoff.url);
+    return;
+  }
+
   const form = document.createElement("form");
   form.method = "POST";
-  form.action = action;
+  form.action = handoff.action;
 
-  for (const [name, value] of Object.entries(fields)) {
+  for (const [name, value] of Object.entries(handoff.fields)) {
     const input = document.createElement("input");
     input.type = "hidden";
     input.name = name;
