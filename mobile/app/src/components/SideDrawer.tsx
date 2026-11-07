@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Coins,
   Globe,
-  PencilRuler,
   Phone,
   RefreshCcw,
   Store,
@@ -28,6 +27,9 @@ import type { View } from "../lib/views";
  * then finished with. The calculator and the shop's address are both of the
  * second kind — needed, and needed once.
  *
+ * Custom Order is not here: it is a tab on the bar, because a customer who
+ * came to have something made should not have to find a menu first.
+ *
  * Some of these are the app's own screens and some are pages of the website,
  * and the drawer says which: an entry that stays inside the app shows a
  * chevron, one that leaves it says so in its own line underneath. The
@@ -45,7 +47,6 @@ type Entry =
 const ENTRIES: readonly Entry[] = [
   { kind: "view", id: "calculator", label: "Gold calculator", icon: Calculator },
   { kind: "view", id: "store", label: "Our store", icon: Store },
-  { kind: "page", path: "/custom-order", label: "Custom order", icon: PencilRuler },
   { kind: "page", path: "/sell-your-gold", label: "Sell your gold", icon: Coins },
   { kind: "page", path: "/buy-back-exchange", label: "Buy-back & exchange", icon: RefreshCcw },
   { kind: "page", path: "/our-story", label: "Our story", icon: BookOpen },

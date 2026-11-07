@@ -1,4 +1,4 @@
-import { Gem, Heart, Home, Menu, Sparkles, type LucideIcon } from "lucide-react";
+import { Gem, Heart, Home, Menu, PencilRuler, Sparkles, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { fetchRateSnapshot } from "@/lib/rates";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { PushHousekeeping } from "./components/PushHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
+import { openShop } from "./lib/shop";
 import { viewFromHistory, type View } from "./lib/views";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -32,23 +33,35 @@ import { StoreScreen } from "./screens/StoreScreen";
  */
 
 /**
- * The bar is four things, and the drawer is everything else.
+ * The bar is five things, and the drawer is everything else.
  *
  * Not a shortlist of the screens: a shortlist of the reasons somebody opens
- * this app. The front door, today's figure, what is in the cases, and what
- * they have already picked out — each of those is somewhere a customer comes
- * back to several times in one visit, which is what a tab is for. The
- * calculator and the shop's address are needed too, and needed once; they are
- * in the drawer, which is what a drawer is for.
+ * this app. The front door, today's figure, what is in the cases, what they
+ * have already picked out, and the piece they want made — the calculator and
+ * the shop's address are needed too, and needed once, so they are in the
+ * drawer, which is what a drawer is for.
  *
- * Four across a 360px phone leaves ninety pixels a tab, and none of these four
- * words needs more than half of that.
+ * Custom Order is the odd one, and deliberately so: the app has no screen for
+ * it yet, so the tab opens the shop's own custom-order page in this same
+ * WebView. That is a tab leaving the app, which the rest of the bar never
+ * does, and it is a tab because the shop asked for it to be one — a customer
+ * who came to have something made should not have to find a menu first. When
+ * the screen exists the path becomes a view and nothing else here changes.
+ *
+ * Five across a 360px phone leaves seventy-two pixels a tab. "Custom" is the
+ * longest word in the bar and needs about forty-five of them at the house
+ * size, which is why it is not "Custom Order".
  */
-const TABS: ReadonlyArray<{ id: View; label: string; icon: LucideIcon }> = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "rate", label: "Rates", icon: Gem },
-  { id: "pieces", label: "Shop", icon: Sparkles },
-  { id: "saved", label: "Saved", icon: Heart },
+type Tab =
+  | { kind: "view"; id: View; label: string; icon: LucideIcon }
+  | { kind: "page"; path: string; label: string; icon: LucideIcon };
+
+const TABS: readonly Tab[] = [
+  { kind: "view", id: "home", label: "Home", icon: Home },
+  { kind: "view", id: "rate", label: "Rates", icon: Gem },
+  { kind: "view", id: "pieces", label: "Shop", icon: Sparkles },
+  { kind: "view", id: "saved", label: "Saved", icon: Heart },
+  { kind: "page", path: "/custom-order", label: "Custom", icon: PencilRuler },
 ];
 
 /** Whether a history entry is one with the drawer open over it. */
@@ -299,28 +312,34 @@ export function App() {
 
       <nav
         aria-label="Sections"
-        className="sticky bottom-0 grid grid-cols-4 border-t border-gold/25 bg-ivory"
+        className="sticky bottom-0 grid grid-cols-5 border-t border-gold/25 bg-ivory"
       >
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onTab(id)}
-            aria-current={view === id ? "page" : undefined}
-            className={cn(
-              "flex flex-col items-center gap-1 py-3 text-[10px] leading-none font-semibold tracking-widest uppercase transition-colors",
-              view === id ? "text-gold-deep" : "text-warmgrey",
-            )}
-          >
-            {/* The Saved heart fills while you are looking at what it holds,
-                the way it does on every tile in the catalogue. */}
-            <Icon
-              className={cn("h-5 w-5", id === "saved" && view === "saved" && "fill-current")}
-              aria-hidden
-            />
-            {label}
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const here = tab.kind === "view" && view === tab.id;
+          return (
+            <button
+              key={tab.label}
+              type="button"
+              onClick={() => (tab.kind === "view" ? onTab(tab.id) : openShop(tab.path))}
+              aria-current={here ? "page" : undefined}
+              className={cn(
+                "flex flex-col items-center gap-1 px-1 py-3 text-[10px] leading-none font-semibold tracking-widest uppercase transition-colors",
+                here ? "text-gold-deep" : "text-warmgrey",
+              )}
+            >
+              {/* The Saved heart fills while you are looking at what it holds,
+                  the way it does on every tile in the catalogue. */}
+              <tab.icon
+                className={cn(
+                  "h-5 w-5",
+                  tab.kind === "view" && tab.id === "saved" && here && "fill-current",
+                )}
+                aria-hidden
+              />
+              {tab.label}
+            </button>
+          );
+        })}
       </nav>
 
       {drawer && <SideDrawer onClose={closeDrawer} onView={goFromDrawer} />}
