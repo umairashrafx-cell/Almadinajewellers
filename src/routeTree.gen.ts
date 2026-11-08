@@ -42,6 +42,7 @@ import { Route as ApiInternationalGoldRouteImport } from './routes/api/internati
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as OurStoryFounderRouteImport } from './routes/our-story_.founder'
+import { Route as PayTokenRouteImport } from './routes/pay/$token'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -210,6 +211,11 @@ const OurStoryFounderRoute = OurStoryFounderRouteImport.update({
   path: '/our-story/founder',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PayTokenRoute = PayTokenRouteImport.update({
+  id: '/pay/$token',
+  path: '/pay/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products/$slug',
   path: '/products/$slug',
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
+  '/pay/$token': typeof PayTokenRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
+  '/pay/$token': typeof PayTokenRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin': typeof AdminIndexRoute
   '/collections': typeof CollectionsIndexRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story_/founder': typeof OurStoryFounderRoute
+  '/pay/$token': typeof PayTokenRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
+    | '/pay/$token'
     | '/products/$slug'
     | '/admin/'
     | '/collections/'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
+    | '/pay/$token'
     | '/products/$slug'
     | '/admin'
     | '/collections'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story_/founder'
+    | '/pay/$token'
     | '/products/$slug'
     | '/admin/'
     | '/collections/'
@@ -458,6 +470,7 @@ export interface RootRouteChildren {
   ApiInternationalGoldRoute: typeof ApiInternationalGoldRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   OurStoryFounderRoute: typeof OurStoryFounderRoute
+  PayTokenRoute: typeof PayTokenRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
 }
@@ -695,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OurStoryFounderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pay/$token': {
+      id: '/pay/$token'
+      path: '/pay/$token'
+      fullPath: '/pay/$token'
+      preLoaderRoute: typeof PayTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products/$slug': {
       id: '/products/$slug'
       path: '/products/$slug'
@@ -755,6 +775,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternationalGoldRoute: ApiInternationalGoldRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   OurStoryFounderRoute: OurStoryFounderRoute,
+  PayTokenRoute: PayTokenRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
 }
