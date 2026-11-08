@@ -27,7 +27,7 @@ const STREAM = "wss://stream.binance.com:9443/ws/btcusdt@ticker";
 /** Long enough that a dead socket is noticed, short enough not to nag. */
 const RETRY_MS = 20000;
 
-export type LiveQuote = { usd: number; changePercent?: number };
+export type LiveQuote = { usd: number; changePercent?: number; change?: number };
 
 export function useLiveBitcoin(): LiveQuote | undefined {
   const [quote, setQuote] = useState<LiveQuote>();
@@ -49,7 +49,11 @@ export function useLiveBitcoin(): LiveQuote | undefined {
 
       socket.onmessage = (event) => {
         try {
-          const frame = JSON.parse(String(event.data)) as { c?: string; P?: string };
+          const frame = JSON.parse(String(event.data)) as {
+            c?: string;
+            P?: string;
+            p?: string;
+          };
           const price = Number(frame.c);
           if (!Number.isFinite(price)) return;
 
@@ -58,9 +62,19 @@ export function useLiveBitcoin(): LiveQuote | undefined {
            * frame does not carry one. Under exactOptionalPropertyTypes an
            * optional property and a property holding undefined are not the
            * same thing, and the board asks whether the key is there.
+           *
+           * Both halves of the move come from here, `P` the percentage and `p`
+           * the dollars. Taking only the percentage and letting the board fall
+           * back to the fetched figure for the cash would pair a price from
+           * this second with a move from minutes ago.
            */
           const move = Number(frame.P);
-          setQuote(Number.isFinite(move) ? { usd: price, changePercent: move } : { usd: price });
+          const cash = Number(frame.p);
+          setQuote({
+            usd: price,
+            ...(Number.isFinite(move) ? { changePercent: move } : {}),
+            ...(Number.isFinite(cash) ? { change: cash } : {}),
+          });
         } catch {
           // A frame we cannot read is not worth a thought; the next one is a
           // second away.
