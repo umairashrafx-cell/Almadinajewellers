@@ -19,6 +19,8 @@ export const SAVED_KEY = "amj:cache:saved";
 export const PIECES_KEY = "amj:cache:pieces";
 /** The international board, so it opens with something rather than nothing. */
 export const MARKETS_KEY = "amj:cache:markets";
+/** The shop's collections, so the custom-order form can name them offline. */
+export const CATEGORIES_KEY = "amj:cache:categories";
 
 /**
  * The saved pieces — and inside the app, the list itself rather than a copy of

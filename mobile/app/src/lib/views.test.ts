@@ -13,10 +13,10 @@ import { HOME, VIEWS, viewFromHistory } from "./views";
 describe("the screen a history entry is for", () => {
   test("is home for the entry the app launched on", () => {
     // The WebView's first entry carries no state of ours. Back from here
-    // leaves the app, which is what back from the board should do.
+    // leaves the app, which is what back from the front door should do.
     expect(viewFromHistory(null)).toBe(HOME);
     expect(viewFromHistory(undefined)).toBe(HOME);
-    expect(HOME).toBe("rate");
+    expect(HOME).toBe("home");
   });
 
   test("is the screen the entry names", () => {
@@ -34,7 +34,7 @@ describe("the screen a history entry is for", () => {
 
   test("is home for a screen this build does not have", () => {
     // An installed app can be opened on history an older version wrote. The
-    // board is a better answer than a blank page.
+    // front door is a better answer than a blank page.
     expect(viewFromHistory({ view: "offers" })).toBe(HOME);
   });
 
@@ -45,8 +45,20 @@ describe("the screen a history entry is for", () => {
   });
 
   test("covers every screen the app can show", () => {
-    // The tab bar has four, and the heart in the header opens the fifth. A
-    // screen missing from here is one the back button cannot return to.
-    expect([...VIEWS]).toEqual(["rate", "pieces", "calculator", "store", "saved"]);
+    // The tab bar has five; the drawer opens the other six. A screen missing
+    // from here is one the back button cannot return to.
+    expect([...VIEWS]).toEqual([
+      "home",
+      "rate",
+      "pieces",
+      "calculator",
+      "store",
+      "saved",
+      "custom",
+      "sell",
+      "story",
+      "contact",
+      "appointment",
+    ]);
   });
 });

@@ -1,26 +1,25 @@
-import {
-  Calculator,
-  ExternalLink,
-  Gem,
-  Heart,
-  Sparkles,
-  Store,
-  type LucideIcon,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { Gem, Heart, Home, Menu, PencilRuler } from "lucide-react";
+import { useEffect, useState, type ComponentType, type SVGProps } from "react";
 
 import { fetchRateSnapshot } from "@/lib/rates";
 import { cn } from "@/lib/utils";
 
+import { NecklaceBustIcon } from "./components/NecklaceBustIcon";
 import { PushHousekeeping } from "./components/PushHousekeeping";
+import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
-import { openShop } from "./lib/shop";
 import { viewFromHistory, type View } from "./lib/views";
+import { AppointmentScreen } from "./screens/AppointmentScreen";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
+import { ContactScreen } from "./screens/ContactScreen";
+import { CustomOrderScreen } from "./screens/CustomOrderScreen";
+import { HomeScreen } from "./screens/HomeScreen";
 import { PiecesScreen } from "./screens/PiecesScreen";
 import { RateScreen } from "./screens/RateScreen";
 import { SavedScreen } from "./screens/SavedScreen";
+import { SellGoldScreen } from "./screens/SellGoldScreen";
 import { StoreScreen } from "./screens/StoreScreen";
+import { StoryScreen } from "./screens/StoryScreen";
 
 /**
  * The app's own screens, and a door to the rest of the shop.
@@ -32,30 +31,75 @@ import { StoreScreen } from "./screens/StoreScreen";
  * nothing will load at all. The forms, the cart and the rest stay on the
  * website, which opens in this same WebView — the back button brings you home.
  *
- * No router: a handful of screens and a tab bar do not need one, and a router
- * would put a second idea of what a page is next to the website's. What the
- * screens do borrow is history, because that is what Android's back button
- * actually is — see lib/views.ts.
+ * No router: a handful of screens, a tab bar and a drawer do not need one, and
+ * a router would put a second idea of what a page is next to the website's.
+ * What the screens do borrow is history, because that is what Android's back
+ * button actually is — see lib/views.ts.
  */
-const TABS: ReadonlyArray<{ id: View; label: string; icon: LucideIcon }> = [
-  { id: "rate", label: "Rate", icon: Gem },
-  { id: "pieces", label: "Pieces", icon: Sparkles },
-  { id: "calculator", label: "Calculator", icon: Calculator },
-  { id: "store", label: "Store", icon: Store },
+
+/** Lucide's icons and the shop's own, standing in the same row. */
+type TabIcon = ComponentType<SVGProps<SVGSVGElement>>;
+
+/**
+ * The bar is five things, and the drawer is everything else.
+ *
+ * Not a shortlist of the screens: a shortlist of the reasons somebody opens
+ * this app. The front door, today's figure, what is in the cases, what they
+ * have already picked out, and the piece they want made — the calculator and
+ * the shop's address are needed too, and needed once, so they are in the
+ * drawer, which is what a drawer is for.
+ *
+ * Five across a 360px phone leaves seventy-two pixels a tab. "Custom" is the
+ * longest word in the bar and needs about forty-five of them at the house
+ * size, which is why it is not "Custom Order".
+ */
+const TABS: ReadonlyArray<{ id: View; label: string; icon: TabIcon }> = [
+  { id: "home", label: "Home", icon: Home },
+  { id: "rate", label: "Rates", icon: Gem },
+  { id: "pieces", label: "Shop", icon: NecklaceBustIcon },
+  { id: "saved", label: "Saved", icon: Heart },
+  { id: "custom", label: "Custom", icon: PencilRuler },
 ];
+
+/** Whether a history entry is one with the drawer open over it. */
+function drawerFromHistory(state: unknown): boolean {
+  return Boolean((state as { drawer?: unknown } | null | undefined)?.drawer);
+}
 
 export function App() {
   /*
    * The screen, read out of the history entry the app is sitting on.
    *
-   * Not simply "rate": the Website button is a real navigation away, and
-   * coming back from it rebuilds this page from scratch. Reading the entry is
-   * what returns somebody to the tab they left instead of to the board.
+   * Not simply "home": the drawer's website entries are real navigations away,
+   * and coming back from one rebuilds this page from scratch. Reading the entry
+   * is what returns somebody to the tab they left instead of to the front door.
    */
   const [view, setView] = useState<View>(() => viewFromHistory(window.history.state));
 
+  /*
+   * The drawer is a history entry rather than a piece of state, so Android's
+   * back button closes it — which is the only thing a back press can mean with
+   * a drawer open over the screen. Read from history on mount for the same
+   * reason the view is: a tap on "Our story" leaves the app with the drawer
+   * open, and coming back should find it where it was left.
+   */
+  const [drawer, setDrawer] = useState(() => drawerFromHistory(window.history.state));
+
+  /*
+   * A collection chosen on the front door, handed to the Shop tab.
+   *
+   * Held here rather than in PiecesScreen because the screen is unmounted
+   * whenever it is not the one on show, and a filter that survives the
+   * journey has to be kept above it. Cleared by a tap on the Shop tab, so the
+   * tab always means the whole catalogue.
+   */
+  const [collection, setCollection] = useState<string | null>(null);
+
   useEffect(() => {
-    const onPop = (event: PopStateEvent) => setView(viewFromHistory(event.state));
+    const onPop = (event: PopStateEvent) => {
+      setView(viewFromHistory(event.state));
+      setDrawer(drawerFromHistory(event.state));
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -73,12 +117,71 @@ export function App() {
     setView(next);
   };
 
+  /**
+   * The whole catalogue, with nothing filtered.
+   *
+   * Every route that offers the catalogue rather than one collection comes
+   * through here, and there are four of them: the Shop tab, the front door's
+   * own invitation to look, the "see all" above the collections, and "See the
+   * pieces" on an empty Saved screen — which is offered there beside the
+   * website as the app's own whole catalogue, not as a corner of it.
+   *
+   * It is a function rather than four copies of two statements because the
+   * three that were `go("pieces")` on its own were a silent bug: a collection
+   * picked on the front door survives in this state until something clears
+   * it, so those buttons offered the whole shop and delivered whatever was
+   * last filtered. Nobody reports that. They just stop believing the button.
+   *
+   * Clearing the value is enough on its own only because PiecesScreen is
+   * keyed on it: that screen owns the filter once it is built, so the key is
+   * what builds it again.
+   */
+  const showAllPieces = () => {
+    setCollection(null);
+    go("pieces");
+  };
+
+  /**
+   * The drawer, opened and closed through history.
+   *
+   * The entry names the screen it was opened over, so `viewFromHistory` reads
+   * it as that screen and nothing underneath moves. Closing is a back press
+   * whichever way it was asked for — the cross, the scrim, or Android's own
+   * button — so the three cannot disagree about what is open.
+   *
+   * Pushed in the handler and not in an effect: an effect runs twice under
+   * StrictMode and the unwinding half would pop the entry as it was pushed.
+   * The same reasoning as a piece opened over the grid in PiecesScreen.
+   */
+  const openDrawer = () => {
+    window.history.pushState({ view, drawer: true }, "");
+    setDrawer(true);
+  };
+
+  const closeDrawer = () => {
+    if (drawer) window.history.back();
+  };
+
+  /**
+   * A screen reached from the drawer.
+   *
+   * Replaced, not pushed, so the drawer's own entry becomes the destination
+   * rather than sitting behind it. Pushing would mean a back press from the
+   * calculator reopened the drawer over the screen somebody had already left,
+   * which is a step backwards into a menu rather than out of one.
+   */
+  const goFromDrawer = (next: View) => {
+    window.history.replaceState({ view: next }, "");
+    setDrawer(false);
+    setView(next);
+  };
+
   /*
    * A new screen starts at its top.
    *
    * The screens are one document under one scroller, so arriving at a tab
    * inherited wherever the last one had been scrolled to. Reading the rate
-   * board to the foot and tapping Pieces landed somebody halfway down the
+   * board to the foot and tapping Shop landed somebody halfway down the
    * grid, under a blank page-end, with no sign that anything was above them —
    * it read as a broken screen rather than as a scroll position.
    *
@@ -131,6 +234,15 @@ export function App() {
    * for anyone who has asked for reduced motion, through the html rule.
    */
   const onTab = (next: View) => {
+    /*
+     * The Shop tab is the whole catalogue, the same as every other route in
+     * `showAllPieces`. Cleared here rather than through that function because
+     * this is also the one route that can already be on the screen: tapping
+     * Shop while standing in a filtered catalogue has to drop the filter, and
+     * `go` would refuse the navigation that otherwise does it.
+     */
+    if (next === "pieces") setCollection(null);
+
     if (next === view) {
       window.scrollTo({ top: 0 });
       return;
@@ -139,8 +251,8 @@ export function App() {
   };
 
   /*
-   * One snapshot, two screens. The board and the calculator must never show
-   * different figures, and fetching twice is how that starts.
+   * One snapshot, three screens. The front door, the board and the calculator
+   * must never show different figures, and fetching twice is how that starts.
    */
   const rates = useCached(RATES_KEY, fetchRateSnapshot);
 
@@ -154,12 +266,34 @@ export function App() {
       */}
       <PushHousekeeping showRates={() => go("rate")} />
 
-      <header className="flex items-center justify-between border-b border-gold/20 bg-ivory px-4 py-3">
+      <header className="flex items-center gap-3 border-b border-gold/20 bg-ivory px-4 py-3">
+        {/*
+          The one control up here. Saved used to be a heart in this corner and
+          the website a button beside it; the first is a tab now and the second
+          is in the drawer, which leaves the header to say the shop's name and
+          offer the way to everything else.
+        */}
+        <button
+          type="button"
+          onClick={openDrawer}
+          aria-label="Open the menu"
+          aria-expanded={drawer}
+          className={cn(
+            /*
+             * 44px square. Android asks for 48dp and WCAG for 44, and this one
+             * sits in the corner a thumb reaches across the screen for.
+             */
+            "-ml-1.5 inline-grid h-11 w-11 shrink-0 place-items-center rounded-full",
+            "text-primary transition-colors active:bg-champagne/50",
+          )}
+        >
+          <Menu className="h-5 w-5" aria-hidden />
+        </button>
+
         {/*
           The full name, set the way it is on the shopfront and on a bill:
           AL-MADINA over JEWELLERS, the second line smaller and wider. On one
-          line at 375px it would take two thirds of the header and leave the
-          heart and the website button fighting for what is left — the stacked
+          line at 375px it would take two thirds of the header; the stacked
           lockup says the whole name in the width of half of it.
         */}
         <p className="font-display text-primary uppercase">
@@ -168,73 +302,50 @@ export function App() {
             Jewellers
           </span>
         </p>
-
-        <div className="flex items-center gap-2">
-          {/*
-            The heart, filled while you are looking at what it holds. No label:
-            at this size a word beside the Website button crowds the line, and
-            a heart in a jeweller's app needs no explaining.
-
-            Saved is a screen but not a tab. The bar below is for the four
-            things somebody opens the app to do; the saved pieces are a place
-            they come back to, not one of those four — and the bar keeps the
-            room it needs to spell "Calculator".
-
-            Opened over whatever they were doing and closed with a step back,
-            so the cross here and Android's own button are one gesture and
-            cannot disagree. The same arrangement as a piece opened over the
-            grid in PiecesScreen.
-          */}
-          <button
-            type="button"
-            onClick={() => (view === "saved" ? window.history.back() : go("saved"))}
-            aria-label="Saved pieces"
-            aria-pressed={view === "saved"}
-            className={cn(
-              /*
-               * 44px square, not 36. These two sit side by side in the top
-               * right corner of a 375px screen — the farthest corner from a
-               * thumb and the easiest pair in the app to fumble between.
-               * Android asks for 48dp and WCAG for 44; 36 was neither.
-               */
-              "inline-grid h-11 w-11 place-items-center border transition-colors",
-              view === "saved"
-                ? "border-gold bg-gold text-primary"
-                : "border-gold/45 text-gold-deep hover:bg-gold hover:text-primary",
-            )}
-          >
-            <Heart className={cn("h-5 w-5", view === "saved" && "fill-current")} aria-hidden />
-          </button>
-
-          {/*
-            The door to the rest of the website — the forms, the cart, the custom
-            order. It said "Shop" while the app had no catalogue of its own; with
-            a Pieces tab and a Store tab in the bar below, that word now belongs
-            to two other things, and the honest name for what this opens is the
-            website itself.
-          */}
-          <button
-            type="button"
-            onClick={() => openShop("/collections")}
-            className="inline-flex h-11 items-center gap-2 border border-gold/45 px-3 text-[11px] font-semibold tracking-widest text-gold-deep uppercase transition-colors hover:bg-gold hover:text-primary"
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-            Website
-          </button>
-        </div>
       </header>
 
       <main className="flex-1">
+        {view === "home" && (
+          <HomeScreen
+            rates={rates}
+            showRates={() => go("rate")}
+            showPieces={showAllPieces}
+            showCollection={(category) => {
+              setCollection(category);
+              go("pieces");
+            }}
+          />
+        )}
         {view === "rate" && <RateScreen rates={rates} />}
-        {view === "pieces" && <PiecesScreen />}
+        {/*
+          Keyed on the collection, which is what makes a tap on the Shop tab
+          mean the whole catalogue. The chosen collection is PiecesScreen's
+          opening state and that screen owns the filter from then on, so
+          clearing the value here changes nothing a customer can see until the
+          screen is built again — the key is what rebuilds it. Tapping Shop
+          while nothing is filtered leaves the key alone, so that tap stays
+          what it was: a scroll back to the top.
+        */}
+        {view === "pieces" && <PiecesScreen key={collection ?? "all"} collection={collection} />}
         {view === "calculator" && <CalculatorScreen rates={rates} />}
-        {view === "saved" && <SavedScreen showPieces={() => go("pieces")} />}
+        {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
         {view === "store" && <StoreScreen />}
+        {view === "custom" && <CustomOrderScreen />}
+        {view === "sell" && <SellGoldScreen rates={rates} />}
+        {view === "appointment" && <AppointmentScreen />}
+        {/*
+          Both of these offer a way to the shop's address rather than
+          reprinting it. Going by `go` and not `goFromDrawer`: the drawer has
+          closed by now, so this is an ordinary move between screens and back
+          should return to the one the customer came from.
+        */}
+        {view === "story" && <StoryScreen showStore={() => go("store")} />}
+        {view === "contact" && <ContactScreen showStore={() => go("store")} />}
       </main>
 
       <nav
         aria-label="Sections"
-        className="sticky bottom-0 grid grid-cols-4 border-t border-gold/25 bg-ivory"
+        className="sticky bottom-0 grid grid-cols-5 border-t border-gold/25 bg-ivory"
       >
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
@@ -243,20 +354,22 @@ export function App() {
             onClick={() => onTab(id)}
             aria-current={view === id ? "page" : undefined}
             className={cn(
-              /*
-               * Four across a 360px phone leaves ninety pixels a tab, which is
-               * what "Calculator" needs at the house size. It was nine pixels
-               * while Saved was down here too, and cramped at it.
-               */
-              "flex flex-col items-center gap-1 py-3 text-[10px] leading-none font-semibold tracking-widest uppercase transition-colors",
+              "flex flex-col items-center gap-1 px-1 py-3 text-[10px] leading-none font-semibold tracking-widest uppercase transition-colors",
               view === id ? "text-gold-deep" : "text-warmgrey",
             )}
           >
-            <Icon className="h-5 w-5" aria-hidden />
+            {/* The Saved heart fills while you are looking at what it holds,
+                the way it does on every tile in the catalogue. */}
+            <Icon
+              className={cn("h-5 w-5", id === "saved" && view === "saved" && "fill-current")}
+              aria-hidden
+            />
             {label}
           </button>
         ))}
       </nav>
+
+      {drawer && <SideDrawer onClose={closeDrawer} onView={goFromDrawer} />}
     </div>
   );
 }
