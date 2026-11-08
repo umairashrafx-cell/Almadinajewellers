@@ -4,13 +4,17 @@ import {
   type MarketCalendar,
   type MarketEvent,
   type MarketRange,
+  TOLA_PER_TROY_OUNCE,
   calendarCurrencies,
+  convertsToTola,
   eventTime,
   eventsToday,
   formatChange,
+  perTolaPKR,
   rangePosition,
   rangeWindowLabel,
 } from "@/lib/markets";
+import { TOLA_IN_GRAMS } from "@/lib/rates";
 
 /**
  * The marker on a range bar, and what the range is called.
@@ -239,5 +243,64 @@ describe("rangeWindowLabel", () => {
     expect(rangeWindowLabel("24h")).toBe("24-hour range");
     expect(rangeWindowLabel("session")).toBe("Range today");
     expect(rangeWindowLabel("24h")).not.toBe(rangeWindowLabel("session"));
+  });
+});
+
+/**
+ * Dollars an ounce into rupees a tola.
+ *
+ * The arithmetic is three multiplications and would hardly be worth a test if
+ * it were only arithmetic. What these guard is the two ways the figure can go
+ * wrong without anybody noticing: a unit that quietly stops matching the tola
+ * the rest of the shop weighs in, and a bad input arriving as a number instead
+ * of as nothing. A board that prints "Rs. 0 per tola" over the shop's own rate
+ * is worse than a board that prints nothing at all.
+ */
+describe("perTolaPKR", () => {
+  test("is the shop's own tola, not a rounded one", () => {
+    // A tola is a hair under three eighths of a troy ounce. If this drifts,
+    // the conversion has stopped agreeing with the calculator and the rate
+    // board, which weigh in TOLA_IN_GRAMS.
+    expect(TOLA_PER_TROY_OUNCE).toBeCloseTo(0.375, 5);
+    expect(TOLA_PER_TROY_OUNCE).toBe(TOLA_IN_GRAMS / 31.1034768);
+  });
+
+  test("converts at the rate it is given", () => {
+    // $4,072 an ounce at 283.40 interbank.
+    const value = perTolaPKR(4072, 283.4);
+    expect(value).not.toBeNull();
+    expect(value as number).toBeCloseTo(4072 * TOLA_PER_TROY_OUNCE * 283.4, 6);
+    // Sanity against the order of magnitude a tola of gold actually costs.
+    expect(value as number).toBeGreaterThan(300_000);
+    expect(value as number).toBeLessThan(600_000);
+  });
+
+  test("scales with each input on its own", () => {
+    const base = perTolaPKR(4000, 280) as number;
+    expect(perTolaPKR(8000, 280) as number).toBeCloseTo(base * 2, 6);
+    expect(perTolaPKR(4000, 560) as number).toBeCloseTo(base * 2, 6);
+  });
+
+  test("answers nothing rather than a figure it cannot stand behind", () => {
+    expect(perTolaPKR(0, 283.4)).toBeNull();
+    expect(perTolaPKR(4072, 0)).toBeNull();
+    expect(perTolaPKR(-4072, 283.4)).toBeNull();
+    expect(perTolaPKR(4072, -283.4)).toBeNull();
+    expect(perTolaPKR(Number.NaN, 283.4)).toBeNull();
+    expect(perTolaPKR(4072, Number.NaN)).toBeNull();
+    expect(perTolaPKR(Number.POSITIVE_INFINITY, 283.4)).toBeNull();
+  });
+});
+
+describe("convertsToTola", () => {
+  test("is true for the metals and nothing else", () => {
+    // A tola of the dollar index is not a thing, and neither the barrel nor
+    // the coin is weighed in one.
+    expect(convertsToTola("gold")).toBe(true);
+    expect(convertsToTola("silver")).toBe(true);
+    expect(convertsToTola("dollarIndex")).toBe(false);
+    expect(convertsToTola("bitcoin")).toBe(false);
+    expect(convertsToTola("crude")).toBe(false);
+    expect(convertsToTola("usdPkr")).toBe(false);
   });
 });
