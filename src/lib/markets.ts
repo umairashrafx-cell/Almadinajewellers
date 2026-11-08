@@ -75,10 +75,49 @@ export type MarketBoard = {
   crude?: MarketQuote;
 };
 
+/**
+ * A scheduled release, as the metals calendar lists it.
+ *
+ * `currency` is the feed's own code — "USD", "EUR" — and is what decides which
+ * instrument a release belongs to. `at` carries the feed's offset, US Eastern,
+ * so every reading of it here goes through a Date and comes out in the phone's
+ * own time: a figure released at half past eight in New York is half past six
+ * in the evening in Mandi Bahauddin, and that is the time worth printing.
+ */
+export type MarketEvent = {
+  title: string;
+  currency: string;
+  at: string;
+  impact: "High" | "Medium";
+  /** What the market expects, where one is published. */
+  forecast?: string;
+  /** What it was last time, where the feed gives it. */
+  previous?: string;
+};
+
+/**
+ * The week of releases the server last managed to collect.
+ *
+ * `from` and `to` are the week the feed covered, and they are the difference
+ * between two things a screen must not confuse: a day inside the week with no
+ * releases on it, which is worth saying out loud, and a day the feed never
+ * covered, about which the only honest thing is silence. Both are absent when
+ * the server has never had a successful fetch.
+ */
+export type MarketCalendar = {
+  events: MarketEvent[];
+  from?: string;
+  to?: string;
+  /** When the server last collected these, ISO. */
+  fetchedAt?: string;
+};
+
 export type MarketSnapshot = {
   board: MarketBoard;
   /** When the server last went out for these, ISO. */
   fetchedAt: string;
+  /** The week's releases, where the server has them. */
+  calendar?: MarketCalendar;
 };
 
 /** How the five read on a board, in the order they belong in. */
@@ -152,6 +191,87 @@ export function rangePosition(price: number, range: MarketRange): number | null 
   return (price - range.low) / span;
 }
 
+/**
+ * Which currencies' releases move which instrument.
+ *
+ * Gold and silver are quoted in dollars, and it is American data that moves
+ * them: a payrolls figure or an inflation print reprices the ounce within the
+ * minute. Nothing else on the metals calendar does that reliably, so nothing
+ * else is claimed to.
+ *
+ * The dollar index is a basket, and the basket is the list — the dollar against
+ * the euro, the yen, sterling, the Canadian dollar, the Swiss franc and the
+ * Swedish krona. A European rate decision moves DXY because the euro is more
+ * than half of it, and that is worth a jeweller's attention even though it is
+ * not American news.
+ *
+ * Bitcoin and crude are deliberately absent. The metals calendar is not their
+ * calendar — the same publisher keeps separate ones for energy and for crypto —
+ * and a row that showed American data under crude would be guessing.
+ */
+const CALENDAR_CURRENCIES = {
+  gold: ["USD"],
+  silver: ["USD"],
+  dollarIndex: ["USD", "EUR", "JPY", "GBP", "CAD", "CHF", "SEK"],
+} as const satisfies Partial<Record<keyof MarketBoard, readonly string[]>>;
+
+export function calendarCurrencies(key: keyof MarketBoard): readonly string[] | undefined {
+  return (CALENDAR_CURRENCIES as Partial<Record<keyof MarketBoard, readonly string[]>>)[key];
+}
+
+/** A date as the phone's own calendar reads it, YYYY-MM-DD. Built by hand
+ *  rather than through a locale, because this is compared against the feed's
+ *  dates and must come out in that spelling every time. */
+function localDay(at: Date): string {
+  const month = String(at.getMonth() + 1).padStart(2, "0");
+  const day = String(at.getDate()).padStart(2, "0");
+  return `${at.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Today's releases for one instrument, in the order they are due.
+ *
+ * Null and empty are different answers, and the difference is the point.
+ * Null means there is nothing to show and nothing to say: this instrument has
+ * no calendar of its own, or the server has never collected one, or the phone's
+ * today falls outside the week the feed covered. Empty means the day is
+ * genuinely covered and genuinely has nothing on it — a Saturday, most often —
+ * which a screen can state as a fact.
+ *
+ * "Today" is the phone's own day, and each release is placed on the day it
+ * happens where the phone is standing. An Asian figure published at a quarter
+ * to nine at night in New York falls on the following morning in Pakistan, and
+ * showing it under yesterday would be showing it on the wrong day.
+ */
+export function eventsToday(
+  key: keyof MarketBoard,
+  calendar: MarketCalendar | undefined,
+  now: Date = new Date(),
+): MarketEvent[] | null {
+  const currencies = calendarCurrencies(key);
+  if (!currencies) return null;
+  if (!calendar?.from || !calendar.to) return null;
+
+  const today = localDay(now);
+  if (today < calendar.from || today > calendar.to) return null;
+
+  return calendar.events
+    .filter((event) => currencies.includes(event.currency))
+    .filter((event) => {
+      const at = new Date(event.at);
+      return !Number.isNaN(at.getTime()) && localDay(at) === today;
+    })
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+}
+
+/** A release time in the phone's own clock — "18:30" — matching how the rest
+ *  of the board states a time. */
+export function eventTime(at: string): string {
+  const when = new Date(at);
+  if (Number.isNaN(when.getTime())) return "";
+  return when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
 export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
   const { data, error } = await untyped.functions.invoke("market-rates", { method: "GET" });
 
@@ -162,5 +282,14 @@ export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
     throw new Error("market-rates returned no board");
   }
 
-  return { board: snapshot.board, fetchedAt: snapshot.fetchedAt ?? new Date().toISOString() };
+  // The calendar is carried only when it arrives with events in a list. A
+  // deployment that predates it sends nothing, and the board must not care.
+  const calendar =
+    snapshot.calendar && Array.isArray(snapshot.calendar.events) ? snapshot.calendar : undefined;
+
+  return {
+    board: snapshot.board,
+    fetchedAt: snapshot.fetchedAt ?? new Date().toISOString(),
+    ...(calendar ? { calendar } : {}),
+  };
 }
