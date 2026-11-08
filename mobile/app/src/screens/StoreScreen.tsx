@@ -1,7 +1,7 @@
 import { Clock, MapPin, Navigation, Phone } from "lucide-react";
 
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
-import { SITE, STORES, directionsUrl, placeUrl, whatsappLink } from "@/lib/site";
+import { SITE, STORES, directionsUrl, openPlaceUrl, whatsappLink } from "@/lib/site";
 
 import { AppLink } from "../components/AppButton";
 
@@ -99,7 +99,7 @@ function Branch({ store }: { store: (typeof STORES)[number] }) {
         </AppLink>
 
         <a
-          href={placeUrl(store.placeId)}
+          href={openPlaceUrl(store.mapEmbedQuery, store.placeId)}
           className="pt-1 text-center text-[11px] tracking-widest text-warmgrey uppercase underline decoration-gold/40 underline-offset-4"
         >
           Reviews and photographs
