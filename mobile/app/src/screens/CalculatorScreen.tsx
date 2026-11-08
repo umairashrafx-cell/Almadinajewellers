@@ -54,7 +54,7 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         board is a tab away, so the board comes here in miniature — and seeing
         the rate beside the estimate is what makes the estimate mean anything.
       */}
-      <dl className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border border-gold/25 bg-champagne/20 px-4 py-3">
+      <dl className="card-lift-sm mt-6 flex flex-wrap gap-x-5 gap-y-2 rounded-xl border border-gold/15 bg-white px-4 py-3.5">
         {goldOnly(rates.data).map((rate) => (
           <div key={rate.karat} className="flex items-baseline gap-2">
             <dt className="text-[11px] tracking-widest text-warmgrey uppercase">{rate.karat}</dt>
@@ -77,7 +77,7 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         come to disagree.
       */}
       {ageNote ? (
-        <p className="mt-3 flex items-start gap-2 border border-gold/30 bg-champagne/25 px-4 py-3 text-xs leading-relaxed text-ink">
+        <p className="card-lift-sm mt-3 flex items-start gap-2 rounded-xl border border-gold/20 bg-champagne/35 px-4 py-3.5 text-xs leading-relaxed text-ink">
           <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden />
           <span>{ageNote}</span>
         </p>

@@ -1,11 +1,11 @@
 import { Heart } from "lucide-react";
 
-import { ActionButton } from "@/components/ui/ActionButton";
 import type { Product } from "@/data/products";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { fetchProductsBySkus } from "@/lib/catalogue";
 import { formatPKR } from "@/lib/site";
 
+import { AppButton } from "../components/AppButton";
 import { Kept } from "../components/Kept";
 import { SAVED_KEY, savedSkus, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
@@ -106,7 +106,7 @@ export function SavedScreen({ showPieces }: { showPieces: () => void }) {
  */
 function Empty({ showPieces }: { showPieces: () => void }) {
   return (
-    <div className="mt-10 border border-gold/30 bg-champagne/20 px-6 py-10 text-center">
+    <div className="card-lift mt-10 rounded-2xl border border-gold/15 bg-white px-6 py-10 text-center">
       <Heart className="mx-auto h-6 w-6 text-gold-deep" aria-hidden />
       <h2 className="mt-5 font-display text-xl font-light tracking-wide text-primary">
         Nothing saved yet
@@ -115,11 +115,13 @@ function Empty({ showPieces }: { showPieces: () => void }) {
         Tap the heart on a piece — on the Pieces screen or in the shop — and it will be here, with
         its price at the day&rsquo;s rate, whether or not you have a signal.
       </p>
-      <div className="mt-7 grid justify-center gap-3">
-        <ActionButton onClick={showPieces}>See the pieces</ActionButton>
-        <ActionButton variant="outline" onClick={() => openShop("/collections")}>
+      <div className="mt-7 grid gap-3">
+        <AppButton variant="gold" onClick={showPieces}>
+          See the pieces
+        </AppButton>
+        <AppButton variant="quiet" onClick={() => openShop("/collections")}>
           Browse the whole shop
-        </ActionButton>
+        </AppButton>
       </div>
     </div>
   );
@@ -134,14 +136,14 @@ function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
       <button
         type="button"
         onClick={() => openShop(`/products/${piece.slug}`)}
-        className="flex w-full items-center gap-4 border border-gold/25 bg-white/70 p-3 pr-16 text-left transition-colors hover:border-gold/60"
+        className="card-lift flex w-full items-center gap-4 rounded-xl border border-gold/15 bg-white p-3 pr-16 text-left transition-colors hover:border-gold/45"
       >
         {/*
           The photograph comes from the shop's storage, so with no connection
           there is nothing to draw. The tile keeps its place either way rather
           than letting the row collapse to the height of the text.
         */}
-        <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden bg-champagne/40">
+        <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-champagne/40">
           <img
             src={piece.images[0]}
             alt=""
@@ -177,7 +179,7 @@ function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${piece.name} from saved pieces`}
-        className="absolute top-1/2 right-3 grid h-11 w-11 -translate-y-1/2 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold"
+        className="card-lift-sm absolute top-1/2 right-3 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-gold/25 bg-white transition-colors hover:border-gold/60"
       >
         <Heart className="h-5 w-5 fill-rose text-rose" strokeWidth={1.4} aria-hidden />
       </button>

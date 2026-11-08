@@ -9,15 +9,35 @@
  * reading the entry landed on rather than keeping a stack of our own.
  *
  * Still not a router. A router decides what to render from a URL; this decides
- * nothing. It is four strings and a comparison, kept in their own file so the
+ * nothing. It is eleven strings and a comparison, kept in their own file so
  * back-button arithmetic can be tested without a DOM.
  */
-export const VIEWS = ["rate", "pieces", "calculator", "store", "saved"] as const;
+export const VIEWS = [
+  "home",
+  "rate",
+  "pieces",
+  "calculator",
+  "store",
+  "saved",
+  "custom",
+  "sell",
+  "story",
+  "contact",
+  "appointment",
+] as const;
 
 export type View = (typeof VIEWS)[number];
 
-/** Where the app opens, and where an entry with nothing to say lands. */
-export const HOME: View = "rate";
+/**
+ * Where the app opens, and where an entry with nothing to say lands.
+ *
+ * The board until the app had a front door; now the front door. Somebody who
+ * taps the icon is as likely to be looking for a piece as for a figure, and a
+ * screen that offers both is a truer answer to "open the shop" than either
+ * one of them on its own. The board is one tap away and is still the first
+ * thing on this screen.
+ */
+export const HOME: View = "home";
 
 function isView(value: unknown): value is View {
   return typeof value === "string" && (VIEWS as readonly string[]).includes(value);
@@ -29,7 +49,7 @@ function isView(value: unknown): value is View {
  * An entry with no screen named is the one the WebView started with — the
  * launch, which is home. So is an entry naming a screen this build does not
  * have: an installed app can be opened on history that an older version
- * wrote, and the board is a better answer there than a blank page.
+ * wrote, and home is a better answer there than a blank page.
  */
 export function viewFromHistory(state: unknown): View {
   const named = (state as { view?: unknown } | null | undefined)?.view;

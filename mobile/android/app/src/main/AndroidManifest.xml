@@ -70,4 +70,31 @@
       is how an app gets a permanent no.
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      The microphone, for the voice note on the custom-order screen.
+
+      Describing a piece of jewellery in writing is the hard part of ordering
+      one, and most customers would rather say it than type it. The website
+      has taken voice notes since the custom-order page was built; this is
+      what lets the app take the same one instead of handing the customer off
+      to WhatsApp.
+
+      Asked for at the moment somebody presses record, and never before.
+      Capacitor does the asking itself: when the WebView requests
+      AUDIO_CAPTURE, BridgeWebChromeClient launches the runtime prompt for
+      exactly these two and grants the WebView only if the customer says yes.
+      A permission missing from this file is reported as denied without a
+      prompt, which is why MODIFY_AUDIO_SETTINGS is here too even though it is
+      a normal permission that needs no prompt of its own — Capacitor asks for
+      the pair, and one missing fails both.
+
+      The feature is declared optional so the listing does not exclude a
+      device without a microphone. The screen works without one: a picture or
+      a description is enough to send, and the recorder is only offered if the
+      WebView says it can record.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>
