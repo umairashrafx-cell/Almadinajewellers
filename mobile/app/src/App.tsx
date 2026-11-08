@@ -1,20 +1,25 @@
-import { Gem, Heart, Home, Menu, PencilRuler, Sparkles, type LucideIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Gem, Heart, Home, Menu, PencilRuler } from "lucide-react";
+import { useEffect, useState, type ComponentType, type SVGProps } from "react";
 
 import { fetchRateSnapshot } from "@/lib/rates";
 import { cn } from "@/lib/utils";
 
+import { NecklaceBustIcon } from "./components/NecklaceBustIcon";
 import { PushHousekeeping } from "./components/PushHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
 import { viewFromHistory, type View } from "./lib/views";
+import { AppointmentScreen } from "./screens/AppointmentScreen";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
+import { ContactScreen } from "./screens/ContactScreen";
 import { CustomOrderScreen } from "./screens/CustomOrderScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { PiecesScreen } from "./screens/PiecesScreen";
 import { RateScreen } from "./screens/RateScreen";
 import { SavedScreen } from "./screens/SavedScreen";
+import { SellGoldScreen } from "./screens/SellGoldScreen";
 import { StoreScreen } from "./screens/StoreScreen";
+import { StoryScreen } from "./screens/StoryScreen";
 
 /**
  * The app's own screens, and a door to the rest of the shop.
@@ -32,6 +37,9 @@ import { StoreScreen } from "./screens/StoreScreen";
  * button actually is — see lib/views.ts.
  */
 
+/** Lucide's icons and the shop's own, standing in the same row. */
+type TabIcon = ComponentType<SVGProps<SVGSVGElement>>;
+
 /**
  * The bar is five things, and the drawer is everything else.
  *
@@ -45,10 +53,10 @@ import { StoreScreen } from "./screens/StoreScreen";
  * longest word in the bar and needs about forty-five of them at the house
  * size, which is why it is not "Custom Order".
  */
-const TABS: ReadonlyArray<{ id: View; label: string; icon: LucideIcon }> = [
+const TABS: ReadonlyArray<{ id: View; label: string; icon: TabIcon }> = [
   { id: "home", label: "Home", icon: Home },
   { id: "rate", label: "Rates", icon: Gem },
-  { id: "pieces", label: "Shop", icon: Sparkles },
+  { id: "pieces", label: "Shop", icon: NecklaceBustIcon },
   { id: "saved", label: "Saved", icon: Heart },
   { id: "custom", label: "Custom", icon: PencilRuler },
 ];
@@ -323,6 +331,16 @@ export function App() {
         {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
         {view === "store" && <StoreScreen />}
         {view === "custom" && <CustomOrderScreen />}
+        {view === "sell" && <SellGoldScreen rates={rates} />}
+        {view === "appointment" && <AppointmentScreen />}
+        {/*
+          Both of these offer a way to the shop's address rather than
+          reprinting it. Going by `go` and not `goFromDrawer`: the drawer has
+          closed by now, so this is an ordinary move between screens and back
+          should return to the one the customer came from.
+        */}
+        {view === "story" && <StoryScreen showStore={() => go("store")} />}
+        {view === "contact" && <ContactScreen showStore={() => go("store")} />}
       </main>
 
       <nav
