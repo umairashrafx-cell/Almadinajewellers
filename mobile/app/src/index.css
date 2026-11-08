@@ -19,3 +19,105 @@ body,
   min-height: 100%;
   background: var(--color-ivory, #faf7f2);
 }
+
+/*
+ * The app's own corners.
+ *
+ * The website is built square on purpose — every radius token there is zero or
+ * two pixels, and ActionButton's own comment says rounding it "would make a
+ * jewellery house read like a piece of software". That judgement stands for a
+ * page viewed on a desktop beside a brand's other pages. A phone screen is a
+ * different room: everything on it is a card in a stack of cards, and at
+ * 375 points wide a square card against a square card against a square tab bar
+ * reads as a form rather than a shopfront.
+ *
+ * So the two diverge here, deliberately and only here. This block cannot reach
+ * the website: the site compiles its CSS from src/styles.css through the root
+ * Vite config, and this file is the app's own entry, compiled separately.
+ * Re-declaring a token the site declared with `@theme inline` is what makes
+ * the difference -- inlined, the site's utilities carry the literal 2px;
+ * re-declared here, the app's carry var(--radius-*) and pick these values up.
+ * So every rounded-sm/md/lg/xl/2xl already written in the shared components
+ * the app renders is re-rounded, without a line of those components changing.
+ *
+ * What this cannot reach is an arbitrary value. `rounded-[2px]` compiles to a
+ * literal, not to a var, so no theme can touch it -- which is how the app came
+ * to show square ActionButtons on the rate and saved screens next to the round
+ * ones here. The six such corners in the shared components the app renders are
+ * tokens now: --radius-action for the two that are buttons, rounded-lg and
+ * rounded-md for the tile and the calculator's fields. They stay 2px on the
+ * site, which declares --radius-action as 2px, and bend here.
+ *
+ * Checked rather than assumed, in both bundles: the app's built CSS emits
+ * border-radius:var(--radius-lg) where it emitted border-radius:2px, and the
+ * website's still emits the literal 2px for those same classes. A
+ * .rounded-\[2px\] rule is still emitted into the app's CSS -- @source below
+ * scans the whole shared src tree, and the site's own routes still use it --
+ * but nothing the app renders carries that class any more. Counted by walking
+ * the imports out of mobile/app/src: 44 modules reachable, none of them with a
+ * rounded-[2px] left in it.
+ */
+@theme {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-action: 9999px;
+}
+
+/*
+ * A card lifted off the page rather than drawn onto it.
+ *
+ * The website separates things with a gold hairline, which is right on ivory
+ * paper. On a phone the same hairline at the same weight turns a grid of
+ * photographs into a spreadsheet, so the app lifts its cards instead: a white
+ * face, almost no border, and two shadows — a tight one that seats the card and
+ * a wide soft one that gives it somewhere to sit.
+ *
+ * Both are the brand's own green at very low opacity rather than black, which
+ * is the difference between a shadow that belongs to this palette and a grey
+ * smudge underneath it.
+ */
+@utility card-lift {
+  box-shadow:
+    0 1px 2px oklch(0.16 0.035 160 / 0.05),
+    0 8px 20px oklch(0.16 0.035 160 / 0.07);
+}
+
+@utility card-lift-sm {
+  box-shadow:
+    0 1px 2px oklch(0.16 0.035 160 / 0.05),
+    0 4px 10px oklch(0.16 0.035 160 / 0.06);
+}
+
+/*
+ * The drawer, arriving from the edge it lives on.
+ *
+ * Mounted only while it is open, so there is nothing to transition from — an
+ * animation rather than a transition, and a short one. 220ms is about the
+ * length of the thumb stroke that asked for it; longer reads as the app
+ * thinking about whether to open.
+ *
+ * The website's own reduced-motion block cannot cover this, because the
+ * utility is declared here. A visitor who has asked for less motion gets the
+ * drawer in place, which is the state the animation was heading for anyway.
+ */
+@utility drawer-in {
+  animation: drawer-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-in {
+    animation: none;
+  }
+}

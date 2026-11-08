@@ -33,13 +33,17 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * Production is on 2, released 5 October 2026 — the Trusted Web
-         * Activity — so this is 3. Read the live number off the Play Console
-         * again before any later release rather than trusting this comment.
+         * The Play Console showed 3 live on 8 November 2026, so this is 4.
+         *
+         * Until then this comment said production was on 2, and it was wrong:
+         * 3 had already gone out. A signed bundle was built against it and
+         * would have been rejected at upload. So read the live number off the
+         * Console before every release — what is written here is a note of
+         * what was true once, not a source of truth.
          *
          * versionName is what a customer sees: the second app.
          */
-        versionCode 3
+        versionCode 4
         versionName "2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

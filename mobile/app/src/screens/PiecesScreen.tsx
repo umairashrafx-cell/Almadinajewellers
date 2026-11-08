@@ -1,13 +1,15 @@
-import { Heart, Search, X } from "lucide-react";
+import { Heart, Search, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { ActionButton } from "@/components/ui/ActionButton";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import type { Product } from "@/data/products";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { fetchAllProducts, searchProducts } from "@/lib/catalogue";
+import { shareOnWhatsApp } from "@/lib/share";
 import { formatGrams, formatPKR, productEnquiryLink, productUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
+import { AppButton, AppLink } from "../components/AppButton";
 import { Kept } from "../components/Kept";
 import { PIECES_KEY, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
@@ -32,11 +34,22 @@ import { openShop } from "../lib/shop";
  * shows up on the Saved screen and on the website's own wishlist, and one
  * removed in either place stays removed. src/lib/wishlist.ts has the why.
  */
-export function PiecesScreen() {
+export function PiecesScreen({ collection }: { collection?: string | null }) {
   const pieces = useCached<Product[]>(PIECES_KEY, fetchAllProducts);
 
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+
+  /*
+   * The collection chosen on the front door, if the customer came that way.
+   *
+   * An initial value rather than a prop this screen keeps reading: the chip row
+   * below is still in charge of the filter once the screen is up, and a prop
+   * that kept overwriting it would make the chips feel broken. The shell
+   * unmounts this screen whenever another tab is showing, so the chosen
+   * collection arrives on a fresh mount every time and there is nothing stale
+   * to reconcile — App.tsx holds the value and clears it on a Shop tap.
+   */
+  const [category, setCategory] = useState<string | null>(collection ?? null);
   const [open, setOpen] = useState<Product | null>(null);
 
   /*
@@ -148,7 +161,7 @@ export function PiecesScreen() {
 
 function Find({ query, setQuery }: { query: string; setQuery: (value: string) => void }) {
   return (
-    <label className="mt-6 flex items-center gap-3 border border-gold/30 bg-white/70 px-3 py-2.5">
+    <label className="card-lift-sm mt-6 flex items-center gap-3 rounded-full border border-gold/20 bg-white px-4 py-3">
       <Search className="h-4 w-4 shrink-0 text-gold-deep" aria-hidden />
       <input
         type="search"
@@ -210,10 +223,10 @@ function Chip({
         // h-11, not py-1.5: a 28px-tall chip in a row that scrolls sideways is
         // the easiest thing in the app to miss with a thumb, and missing it
         // scrolls the row instead of choosing the category.
-        "inline-flex h-11 shrink-0 items-center border px-4 text-[11px] font-semibold tracking-widest whitespace-nowrap uppercase transition-colors",
+        "inline-flex h-11 shrink-0 items-center rounded-full border px-5 text-[11px] font-semibold tracking-widest whitespace-nowrap uppercase transition-colors",
         active
-          ? "border-gold bg-gold text-primary"
-          : "border-gold/35 text-warmgrey hover:border-gold/60",
+          ? "card-lift-sm border-primary bg-primary text-ivory"
+          : "border-gold/25 bg-white text-warmgrey hover:border-gold/60",
       )}
     >
       {children}
@@ -229,9 +242,9 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
       <button
         type="button"
         onClick={onOpen}
-        className="flex h-full w-full flex-col border border-gold/25 bg-white/70 text-left transition-colors hover:border-gold/60"
+        className="card-lift flex h-full w-full flex-col overflow-hidden rounded-xl border border-gold/15 bg-white text-left transition-colors hover:border-gold/40"
       >
-        <span className="relative block aspect-square w-full overflow-hidden bg-champagne/40">
+        <span className="relative block aspect-square w-full overflow-hidden bg-champagne/30">
           <img
             src={piece.images[0]}
             alt=""
@@ -242,7 +255,7 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
             }}
           />
           {piece.isNew ? (
-            <span className="absolute top-2 left-2 bg-primary/90 px-2 py-1 text-[9px] font-semibold tracking-widest text-ivory uppercase">
+            <span className="absolute top-2 left-2 rounded-full bg-primary/90 px-2.5 py-1 text-[9px] font-semibold tracking-widest text-ivory uppercase">
               New
             </span>
           ) : null}
@@ -288,7 +301,7 @@ function Keep({ piece, className }: { piece: Product; className?: string }) {
       aria-label={saved ? `Remove ${piece.name} from saved pieces` : `Save ${piece.name}`}
       aria-pressed={saved}
       className={cn(
-        "grid h-11 w-11 place-items-center border border-gold/40 bg-ivory/90 transition-colors hover:bg-gold",
+        "card-lift-sm grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-white/95 transition-colors hover:bg-gold",
         className,
       )}
     >
@@ -339,7 +352,7 @@ function Detail({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="inline-grid h-11 w-11 place-items-center border border-gold/40 text-gold-deep transition-colors hover:bg-gold hover:text-primary"
+            className="inline-grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-white text-gold-deep transition-colors hover:bg-gold hover:text-primary"
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -347,16 +360,7 @@ function Detail({
       </div>
 
       <div className="px-4 pt-5 pb-12">
-        <div className="aspect-square w-full overflow-hidden bg-champagne/40">
-          <img
-            src={piece.images[0]}
-            alt={piece.name}
-            className="h-full w-full object-cover"
-            onError={(event) => {
-              event.currentTarget.style.visibility = "hidden";
-            }}
-          />
-        </div>
+        <Gallery piece={piece} />
 
         <h2 className="mt-5 font-display text-2xl leading-snug font-light tracking-wide text-primary">
           {piece.name}
@@ -368,7 +372,7 @@ function Detail({
           <p className="mt-1 text-sm text-warmgrey line-through">{formatPKR(piece.pricePkr)}</p>
         ) : null}
 
-        <dl className="mt-6 divide-y divide-gold/15 border-y border-gold/15 text-sm">
+        <dl className="card-lift-sm mt-6 divide-y divide-gold/15 rounded-xl border border-gold/15 bg-white px-4 text-sm">
           <Row label="Karat" value={piece.karat} />
           <Row label="Weight charged" value={formatGrams(weight)} />
           {piece.pricedWeightG && piece.pricedWeightG !== piece.grossWeightG ? (
@@ -382,29 +386,136 @@ function Detail({
           making and anything the photograph does not say.
         </p>
 
+        {/*
+          WhatsApp leads now. It is what the screen is for — every price on it
+          is "ask the shop", and the mockup puts the green button first for the
+          same reason. The shop link follows in gold, and sharing is quiet,
+          because a customer who wants to send a piece to somebody will look
+          for it and a customer who does not should not be asked.
+        */}
         <div className="mt-6 grid gap-3">
-          <ActionButton
-            onClick={() => onShop(`/products/${piece.slug}`)}
-            className="w-full justify-center"
-          >
-            See it in the shop
-          </ActionButton>
-
           {/*
             The enquiry is the same WhatsApp message the website's product page
             sends, carrying the piece's own link, so a reply from the shop reads
             the same whichever half of the app it was asked from.
           */}
-          <a
-            href={productEnquiryLink(piece.name, piece.sku, productUrl(piece.slug))}
-            className="inline-flex w-full items-center justify-center gap-2 border border-gold px-7 py-3.5 text-[12px] font-semibold tracking-widest text-ink uppercase transition-colors hover:bg-champagne/50"
-          >
+          <AppLink href={productEnquiryLink(piece.name, piece.sku, productUrl(piece.slug))}>
+            <WhatsAppIcon className="h-4 w-4" />
             Ask about this piece
-          </a>
+          </AppLink>
+
+          <AppButton variant="gold" onClick={() => onShop(`/products/${piece.slug}`)}>
+            See it in the shop
+          </AppButton>
+
+          <AppButton variant="quiet" onClick={() => void share(piece)}>
+            <Share2 className="h-4 w-4" aria-hidden />
+            Share
+          </AppButton>
         </div>
       </div>
     </div>
   );
+}
+
+/**
+ * The photographs, and where you are among them.
+ *
+ * A snap-scrolling row rather than a carousel with arrows: a thumb already
+ * knows what to do with a strip of images on a phone, and arrows would be two
+ * more targets on a screen that already carries a heart and a cross. The dots
+ * are read-only. They say how many there are and which one this is, which is
+ * the whole job, and a piece with one photograph gets none — a single dot is a
+ * control that cannot do anything.
+ */
+function Gallery({ piece }: { piece: Product }) {
+  const [index, setIndex] = useState(0);
+
+  /*
+   * Distinct photographs only, and this is the line the whole component turns
+   * on. A Product always carries two images, but the catalogue fills the
+   * second from the first when a piece has only one key — and thirty of the
+   * shop's thirty-six pieces have only one. Handed the pair unfiltered, those
+   * thirty would get a two-dot pager over the same photograph twice: a
+   * promise of a second angle that does not exist.
+   */
+  const images = useMemo(
+    () => piece.images.filter((src, position, all) => all.indexOf(src) === position),
+    [piece.images],
+  );
+
+  if (images.length === 0) {
+    return <div className="aspect-square w-full rounded-xl bg-champagne/30" />;
+  }
+
+  return (
+    <div>
+      <div
+        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-xl bg-champagne/30"
+        onScroll={(event) => {
+          const strip = event.currentTarget;
+          const width = strip.clientWidth;
+          if (width > 0) setIndex(Math.round(strip.scrollLeft / width));
+        }}
+      >
+        {images.map((src, position) => (
+          <img
+            key={src}
+            src={src}
+            alt={position === 0 ? piece.name : ""}
+            className="aspect-square w-full shrink-0 snap-center object-cover"
+            onError={(event) => {
+              event.currentTarget.style.visibility = "hidden";
+            }}
+          />
+        ))}
+      </div>
+
+      {images.length > 1 ? (
+        <>
+          <div className="mt-3 flex justify-center gap-1.5" aria-hidden>
+            {images.map((src, position) => (
+              <span
+                key={src}
+                className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  position === index ? "w-4 bg-gold" : "w-1.5 bg-gold/30",
+                )}
+              />
+            ))}
+          </div>
+          <p className="sr-only" aria-live="polite">
+            Photograph {index + 1} of {images.length}
+          </p>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Hand the piece to whatever the phone shares with.
+ *
+ * Android's WebView offers the Web Share API, which opens the system sheet and
+ * lets somebody send the piece wherever they already talk to the person they
+ * are sending it to. Where the API is missing, WhatsApp is the fallback,
+ * because that is where this shop's conversations happen anyway.
+ */
+async function share(piece: Product) {
+  const url = productUrl(piece.slug);
+  const text = `${piece.name} — Al-Madina Jewellers`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: piece.name, text, url });
+    } catch {
+      // Dismissing the sheet throws exactly as a failure does, and somebody
+      // who closed it has not asked to be sent to WhatsApp instead.
+    }
+    return;
+  }
+
+  window.open(shareOnWhatsApp(`${text}\n${url}`), "_blank");
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -435,8 +546,11 @@ function Waiting() {
 
       <div className="mt-6 grid animate-pulse grid-cols-2 gap-3">
         {[0, 1, 2, 3, 4, 5].map((tile) => (
-          <div key={tile} className="border border-gold/25 bg-white/70">
-            <div className="aspect-square w-full bg-champagne/40" />
+          <div
+            key={tile}
+            className="card-lift overflow-hidden rounded-xl border border-gold/15 bg-white"
+          >
+            <div className="aspect-square w-full bg-champagne/30" />
             <div className="p-3">
               <div className="h-3.5 w-4/5 rounded bg-champagne/60" />
               <div className="mt-2 h-2.5 w-1/2 rounded bg-champagne/45" />
@@ -492,9 +606,9 @@ function NothingMatches({
       </p>
 
       <div className="mt-6 grid justify-center gap-3">
-        <ActionButton onClick={clear}>
+        <AppButton variant="gold" onClick={clear}>
           {typed && category ? "Clear search and filter" : typed ? "Clear the search" : "Show all"}
-        </ActionButton>
+        </AppButton>
       </div>
     </div>
   );
@@ -510,7 +624,9 @@ function Empty({ refresh }: { refresh: () => void }) {
         They arrive the first time the app has a connection, and stay afterwards.
       </p>
       <div className="mt-7">
-        <ActionButton onClick={refresh}>Try again</ActionButton>
+        <AppButton variant="gold" onClick={refresh}>
+          Try again
+        </AppButton>
       </div>
     </div>
   );

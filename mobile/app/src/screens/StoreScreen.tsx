@@ -1,6 +1,9 @@
-import { Clock, MapPin, MessageCircle, Navigation, Phone } from "lucide-react";
+import { Clock, MapPin, Navigation, Phone } from "lucide-react";
 
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { SITE, STORES, directionsUrl, openPlaceUrl, whatsappLink } from "@/lib/site";
+
+import { AppLink } from "../components/AppButton";
 
 /**
  * Where the shop is, written down on the phone.
@@ -34,8 +37,8 @@ export function StoreScreen() {
 
 function Branch({ store }: { store: (typeof STORES)[number] }) {
   return (
-    <section className="border border-gold/25 bg-white/70">
-      <header className="border-b border-gold/20 px-4 py-4">
+    <section className="card-lift overflow-hidden rounded-2xl border border-gold/15 bg-white">
+      <header className="border-b border-gold/20 px-5 py-4">
         <h2 className="font-display text-xl font-light tracking-wide text-primary">{store.name}</h2>
         <p className="mt-1 text-[11px] tracking-widest text-warmgrey uppercase">{store.city}</p>
       </header>
@@ -68,33 +71,32 @@ function Branch({ store }: { store: (typeof STORES)[number] }) {
         own button, because a single Call button would have to choose one and
         would choose wrong half the time.
       */}
-      <div className="grid gap-3 px-4 py-5">
+      <div className="grid gap-3 px-5 py-5">
         {store.phones.map((phone) => (
-          <a
-            key={phone}
-            href={`tel:${phone.replace(/\s/g, "")}`}
-            className="inline-flex w-full items-center justify-center gap-2 border border-gold px-7 py-3.5 text-[12px] font-semibold tracking-widest text-ink uppercase transition-colors hover:bg-champagne/50"
-          >
-            <Phone className="h-4 w-4" aria-hidden />
-            {phone}
-          </a>
+          <AppLink key={phone} variant="quiet" href={`tel:${phone.replace(/\s/g, "")}`}>
+            <Phone className="h-4 w-4 text-gold-deep" aria-hidden />
+            <span className="nums">{phone}</span>
+          </AppLink>
         ))}
 
-        <a
-          href={directionsUrl(store.mapQuery, store.placeId)}
-          className="inline-flex w-full items-center justify-center gap-2 bg-gold px-7 py-3.5 text-[12px] font-semibold tracking-widest text-primary uppercase transition-colors hover:bg-gold-deep"
-        >
+        <AppLink variant="gold" href={directionsUrl(store.mapQuery, store.placeId)}>
           <Navigation className="h-4 w-4" aria-hidden />
           Directions
-        </a>
+        </AppLink>
 
-        <a
+        {/*
+          WhatsApp in WhatsApp's own green and under its own mark, the way it
+          is in the drawer and at the end of a custom order. A customer
+          scanning for it recognises the colour before they read anything, and
+          the shop's enquiries all arrive there.
+        */}
+        <AppLink
           href={whatsappLink("Assalam-o-Alaikum, I have a question about your jewellery.")}
-          className="inline-flex w-full items-center justify-center gap-2 border border-gold px-7 py-3.5 text-[12px] font-semibold tracking-widest text-ink uppercase transition-colors hover:bg-champagne/50"
+          className="bg-[#25D366] text-white hover:bg-[#1fb356]"
         >
-          <MessageCircle className="h-4 w-4" aria-hidden />
+          <WhatsAppIcon className="h-4 w-4" aria-hidden />
           WhatsApp
-        </a>
+        </AppLink>
 
         <a
           href={openPlaceUrl(store.mapEmbedQuery, store.placeId)}
@@ -117,7 +119,7 @@ function Line({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-3 px-4 py-4">
+    <div className="flex gap-3 px-5 py-4">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden />
       <div className="min-w-0 flex-1">
         <dt className="text-[10px] tracking-widest text-warmgrey uppercase">{label}</dt>

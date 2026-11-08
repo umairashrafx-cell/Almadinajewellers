@@ -479,9 +479,26 @@ function PhotoField({
   onPick: () => void;
   onClear: () => void;
 }) {
+  /*
+   * Labelled as a group, not with a <label htmlFor> aimed at the button.
+   *
+   * A native <label for> on a <button> beats the button's own text in the
+   * accessible-name computation, so the trigger announced as "Show us a
+   * picture" and its visible words were not in the name at all -- a WCAG
+   * 2.5.3 failure, and nothing for voice control to say. The id also only
+   * existed while the field was empty, so attaching a photo left the label
+   * pointing at nothing.
+   */
   return (
-    <div>
-      <Label htmlFor="co-photo-button">Show us a picture</Label>
+    <div role="group" aria-labelledby="co-photo-label">
+      {/* A span, not a <p>: inline, so the caption keeps the 24px line box the
+          <label> had and the trigger does not move up by 8px. */}
+      <span
+        id="co-photo-label"
+        className="text-[11px] font-semibold uppercase tracking-widest text-warmgrey"
+      >
+        Show us a picture
+      </span>
       {photo ? (
         <div className="mt-2 flex flex-wrap items-center gap-4 border border-gold/40 bg-ivory p-4">
           <img
@@ -506,7 +523,6 @@ function PhotoField({
         </div>
       ) : (
         <button
-          id="co-photo-button"
           type="button"
           onClick={onPick}
           className="mt-2 flex w-full items-center justify-center gap-3 border border-dashed border-gold/60 bg-ivory px-4 py-8 text-sm text-warmgrey transition-colors hover:border-gold hover:text-primary"

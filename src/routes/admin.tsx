@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Calculator,
+  CalendarCheck,
   Coins,
   Inbox,
   Loader2,
@@ -86,15 +87,18 @@ function AdminLayout() {
           </div>
 
           {/*
-            Eight tabs need about 860px laid out in a row, and a phone offers
+            Nine tabs need about 960px laid out in a row, and a phone offers
             343. They used to be given `flex-1` and no way to wrap, so each one
             was squeezed to a sliver of the width and the labels were
-            unreadable. On a phone they become a four-up grid of stacked
-            icon-and-label tiles — two full rows, every tab visible without
-            scrolling or hiding, and a target big enough for a thumb. From sm
-            up they sit in a single row, wrapping if the screen runs out.
+            unreadable. On a phone they become a three-up grid of stacked
+            icon-and-label tiles — three full rows, every tab visible without
+            scrolling or hiding, and a target big enough for a thumb. Three
+            across rather than four because the ninth tab would otherwise sit
+            alone on a row of its own, and because a third of 343px is a
+            roomier target than a quarter. From sm up they sit in a single
+            row, wrapping if the screen runs out.
           */}
-          <nav className="order-3 grid w-full grid-cols-4 gap-1 sm:order-none sm:flex sm:w-auto sm:flex-wrap">
+          <nav className="order-3 grid w-full grid-cols-3 gap-1 sm:order-none sm:flex sm:w-auto sm:flex-wrap">
             <NavTab to="/admin" exact icon={Inbox}>
               Enquiries
             </NavTab>
@@ -103,6 +107,9 @@ function AdminLayout() {
             </NavTab>
             <NavTab to="/admin/custom-orders" icon={Sparkles}>
               Custom
+            </NavTab>
+            <NavTab to="/admin/appointments" icon={CalendarCheck}>
+              Visits
             </NavTab>
             <NavTab to="/admin/products" icon={Gem}>
               Products

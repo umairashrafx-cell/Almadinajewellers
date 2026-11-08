@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * hairline ring reads as jewellery rather than as a form control.
  */
 export const shareTile =
-  "group flex min-h-[86px] w-full flex-col items-center justify-center gap-2 rounded-[2px] border border-gold/35 bg-ivory/[0.04] px-2 py-3 text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-ivory transition-colors hover:border-gold hover:bg-gold/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-60 sm:text-[11px]";
+  "group flex min-h-[86px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-gold/35 bg-ivory/[0.04] px-2 py-3 text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-ivory transition-colors hover:border-gold hover:bg-gold/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-60 sm:text-[11px]";
 
 /** The gold ring the tile's icon sits in. */
 export function TileIcon({ children, className }: { children: ReactNode; className?: string }) {

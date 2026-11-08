@@ -10,13 +10,18 @@ import { defineConfig } from "vitest/config";
  * touches it: this config exists only so the test runner can resolve the same
  * `@/` paths the source uses, and it is deliberately the smallest thing that
  * does that.
+ *
+ * The third include is the Edge Functions' own pure logic. Those run on Deno
+ * and are deployed rather than built, so nothing else here sees them — but the
+ * parts of a payment protocol worth testing are plain functions over strings,
+ * and they are worth testing.
  */
 export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   test: {
-    include: ["src/**/*.test.ts", "mobile/app/src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "mobile/app/src/**/*.test.ts", "supabase/functions/**/*.test.ts"],
     environment: "node",
   },
 });

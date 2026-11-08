@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 
-import storeImage from "@/assets/store-counter.webp";
+import storeFront from "@/assets/store-front.webp";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
@@ -73,18 +73,29 @@ function StoresPage() {
                 <article className="grid gap-10 lg:grid-cols-2 lg:gap-16">
                   <div>
                     {/*
-                      A piece, not the shopfront. The alt used to name the
-                      branch and the city, which reads as a photograph of the
-                      premises — it is not one, and describing it that way
-                      tells a screen reader something the picture does not
-                      show.
+                      The shopfront, which is what a page headed "Visit Us" is
+                      for: the one photograph that tells somebody standing in
+                      Sarafa Market they have found the right door. It replaces
+                      a close-up of a necklace, whose alt had to say outright
+                      that it was not the premises.
+
+                      Heavier than what it replaces — 242KB against 38KB — and
+                      that is the picture, not the encoding: a lattice screen, a
+                      chandelier and four lit cases give a webp encoder very
+                      little it can throw away. Re-encoding the supplied file at
+                      quality 80 took 405KB down to 242KB with no visible change
+                      at 4x magnification on the smallest text in the frame,
+                      which is as far as a second lossy pass is worth pushing.
+                      It sits below the fold on a secondary page and loads
+                      lazily, so the weight falls on somebody who has already
+                      decided to come in.
                     */}
                     <img
-                      src={storeImage}
-                      alt="A gold necklace with a violet centre stone, of the kind kept at the counter"
+                      src={storeFront}
+                      alt="The Al-Madina Jewellers shopfront in Sarafa Market: a lit glass frontage under a black and gold name board in Urdu and English, with display cases and seating inside"
                       loading="lazy"
-                      width={1400}
-                      height={1050}
+                      width={1448}
+                      height={1086}
                       className="aspect-[4/3] w-full object-cover"
                     />
 
