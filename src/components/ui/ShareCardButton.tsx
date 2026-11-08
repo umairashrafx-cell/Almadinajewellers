@@ -97,7 +97,7 @@ export function ShareCardButton({
         className={cn(
           tile
             ? shareTile
-            : "inline-flex min-h-11 items-center justify-center gap-2 rounded-[2px] px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest transition-colors duration-300 disabled:opacity-70",
+            : "inline-flex min-h-11 items-center justify-center gap-2 rounded-action px-7 py-3.5 text-[12px] font-semibold uppercase tracking-widest transition-colors duration-300 disabled:opacity-70",
           className,
         )}
       >
