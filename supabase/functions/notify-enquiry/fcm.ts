@@ -139,6 +139,16 @@ export type Notification = {
   path: string;
   /** The Android channel the app created. Decides the sound and the heading. */
   channelId: string;
+  /**
+   * Which notification this one replaces in the tray.
+   *
+   * Android keeps one notification per tag. A change to the rate carries the
+   * same tag as the morning's rate, so it takes that one's place rather than
+   * leaving a stale figure sitting above the new one. New pieces carry their
+   * own, or the two kinds would overwrite each other and a customer who asked
+   * for both would only ever see whichever arrived last.
+   */
+  tag: string;
 };
 
 /**
@@ -173,9 +183,9 @@ export async function send(
             ttl: "43200s",
             notification: {
               channel_id: notification.channelId,
-              // A notification about the morning's rate replaces yesterday's
-              // rather than stacking beneath it.
-              tag: "gold-rate",
+              // Replaces the last one of its own kind rather than stacking
+              // beneath it. See Notification.tag.
+              tag: notification.tag,
             },
           },
         },

@@ -462,6 +462,7 @@ function notificationFor(audience: Audience, record: AnyRecord) {
       ...summarisePieces(record as PiecesRecord),
       path: PIECES_PATH,
       channelId: PIECES_CHANNEL,
+      tag: "new-pieces",
     };
   }
 
@@ -469,6 +470,9 @@ function notificationFor(audience: Audience, record: AnyRecord) {
     ...summariseRates(record as RateRecord, audience === "gold_rates_update"),
     path: RATE_PATH,
     channelId: RATE_CHANNEL,
+    // The same tag for the morning and for a change: the new figures take the
+    // old ones' place in the tray. It is the tag this function has always sent.
+    tag: "gold-rate",
   };
 }
 
