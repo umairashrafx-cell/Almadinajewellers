@@ -2,7 +2,13 @@ import { BellRing } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ActionButton } from "@/components/ui/ActionButton";
-import { alertState, disableRateAlerts, enableRateAlerts, type AlertState } from "@/lib/push";
+import {
+  disableRateAlerts,
+  enableRateAlerts,
+  pushStatus,
+  type AlertState,
+  type PushStatus,
+} from "@/lib/push";
 
 /**
  * Asks, inside the app, whether to send the day's rate.
@@ -16,16 +22,29 @@ import { alertState, disableRateAlerts, enableRateAlerts, type AlertState } from
  * the person who would like tomorrow's without having to come and look, and
  * asking here means the reason is on the screen while Android's own permission
  * prompt is being answered.
+ *
+ * The card offers one thing, the morning's rate, and turns it on or off. The
+ * app's Settings screen is where somebody chooses to be told of every change
+ * instead — and once they have, this card has to stop promising "never more
+ * than once a day", because for that phone it is no longer true. So it reads
+ * which of the two is in force and says that one.
  */
 export function RateAlerts() {
   const [state, setState] = useState<AlertState>("unsupported");
+  /** Told of every change, not only the morning's. Chosen in the app's Settings. */
+  const [every, setEvery] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const show = ({ state: next, prefs }: PushStatus) => {
+    setState(next !== "ready" ? next : prefs.rate === "off" ? "off" : "on");
+    setEvery(prefs.rate === "every");
+  };
 
   useEffect(() => {
     let cancelled = false;
-    void alertState()
+    void pushStatus()
       .then((next) => {
-        if (!cancelled) setState(next);
+        if (!cancelled) show(next);
       })
       .catch(() => {});
     return () => {
@@ -38,7 +57,11 @@ export function RateAlerts() {
   const act = (run: () => Promise<AlertState>) => async () => {
     setBusy(true);
     try {
-      setState(await run());
+      const next = await run();
+      // Blocked is the phone's answer and there is nothing further to read.
+      // Anything else, ask again: the answer also says which kind is on.
+      if (next === "blocked") setState(next);
+      else show(await pushStatus());
     } finally {
       setBusy(false);
     }
@@ -50,11 +73,21 @@ export function RateAlerts() {
         <BellRing className="mt-0.5 h-5 w-5 shrink-0 text-gold-deep" aria-hidden />
         <div className="min-w-0">
           <h2 className="font-display text-xl font-light tracking-wide text-primary">
-            {state === "on" ? "You will be told each morning" : "Know the rate before you ask"}
+            {state !== "on"
+              ? "Know the rate before you ask"
+              : every
+                ? "You will be told when the rate changes"
+                : "You will be told each morning"}
           </h2>
 
           <p className="mt-3 text-sm leading-relaxed text-warmgrey">
-            {state === "on" ? (
+            {state === "on" && every ? (
+              <>
+                We send a notification the morning the board is set, and again whenever the shop
+                changes a gold rate during the day. Nothing else — no offers. You can go back to
+                once a day in the app's Settings.
+              </>
+            ) : state === "on" ? (
               <>
                 We send one notification the morning the board is set, with the day's 24K and 22K
                 rates on it. Nothing else — no offers, and never more than once a day.

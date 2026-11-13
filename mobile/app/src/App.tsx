@@ -4,6 +4,7 @@ import { useEffect, useState, type ComponentType, type SVGProps } from "react";
 import { fetchRateSnapshot } from "@/lib/rates";
 import { cn } from "@/lib/utils";
 
+import { MoneyProvider } from "./components/Money";
 import { NecklaceBustIcon } from "./components/NecklaceBustIcon";
 import { PushHousekeeping } from "./components/PushHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
@@ -18,6 +19,7 @@ import { PiecesScreen } from "./screens/PiecesScreen";
 import { RateScreen } from "./screens/RateScreen";
 import { SavedScreen } from "./screens/SavedScreen";
 import { SellGoldScreen } from "./screens/SellGoldScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
 import { StoreScreen } from "./screens/StoreScreen";
 import { StoryScreen } from "./screens/StoryScreen";
 
@@ -264,7 +266,7 @@ export function App() {
         shell because the app opens here, on its own screens, and never on the
         website where the same work was already being done.
       */}
-      <PushHousekeeping showRates={() => go("rate")} />
+      <PushHousekeeping showRates={() => go("rate")} showPieces={showAllPieces} />
 
       <header className="flex items-center gap-3 border-b border-gold/20 bg-ivory px-4 py-3">
         {/*
@@ -304,20 +306,25 @@ export function App() {
         </p>
       </header>
 
-      <main className="flex-1">
-        {view === "home" && (
-          <HomeScreen
-            rates={rates}
-            showRates={() => go("rate")}
-            showPieces={showAllPieces}
-            showCollection={(category) => {
-              setCollection(category);
-              go("pieces");
-            }}
-          />
-        )}
-        {view === "rate" && <RateScreen rates={rates} />}
-        {/*
+      {/*
+        Around the screens and nothing else. Every rupee figure the app prints
+        is inside this, and the header, the bar and the drawer print none.
+      */}
+      <MoneyProvider>
+        <main className="flex-1">
+          {view === "home" && (
+            <HomeScreen
+              rates={rates}
+              showRates={() => go("rate")}
+              showPieces={showAllPieces}
+              showCollection={(category) => {
+                setCollection(category);
+                go("pieces");
+              }}
+            />
+          )}
+          {view === "rate" && <RateScreen rates={rates} />}
+          {/*
           Keyed on the collection, which is what makes a tap on the Shop tab
           mean the whole catalogue. The chosen collection is PiecesScreen's
           opening state and that screen owns the filter from then on, so
@@ -326,22 +333,24 @@ export function App() {
           while nothing is filtered leaves the key alone, so that tap stays
           what it was: a scroll back to the top.
         */}
-        {view === "pieces" && <PiecesScreen key={collection ?? "all"} collection={collection} />}
-        {view === "calculator" && <CalculatorScreen rates={rates} />}
-        {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
-        {view === "store" && <StoreScreen />}
-        {view === "custom" && <CustomOrderScreen />}
-        {view === "sell" && <SellGoldScreen rates={rates} />}
-        {view === "appointment" && <AppointmentScreen />}
-        {/*
+          {view === "pieces" && <PiecesScreen key={collection ?? "all"} collection={collection} />}
+          {view === "calculator" && <CalculatorScreen rates={rates} />}
+          {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
+          {view === "store" && <StoreScreen />}
+          {view === "custom" && <CustomOrderScreen />}
+          {view === "sell" && <SellGoldScreen rates={rates} />}
+          {view === "appointment" && <AppointmentScreen />}
+          {/*
           Both of these offer a way to the shop's address rather than
           reprinting it. Going by `go` and not `goFromDrawer`: the drawer has
           closed by now, so this is an ordinary move between screens and back
           should return to the one the customer came from.
         */}
-        {view === "story" && <StoryScreen showStore={() => go("store")} />}
-        {view === "contact" && <ContactScreen showStore={() => go("store")} />}
-      </main>
+          {view === "story" && <StoryScreen showStore={() => go("store")} />}
+          {view === "contact" && <ContactScreen showStore={() => go("store")} />}
+          {view === "settings" && <SettingsScreen />}
+        </main>
+      </MoneyProvider>
 
       <nav
         aria-label="Sections"

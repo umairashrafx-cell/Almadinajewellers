@@ -10,8 +10,22 @@ import { MetalIcon } from "@/components/rate/MetalIcon";
  *
  * The figures are ordinary selectable text — never an image — so they can be
  * copied into a calculator, read aloud by a screen reader, and indexed.
+ *
+ * `approx` is the Android app's, and the website never passes it. Given a
+ * rupee amount it answers with the same amount in another currency, already
+ * formatted and already marked as approximate, or with nothing when it has no
+ * rate it trusts — and the card prints what it is given as a third line. The
+ * rupee figures above it are the board; this is a gloss on them.
  */
-export function RateCard({ rate }: { rate: RateCardData }) {
+export function RateCard({
+  rate,
+  approx,
+}: {
+  rate: RateCardData;
+  approx?: ((pkr: number) => string | null) | undefined;
+}) {
+  const inOtherMoney = approx?.(rate.perTola) ?? null;
+
   return (
     <li className="group grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3 rounded-xl border border-rate-gold/35 bg-white/70 px-4 py-4 shadow-[0_1px_2px_rgb(22_61_52/0.04)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-px hover:border-rate-gold/70 hover:shadow-[0_8px_24px_rgb(22_61_52/0.10)] sm:grid-cols-[auto_1fr_auto] sm:gap-x-6 sm:px-6 sm:py-5">
       {/*
@@ -60,6 +74,9 @@ export function RateCard({ rate }: { rate: RateCardData }) {
           <p className="nums mt-1.5 text-xs text-rate-ink/80 sm:text-sm">
             {rate.perGram.toLocaleString("en-US")} per gram
           </p>
+          {inOtherMoney ? (
+            <p className="nums mt-1 text-xs text-rate-ink/70">{inOtherMoney} a tola</p>
+          ) : null}
         </div>
       </div>
     </li>

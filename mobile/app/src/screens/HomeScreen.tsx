@@ -8,6 +8,7 @@ import { formatRateStamp, rateFor, type RateSnapshot } from "@/lib/rates";
 import { SITE, formatPKR } from "@/lib/site";
 
 import { AppButton } from "../components/AppButton";
+import { Approx } from "../components/Money";
 import { PIECES_KEY, useCached, type Cached } from "../lib/cache";
 
 /**
@@ -125,6 +126,7 @@ function TodaysRate({ rates, onOpen }: { rates: Cached<RateSnapshot>; onOpen: ()
           <p className="font-display nums mt-2 text-2xl text-primary">
             {jewellery ? formatPKR(jewellery.perTola) : "—"}
           </p>
+          {jewellery ? <Approx pkr={jewellery.perTola} className="mt-1 text-xs" /> : null}
           <p className="mt-1 text-xs text-warmgrey">22K Jewellery, per tola</p>
         </div>
 

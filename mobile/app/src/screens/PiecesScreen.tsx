@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 import { AppButton, AppLink } from "../components/AppButton";
 import { Kept } from "../components/Kept";
+import { Approx } from "../components/Money";
 import { PIECES_KEY, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
 
@@ -271,6 +272,7 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
           <span className="mt-auto block pt-2 text-sm font-semibold text-ink">
             {formatPKR(price)}
           </span>
+          <Approx pkr={price} className="mt-0.5 text-[10px]" />
         </span>
       </button>
 
@@ -368,6 +370,7 @@ function Detail({
         <p className="mt-1 text-[11px] tracking-widest text-warmgrey uppercase">{piece.sku}</p>
 
         <p className="mt-4 text-xl font-semibold text-ink">{formatPKR(price)}</p>
+        <Approx pkr={price} className="mt-1 text-sm" />
         {piece.salePricePkr ? (
           <p className="mt-1 text-sm text-warmgrey line-through">{formatPKR(piece.pricePkr)}</p>
         ) : null}

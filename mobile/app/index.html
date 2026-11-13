@@ -13,6 +13,29 @@
     <title>Al-Madina Jewellers</title>
 
     <!--
+      Dark, if that is what was chosen, before the first paint.
+
+      Everything else waits for the bundle; this cannot. A dark app that
+      opened ivory and then turned would flash white in somebody's face every
+      time they launched it at night, which is the one time the setting
+      matters. So the choice is read here from a single word in storage,
+      written by src/lib/settings.ts whenever the setting changes, and the
+      class is on the page before the stylesheet has anything to draw.
+
+      Wrapped, because storage can be switched off and this must never be the
+      reason the app fails to open.
+    -->
+    <script>
+      try {
+        var theme = localStorage.getItem("amj:theme");
+        var phone = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (theme === "dark" || (theme === "phone" && phone)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (error) {}
+    </script>
+
+    <!--
       The shop's typefaces, from the same place the website gets them. With no
       connection they simply do not arrive and the screens fall back to the
       phone's own faces — the figures are still the figures.

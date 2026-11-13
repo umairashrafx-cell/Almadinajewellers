@@ -40,6 +40,24 @@ let preferences = new Map<string, string>();
 let permission = "granted";
 
 /**
+ * The token Firebase hands this phone. The table's own check wants at least
+ * sixty-four characters, and a real one is about a hundred and sixty.
+ */
+const TOKEN = "t".repeat(160);
+
+/** Every call made to the shop, in order. */
+const calls: Array<{ name: string; args: unknown }> = [];
+
+/** Calls the shop refuses, by function name, and what it says when it does. */
+const failing = new Map<string, { code: string; message: string }>();
+
+/** The notification channels the code under test asked Android to make. */
+const channels: string[] = [];
+
+/** Whoever is waiting for Firebase to answer register(). */
+let onRegistration: ((token: { value: string }) => void) | undefined;
+
+/**
  * This origin's localStorage, which the tests run without.
  *
  * Only one of them needs it — the migration path that moves a flag written by
@@ -96,25 +114,54 @@ vi.mock("@capacitor/push-notifications", () => ({
   PushNotifications: asPlugin({
     checkPermissions: async () => ({ receive: permission }),
     requestPermissions: async () => ({ receive: permission }),
-    createChannel: async () => {},
-    register: async () => {},
+    createChannel: async ({ id }: { id: string }) => {
+      channels.push(id);
+    },
+    // Firebase answers through the "registration" event, not the promise.
+    register: async () => {
+      onRegistration?.({ value: TOKEN });
+    },
     unregister: async () => {},
-    addListener: async () => ({ remove: async () => {} }),
+    addListener: async (event: string, handler: (token: { value: string }) => void) => {
+      if (event === "registration") onRegistration = handler;
+      return { remove: async () => {} };
+    },
   }),
 }));
 
-/** Nothing here reaches the shop; no test below gets as far as a token. */
+/** The shop, which records what it was asked and refuses what it is told to. */
 vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { rpc: async () => ({ error: null }) },
+  supabase: {
+    rpc: async (name: string, args: unknown) => {
+      calls.push({ name, args });
+      return { error: failing.get(name) ?? null };
+    },
+  },
 }));
 
-const { alertState, inApp, refreshRegistration } = await import("@/lib/push");
+const {
+  alertState,
+  disableRateAlerts,
+  enableRateAlerts,
+  inApp,
+  pushStatus,
+  readPushPrefs,
+  refreshRegistration,
+  setPushPreferences,
+} = await import("@/lib/push");
 
 beforeEach(() => {
   native = false;
   preferences = new Map();
   permission = "granted";
+  calls.length = 0;
+  failing.clear();
+  channels.length = 0;
+  onRegistration = undefined;
   origin();
+  // The module logs what it could not do, which is the behaviour under test
+  // in half of these and noise in the test output.
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 describe("the mocks", () => {
@@ -173,5 +220,196 @@ describe("inside the app", () => {
     localStorage.setItem(WANTED_KEY, "yes");
     await expect(alertState()).resolves.toBe("on");
     expect(preferences.get(WANTED_KEY)).toBe("yes");
+  });
+});
+
+/*
+ * Everything below came with the Settings screen: the same token can now be
+ * subscribed to more than the daily rate, and what it is subscribed to has to
+ * survive an update, a failed save, and a database that has not yet been told
+ * about any of it.
+ */
+
+describe("what a phone is subscribed to, read back from storage", () => {
+  it("is nothing when nothing was ever stored", () => {
+    expect(readPushPrefs(null, null)).toEqual({ rate: "off", pieces: false });
+  });
+
+  it("is the daily rate for somebody who said yes before there was a choice", () => {
+    // A build before the Settings screen wrote only the flag. An update must
+    // not change what those customers are sent.
+    expect(readPushPrefs(null, "yes")).toEqual({ rate: "daily", pieces: false });
+  });
+
+  it("is what was stored, whatever the older flag says", () => {
+    expect(readPushPrefs('{"rate":"every","pieces":true}', "yes")).toEqual({
+      rate: "every",
+      pieces: true,
+    });
+    expect(readPushPrefs('{"rate":"off","pieces":true}', "yes")).toEqual({
+      rate: "off",
+      pieces: true,
+    });
+  });
+
+  it("never reads an unknown word as a subscription", () => {
+    // A mode this build has not heard of must not become "send everything".
+    expect(readPushPrefs('{"rate":"hourly","pieces":"yes"}', null)).toEqual({
+      rate: "off",
+      pieces: false,
+    });
+  });
+
+  it("falls back to the flag when what was stored cannot be read", () => {
+    expect(readPushPrefs("{", "yes")).toEqual({ rate: "daily", pieces: false });
+    expect(readPushPrefs("null", null)).toEqual({ rate: "off", pieces: false });
+  });
+});
+
+describe("choosing what to be told", () => {
+  beforeEach(() => {
+    native = true;
+  });
+
+  it("reports nothing switched on for a phone that has never been asked", async () => {
+    await expect(pushStatus()).resolves.toEqual({
+      state: "ready",
+      prefs: { rate: "off", pieces: false },
+    });
+  });
+
+  it("tells the shop, and then remembers", async () => {
+    const result = await setPushPreferences({ rate: "every", pieces: true });
+
+    expect(result).toEqual({ state: "ready", prefs: { rate: "every", pieces: true }, saved: true });
+    expect(calls).toEqual([
+      {
+        name: "set_push_preferences",
+        args: {
+          p_token: TOKEN,
+          p_platform: "android",
+          p_rate_alerts: "every",
+          p_new_pieces: true,
+        },
+      },
+    ]);
+
+    // Both halves of the app read the same answer afterwards.
+    expect(preferences.get(WANTED_KEY)).toBe("yes");
+    await expect(pushStatus()).resolves.toEqual({
+      state: "ready",
+      prefs: { rate: "every", pieces: true },
+    });
+    // And the rate card, which only asks about the rate, says on.
+    await expect(alertState()).resolves.toBe("on");
+  });
+
+  it("makes a channel only for what was asked for", async () => {
+    await setPushPreferences({ rate: "off", pieces: true });
+    expect(channels).toEqual(["pieces"]);
+
+    channels.length = 0;
+    await setPushPreferences({ rate: "daily", pieces: false });
+    expect(channels).toEqual(["rates"]);
+  });
+
+  it("keeps new pieces on when the rate card turns the rate off", async () => {
+    await setPushPreferences({ rate: "daily", pieces: true });
+    calls.length = 0;
+
+    await expect(disableRateAlerts()).resolves.toBe("off");
+
+    // Still a subscriber, so the shop is told the new choice, not to forget.
+    expect(calls.map((call) => call.name)).toEqual(["set_push_preferences"]);
+    expect(calls[0]?.args).toMatchObject({ p_rate_alerts: "off", p_new_pieces: true });
+    await expect(pushStatus()).resolves.toMatchObject({ prefs: { rate: "off", pieces: true } });
+  });
+
+  it("has the shop forget the phone once nothing is left to send", async () => {
+    await setPushPreferences({ rate: "daily", pieces: false });
+    calls.length = 0;
+
+    const result = await setPushPreferences({ rate: "off", pieces: false });
+
+    expect(result).toEqual({ state: "ready", prefs: { rate: "off", pieces: false }, saved: true });
+    expect(calls).toEqual([{ name: "forget_push_device", args: { p_token: TOKEN } }]);
+    expect(preferences.has(WANTED_KEY)).toBe(false);
+  });
+
+  it("does not turn every-change back into daily when the rate card says yes", async () => {
+    await setPushPreferences({ rate: "every", pieces: false });
+    calls.length = 0;
+
+    await expect(enableRateAlerts()).resolves.toBe("on");
+    expect(calls[0]?.args).toMatchObject({ p_rate_alerts: "every" });
+  });
+
+  it("says so, and changes nothing, when the shop cannot be told", async () => {
+    await setPushPreferences({ rate: "daily", pieces: false });
+    failing.set("set_push_preferences", { code: "XX000", message: "boom" });
+
+    const result = await setPushPreferences({ rate: "every", pieces: true });
+
+    // What is still in force, not what was asked for.
+    expect(result).toEqual({
+      state: "ready",
+      prefs: { rate: "daily", pieces: false },
+      saved: false,
+    });
+    await expect(pushStatus()).resolves.toMatchObject({ prefs: { rate: "daily", pieces: false } });
+  });
+
+  it("reports blocked, and asks the shop nothing, when Android says no", async () => {
+    permission = "denied";
+
+    const result = await setPushPreferences({ rate: "daily", pieces: false });
+
+    expect(result).toEqual({
+      state: "blocked",
+      prefs: { rate: "off", pieces: false },
+      saved: false,
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("sends the preferences again on launch, not just the token", async () => {
+    // A row made again from nothing must come back as what this phone chose.
+    await setPushPreferences({ rate: "every", pieces: true });
+    calls.length = 0;
+
+    await refreshRegistration();
+
+    expect(calls).toEqual([
+      {
+        name: "set_push_preferences",
+        args: { p_token: TOKEN, p_platform: "android", p_rate_alerts: "every", p_new_pieces: true },
+      },
+    ]);
+  });
+});
+
+describe("against a database that has not been migrated yet", () => {
+  beforeEach(() => {
+    native = true;
+    // What PostgREST answers for a function it has never heard of.
+    failing.set("set_push_preferences", { code: "PGRST202", message: "not found" });
+  });
+
+  it("still grants the daily rate, through the function that always has", async () => {
+    // The website deploys on merge and the database is migrated by hand. The
+    // rate card on the website's own page has to work in between.
+    await expect(enableRateAlerts()).resolves.toBe("on");
+    expect(calls.map((call) => call.name)).toEqual([
+      "set_push_preferences",
+      "register_push_device",
+    ]);
+  });
+
+  it("does not pretend to have saved a choice the database cannot hold", async () => {
+    const result = await setPushPreferences({ rate: "every", pieces: false });
+
+    expect(result.saved).toBe(false);
+    expect(calls.map((call) => call.name)).toEqual(["set_push_preferences"]);
+    await expect(alertState()).resolves.toBe("off");
   });
 });

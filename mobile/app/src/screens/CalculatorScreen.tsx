@@ -4,6 +4,7 @@ import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
 import { formatRateStamp, goldOnly, rateAgeNote, type RateSnapshot } from "@/lib/rates";
 
 import { Kept } from "../components/Kept";
+import { useApprox } from "../components/Money";
 import type { Cached } from "../lib/cache";
 
 /**
@@ -19,6 +20,8 @@ import type { Cached } from "../lib/cache";
  * the buying rate is shown beside it.
  */
 export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
+  const approx = useApprox();
+
   if (!rates.data) {
     return (
       <div className="grid min-h-[60vh] place-items-center px-6 text-center">
@@ -89,7 +92,7 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         mt-8 on top of that put 80px of ivory between the rate line and the
         purity buttons — nearly a sixth of a phone screen spent on nothing.
       */}
-      <GoldValueCalculator snapshot={rates.data} side="buy" />
+      <GoldValueCalculator snapshot={rates.data} side="buy" approx={approx} />
     </div>
   );
 }

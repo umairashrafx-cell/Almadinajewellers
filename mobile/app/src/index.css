@@ -17,7 +17,7 @@ html,
 body,
 #root {
   min-height: 100%;
-  background: var(--color-ivory, #faf7f2);
+  background: var(--app-bg, #faf7f2);
 }
 
 /*
@@ -120,4 +120,209 @@ body,
   .drawer-in {
     animation: none;
   }
+}
+
+/*
+ * The thumb of a switch on the settings screen.
+ *
+ * Its own colour rather than bg-white, because in the dark theme below
+ * bg-white means "a card", and a switch whose thumb turned the colour of the
+ * card it sits on would be a switch nobody could read.
+ */
+@utility switch-thumb {
+  background: oklch(0.99 0.004 85);
+  box-shadow:
+    0 1px 2px oklch(0.16 0.035 160 / 0.25),
+    0 0 0 1px oklch(0.16 0.035 160 / 0.06);
+}
+
+/*
+ * The app after dark.
+ *
+ * One class on the root element, set from the settings screen — see
+ * lib/settings.ts. Like the corners above, this is the app's alone: the
+ * website compiles its own CSS from src/styles.css and never loads this file,
+ * so nothing here can reach a page of it.
+ *
+ * It is the shop at night rather than the shop inverted. The page goes to the
+ * deep end of the Madina green instead of to black, the cards sit a step above
+ * it in the same hue, and the gold is left exactly where it was: gold is the
+ * one colour in this palette that was always meant to be seen against
+ * something dark.
+ *
+ * The website's palette is a set of custom properties and every utility reads
+ * one, so most of this is a matter of giving a property a second value. That
+ * works for a colour with one job. --warmgrey is only ever text, so it can
+ * simply become a lighter grey and all ninety-seven places it is used are
+ * right.
+ *
+ * It does not work for a colour with two jobs, and four of this palette's have
+ * two:
+ *
+ *   --primary  is the green of a heading on ivory (text-primary, 56 places)
+ *              and the green of a panel under ivory text (bg-primary).
+ *   --ivory    is the page (bg-ivory) and the text on those green panels.
+ *   --ink      is body text, and the dark pill under white text (bg-ink).
+ *   white      is a card (bg-white) and the label on a WhatsApp button.
+ *
+ * Give any of those a second value and one of its two jobs breaks: lighten
+ * --primary so headings can be read and every green panel turns pale under
+ * pale text. So those four are not re-valued. Each keeps its value, and the
+ * one utility whose job has to change is re-pointed below — bg-ivory becomes
+ * the dark page while text-ivory stays ivory, text-primary becomes champagne
+ * while bg-primary stays green.
+ *
+ * The overrides are ordinary rules, outside any layer, which is what lets a
+ * single class beat a Tailwind utility: unlayered CSS wins over layered CSS
+ * whatever the specificity. Every class named here was found by listing the
+ * colour utilities in the fifty-odd modules the app can reach; a new one of
+ * the four dual kinds used on a new screen has to be added here too, and the
+ * way to find out is to open that screen with the theme on.
+ */
+:root {
+  /* What html and body paint, and what bg-ivory means once the theme is on. */
+  --app-bg: var(--ivory);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  /* The three levels: the page, a card on it, something raised on a card. */
+  --app-bg: oklch(0.17 0.022 165);
+  --app-surface: oklch(0.215 0.024 165);
+  --app-surface-raised: oklch(0.27 0.026 165);
+  /* Headings: champagne, a shade warmer than the body text beside it. */
+  --app-heading: oklch(0.9 0.05 90);
+
+  /* One job each, so a second value is the whole of the change. */
+  --ink: oklch(0.94 0.012 85);
+  --warmgrey: oklch(0.74 0.015 85);
+  /* The text gold. Deep on ivory so it can be read; light here for the same reason. */
+  --gold-deep: oklch(0.8 0.105 85);
+  --rose: oklch(0.74 0.13 15);
+  /*
+   * Champagne is nearly always a tint — bg-champagne at twenty to sixty per
+   * cent, laid over ivory to warm a strip or a chip. Laid over this page at
+   * its daytime value the same tint comes out as a pale slab, brighter than
+   * the text on it. So the colour itself is taken down, and the tints follow.
+   * The two places it is text, on the calculator's green panel, are put back
+   * below.
+   */
+  --champagne: oklch(0.55 0.05 90);
+  --success: oklch(0.74 0.12 160);
+  --warning: oklch(0.8 0.12 80);
+
+  --background: var(--app-bg);
+  --foreground: var(--ink);
+  --card: var(--app-surface);
+  --card-foreground: var(--ink);
+  --popover: var(--app-surface);
+  --popover-foreground: var(--ink);
+  --muted: var(--app-surface-raised);
+
+  /* The rate board's own inks, which are text and nothing else. */
+  --rate-ink: oklch(0.93 0.018 160);
+  --rate-gold-deep: #e5c979;
+}
+
+/* The page. */
+.dark .bg-ivory {
+  background-color: var(--app-bg);
+}
+
+/* Headings and anything else set in the green, on what is now a dark page. */
+.dark .text-primary {
+  color: var(--app-heading);
+}
+
+/*
+ * Except on gold, where the green is the label on a gold button or a gold
+ * badge and has to stay dark to be read. A button is gold and green at once;
+ * a badge's number may sit inside it.
+ */
+.dark .bg-gold.text-primary,
+.dark .bg-gold-light.text-primary,
+.dark .bg-gold .text-primary {
+  color: var(--primary);
+}
+
+/* Champagne as text on a green panel, which is not a tint and stays pale. */
+.dark .text-champagne\/85 {
+  color: oklch(0.89 0.045 90 / 0.85);
+}
+
+.dark .text-champagne\/70 {
+  color: oklch(0.89 0.045 90 / 0.7);
+}
+
+/* A falling price on the international board: Tailwind's own red, lifted. */
+.dark .text-red-700 {
+  color: oklch(0.72 0.17 25);
+}
+
+/* Cards, fields and the round buttons that float over a photograph. */
+.dark .bg-white {
+  background-color: var(--app-surface);
+}
+
+.dark .bg-white\/95 {
+  background-color: color-mix(in oklab, var(--app-surface) 95%, transparent);
+}
+
+.dark .bg-white\/70 {
+  background-color: color-mix(in oklab, var(--app-surface) 70%, transparent);
+}
+
+.dark .bg-white\/50 {
+  background-color: color-mix(in oklab, var(--app-surface) 50%, transparent);
+}
+
+.dark .ring-white {
+  --tw-ring-color: var(--app-surface);
+}
+
+/* The selected half of a two-way control, which carries white text. */
+.dark .bg-ink {
+  background-color: oklch(0.42 0.035 165);
+}
+
+/*
+ * The rate board. It is a pale certificate with an emerald crown on the
+ * website, and that crown is already dark and already right. The certificate
+ * under it becomes a card like any other; the ivory text on the crown is
+ * untouched, which is why the board's background is re-pointed here and
+ * --rate-ivory is left alone.
+ */
+.dark .bg-rate-ivory {
+  background-color: var(--app-surface);
+}
+
+.dark .text-rate-emerald {
+  color: var(--rate-gold-light);
+}
+
+/* The coin a rate's metal icon sits on: a raised disc rather than a white one. */
+.dark .from-white {
+  --tw-gradient-from: var(--app-surface-raised);
+}
+
+.dark .to-rate-ivory {
+  --tw-gradient-to: var(--app-surface);
+}
+
+/*
+ * A card's lift. The shadows above are the brand's green at five per cent,
+ * which on a page that is already that green is nothing at all — so the card
+ * is given an edge instead, a hairline of light, and a real shadow under it.
+ */
+.dark .card-lift {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.06),
+    0 8px 20px oklch(0 0 0 / 0.35);
+}
+
+.dark .card-lift-sm {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.06),
+    0 4px 10px oklch(0 0 0 / 0.3);
 }

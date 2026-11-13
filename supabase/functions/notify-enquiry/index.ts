@@ -1,18 +1,20 @@
 /**
- * Notifies the shop when a customer submits something — and, once a day, the
- * customers when the shop publishes its rates.
+ * Notifies the shop when a customer submits something — and the customers
+ * when the shop publishes its rates, changes them, or adds new pieces.
  *
  * Runs as a Supabase Edge Function (Deno), invoked by AFTER INSERT triggers on
- * public.enquiries, public.orders and public.custom_orders, and by the
- * statement trigger on public.gold_rates. Provider-agnostic: it sends to
- * whichever channels are configured through environment variables, and does
- * nothing if none are.
+ * public.enquiries, public.orders and public.custom_orders, by the statement
+ * triggers on public.gold_rates, and by the one on public.products.
+ * Provider-agnostic: it sends to whichever channels are configured through
+ * environment variables, and does nothing if none are.
  *
- * The rates are the one case that travels in the other direction: nothing is
- * sent to the shop, and the notification goes out to every phone in
- * public.push_devices through Firebase. It lives here rather than in a second
- * function because it is the same trigger plumbing, the same URL and the same
- * shared secret — one notifier to deploy, one secret to keep.
+ * The rates and the new pieces are the cases that travel in the other
+ * direction: nothing is sent to the shop, and the notification goes out
+ * through Firebase to the phones in public.push_devices that asked for that
+ * kind — each phone chooses in the app's Settings screen, and the choice is a
+ * column on its row. It lives here rather than in a second function because it
+ * is the same trigger plumbing, the same URL and the same shared secret — one
+ * notifier to deploy, one secret to keep.
  *
  *   FCM_SERVICE_ACCOUNT_JSON  The service account file from the Firebase
  *                             project, as one secret. Without it the rate
@@ -50,7 +52,19 @@ declare const Deno: { env: { get(key: string): string | undefined } };
 import { readServiceAccount, send as sendToPhone } from "./fcm.ts";
 
 /** Which table the row came from. Absent when an older trigger posts the bare row. */
-export type Source = "enquiries" | "orders" | "custom_orders" | "gold_rates";
+export type Source =
+  | "enquiries"
+  | "orders"
+  | "custom_orders"
+  /** The first publish of a day's board. */
+  | "gold_rates"
+  /** A later save, the same day, that moved a gold figure. */
+  | "gold_rates_update"
+  /** The first pieces added to the catalogue on a given day. */
+  | "new_pieces";
+
+/** The sources that go out to customers' phones rather than in to the shop. */
+const TO_PHONES: readonly string[] = ["gold_rates", "gold_rates_update", "new_pieces"];
 
 type EnquiryRecord = {
   id?: string;
@@ -247,22 +261,40 @@ type RateRecord = {
   rates?: Array<{ karat?: string; per_tola_pkr?: number; per_gram_pkr?: number }>;
 };
 
+/** What the products trigger posts: how many arrived, and the first of them. */
+type PiecesRecord = {
+  alert_date?: string;
+  count?: number;
+  name?: string | null;
+  category?: string | null;
+};
+
 /**
- * The channel the app creates, and the page a tap opens. Both are agreed with
- * src/lib/push.ts on the website side; changing one means changing the other.
+ * The channels the app creates, and the pages a tap opens. All four are
+ * agreed with src/lib/push.ts on the website side; changing one means changing
+ * the other.
  */
 const RATE_CHANNEL = "rates";
 const RATE_PATH = "/gold-rate-in-mandi-bahauddin-today";
+const PIECES_CHANNEL = "pieces";
+const PIECES_PATH = "/new-arrivals";
 
 /**
- * What the notification says.
+ * What the rate notification says.
  *
  * 24K and 22K, per tola, because those are the two figures people ask for at
  * the counter — 24K is what the market quotes and 22K is what jewellery is
  * sold at. Anything else the shop published is a tap away on the rate page.
  * If neither is there, whatever gold was published stands in.
+ *
+ * `changed` is a later save on a day already announced. The figures are set
+ * out the same way, because the new figures are the whole of the news; only
+ * the heading says that this is a change and not the morning.
  */
-export function summariseRates(record: RateRecord): { title: string; body: string } {
+export function summariseRates(
+  record: RateRecord,
+  changed = false,
+): { title: string; body: string } {
   // The day's rows carry silver as well; this notification is about the gold.
   // The same three karats as GOLD_KARATS in src/lib/rates.ts.
   const gold = (Array.isArray(record.rates) ? record.rates : []).filter(
@@ -278,33 +310,104 @@ export function summariseRates(record: RateRecord): { title: string; body: strin
   const figures = shown.map((rate) => `${rate.karat} ${pkr(rate.per_tola_pkr)}`).join("  ·  ");
 
   return {
-    title: "Today's gold rate is in",
-    body: figures ? `${figures} per tola` : "Tap to see the day's rates.",
+    title: changed ? "The gold rate has changed" : "Today's gold rate is in",
+    body: figures
+      ? `${figures} per tola`
+      : changed
+        ? "Tap to see the new rates."
+        : "Tap to see the day's rates.",
   };
 }
 
 /**
- * The tokens we hold, read with the service role — the table is shut to anon.
+ * What the new-pieces notification says.
+ *
+ * The first piece by the name the shop gave it, and how many came with it.
+ * Nothing is described that the shop did not write: no adjectives, no price,
+ * no "stunning" — a name, a collection and a count, all three read from the
+ * rows that were just added.
+ */
+export function summarisePieces(record: PiecesRecord): { title: string; body: string } {
+  const name = typeof record.name === "string" ? record.name.trim() : "";
+  const category = typeof record.category === "string" ? record.category.trim() : "";
+  const count = typeof record.count === "number" && record.count > 1 ? Math.floor(record.count) : 1;
+
+  const title = "New at Al-Madina Jewellers";
+
+  if (!name) return { title, body: "New pieces have arrived. Tap to see them." };
+
+  const others = count - 1;
+  if (others > 0) {
+    return {
+      title,
+      body: `${name} and ${others} more ${others === 1 ? "piece" : "pieces"}. Tap to see them.`,
+    };
+  }
+
+  return { title, body: `${name}${category ? ` · ${category}` : ""}. Tap to see it.` };
+}
+
+/**
+ * Which phones a notification is for, as the filter PostgREST is asked with.
+ *
+ * The columns are the ones 20261113120000_push_preferences.sql adds. The
+ * morning's rate goes to both kinds of rate subscriber; a change goes only to
+ * those who asked for every change.
+ */
+const AUDIENCE = {
+  gold_rates: "rate_alerts=in.(daily,every)",
+  gold_rates_update: "rate_alerts=eq.every",
+  new_pieces: "new_pieces=is.true",
+} as const;
+
+type Audience = keyof typeof AUDIENCE;
+
+/**
+ * The tokens of the phones that asked for this, read with the service role —
+ * the table is shut to anon.
  *
  * A page at a time, because the REST API caps what one request may return
  * (a thousand rows unless the project says otherwise). Asking for everything
  * in one go does not fail when there are more than that: it answers with the
  * first page and says nothing, which would quietly leave every customer past
  * the cap untold. Ordered by id so the pages cannot overlap or skip.
+ *
+ * This function is deployed and the database is migrated as two separate acts,
+ * and for a while one is ahead of the other. Against a database that does not
+ * have the preference columns yet, PostgREST refuses the filter with a 400.
+ * For the morning's rate that is answered by asking without the filter: before
+ * the columns existed every row in the table was a phone that had asked for
+ * exactly that, so "everybody" is the right audience and the morning's
+ * notification is not lost to the order two things were deployed in. For the
+ * two newer kinds it is answered with nobody — a phone cannot have asked for
+ * something the database has nowhere to record.
  */
-async function listDeviceTokens(url: string, key: string): Promise<string[]> {
+async function listDeviceTokens(url: string, key: string, audience: Audience): Promise<string[]> {
   const PAGE = 1000;
   // A hundred pages is a hundred thousand phones. Past that something is
   // wrong, and a loop that cannot end is worse than a short list.
   const LIMIT = 100;
 
   const tokens: string[] = [];
+  let filter = `&${AUDIENCE[audience]}`;
 
   for (let page = 0; page < LIMIT; page += 1) {
-    const response = await fetch(
-      `${url}/rest/v1/push_devices?select=token&order=id&limit=${PAGE}&offset=${page * PAGE}`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` } },
-    );
+    const ask = () =>
+      fetch(
+        `${url}/rest/v1/push_devices?select=token&order=id&limit=${PAGE}&offset=${page * PAGE}${filter}`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+      );
+
+    let response = await ask();
+
+    if (response.status === 400 && filter && page === 0) {
+      console.warn(
+        "notify-enquiry: push_devices has no preference columns yet; apply 20261113120000_push_preferences.sql.",
+      );
+      if (audience !== "gold_rates") return [];
+      filter = "";
+      response = await ask();
+    }
 
     if (!response.ok) {
       throw new Error(`could not read push_devices: ${response.status} ${await response.text()}`);
@@ -352,17 +455,42 @@ async function forgetDeviceTokens(url: string, key: string, tokens: string[]) {
   }
 }
 
+/** The notification for one of the three things a phone can be told. */
+function notificationFor(audience: Audience, record: AnyRecord) {
+  if (audience === "new_pieces") {
+    return {
+      ...summarisePieces(record as PiecesRecord),
+      path: PIECES_PATH,
+      channelId: PIECES_CHANNEL,
+      tag: "new-pieces",
+    };
+  }
+
+  return {
+    ...summariseRates(record as RateRecord, audience === "gold_rates_update"),
+    path: RATE_PATH,
+    channelId: RATE_CHANNEL,
+    // The same tag for the morning and for a change: the new figures take the
+    // old ones' place in the tray. It is the tag this function has always sent.
+    tag: "gold-rate",
+  };
+}
+
 /**
- * Sends the day's rate to every registered phone.
+ * Sends a notification to every phone that asked for that kind.
  *
  * Deliberately quiet about failure, like the rest of this function: the rates
- * are already on the board, and the trigger that called this is not waiting for
- * an answer it could do anything with.
+ * are already on the board and the pieces already in the catalogue, and the
+ * trigger that called this is not waiting for an answer it could do anything
+ * with.
  */
-async function pushRates(record: RateRecord): Promise<Record<string, string>> {
+async function pushToPhones(
+  audience: Audience,
+  record: AnyRecord,
+): Promise<Record<string, string>> {
   const account = readServiceAccount();
   if (!account) {
-    console.warn("notify-enquiry: FCM_SERVICE_ACCOUNT_JSON is not set; no rate alert sent.");
+    console.warn("notify-enquiry: FCM_SERVICE_ACCOUNT_JSON is not set; no notification sent.");
     return { push: "not configured" };
   }
 
@@ -373,11 +501,10 @@ async function pushRates(record: RateRecord): Promise<Record<string, string>> {
     return { push: "no database credentials" };
   }
 
-  const tokens = await listDeviceTokens(url, key);
+  const tokens = await listDeviceTokens(url, key, audience);
   if (tokens.length === 0) return { push: "nobody is subscribed" };
 
-  const { title, body } = summariseRates(record);
-  const notification = { title, body, path: RATE_PATH, channelId: RATE_CHANNEL };
+  const notification = notificationFor(audience, record);
 
   let sent = 0;
   let failed = 0;
@@ -393,7 +520,7 @@ async function pushRates(record: RateRecord): Promise<Record<string, string>> {
         try {
           return await sendToPhone(account, token, notification);
         } catch (error) {
-          console.error("notify-enquiry: rate alert failed:", error);
+          console.error(`notify-enquiry: ${audience} notification failed:`, error);
           return "failed" as const;
         }
       }),
@@ -494,16 +621,16 @@ export default {
     }
 
     /*
-     * The rates go the other way: out to the customers, and never to the
-     * shop's own webhook or inbox. The shop just published them; it does not
-     * need an email saying so.
+     * The rates and the new pieces go the other way: out to the customers, and
+     * never to the shop's own webhook or inbox. The shop just published them;
+     * it does not need an email saying so.
      */
-    if (source === "gold_rates") {
+    if (source !== undefined && TO_PHONES.includes(source)) {
       let results: Record<string, string>;
       try {
-        results = await pushRates(record as RateRecord);
+        results = await pushToPhones(source as Audience, record);
       } catch (error) {
-        console.error("notify-enquiry: rate alert failed:", error);
+        console.error(`notify-enquiry: ${source} notification failed:`, error);
         results = { push: `failed: ${(error as Error).message}` };
       }
 

@@ -8,6 +8,7 @@ import { SITE, formatPKR, whatsappLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 import { AppLink } from "../components/AppButton";
+import { Approx } from "../components/Money";
 import type { Cached } from "../lib/cache";
 
 /**
@@ -85,6 +86,7 @@ function BuyingRate({ rates }: { rates: Cached<RateSnapshot> }) {
           <p className="font-display nums mt-2 text-2xl text-primary">
             {buying ? formatPKR(buying.perTola) : "Ask at the shop"}
           </p>
+          {buying ? <Approx pkr={buying.perTola} className="mt-1 text-xs" /> : null}
           <p className="mt-1 text-xs text-warmgrey">
             {BUY_KARAT}, per tola &mdash; what we pay for jewellery
           </p>
