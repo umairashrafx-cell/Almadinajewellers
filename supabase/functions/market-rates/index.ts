@@ -141,8 +141,11 @@ type Quote = {
   changePercent?: number;
   /**
    * The same move in the instrument's own units — dollars for the metals,
-   * bitcoin and crude, index points for the dollar index. Set only where it
-   * comes from the same quote as the price.
+   * bitcoin and crude, index points for the dollar index.
+   *
+   * For everything but the metals it comes from the same quote as the price.
+   * For the metals it cannot: spot is from gold-api, which publishes a price
+   * and nothing else. See dayMove for how the metals get theirs.
    */
   change?: number;
   /** The high and the low, where the source publishes them. */
@@ -206,7 +209,7 @@ async function metal(symbol: "XAU" | "XAG"): Promise<Quote> {
   return { usd: body.price, at: body.updatedAt ?? new Date().toISOString() };
 }
 
-type YahooMeta = {
+export type YahooMeta = {
   regularMarketPrice?: number;
   regularMarketChangePercent?: number;
   regularMarketTime?: number;
@@ -511,6 +514,101 @@ async function rupeeTrail(previous: Trail | undefined): Promise<Trail | undefine
   }
 }
 
+/**
+ * The currencies a customer can ask to see prices in, besides the rupee.
+ *
+ * Ten, chosen for who actually buys from a jeweller in Mandi Bahauddin from
+ * abroad: the Gulf, where most of the town's remittances are earned, then
+ * Britain, Europe and North America and Australia. The codes are the
+ * currency-api's own, which are lower case. The app's list in
+ * mobile/app/src/lib/settings.ts is the same ten; a code added to one belongs
+ * in the other.
+ */
+export const FX_CODES = ["usd", "gbp", "eur", "aed", "sar", "qar", "kwd", "omr", "cad", "aud"];
+
+/**
+ * How many of each currency one US dollar buys, on a day the source names.
+ *
+ * Crosses against the dollar rather than rupees against each currency, and the
+ * difference is the point. The app already holds a live interbank rupee, the
+ * one the whole board converts at; a pound in rupees is that rupee times the
+ * dollar's worth in pounds. Taking the rupee from here as well would put two
+ * different rupees on one screen — Rs. 276.29 to the dollar beside a pound
+ * worked out from 276.8 — and a customer comparing the two would be right to
+ * distrust both.
+ */
+export type FxCrosses = {
+  /** The day the figures are for, yyyy-mm-dd, as the source stamps it. */
+  day: string;
+  perUsd: Record<string, number>;
+  /** When this function read them, ISO. Refetched hourly like a trail. */
+  at: string;
+};
+
+/**
+ * The crosses out of one dated file, or nothing.
+ *
+ * The file must say it is the day it was asked for, as with the rupee's
+ * history. Each currency is checked on its own, and one that is missing or
+ * not a positive number is left out rather than failing the rest; the app
+ * then offers nothing for that currency and everything for the others. The
+ * dollar itself is one by definition and is not read from the file.
+ */
+export function crossesFrom(body: unknown, day: string): Record<string, number> | null {
+  const answer = body as { date?: unknown; usd?: Record<string, unknown> } | null;
+  if (!answer || answer.date !== day || typeof answer.usd !== "object" || !answer.usd) {
+    return null;
+  }
+
+  const perUsd: Record<string, number> = {};
+  for (const code of FX_CODES) {
+    if (code === "usd") {
+      perUsd.usd = 1;
+      continue;
+    }
+    const value = answer.usd[code];
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) perUsd[code] = value;
+  }
+
+  // The dollar alone is no list of crosses.
+  return Object.keys(perUsd).length > 1 ? perUsd : null;
+}
+
+/**
+ * The day's crosses, kept for an hour.
+ *
+ * The same dated builds the rupee's history comes from, walked back the same
+ * way to the last day that was published, and under the same budget. A
+ * failure hands back what was held, so a currency outlives a bad fetch the
+ * way a price does.
+ */
+async function currentCrosses(previous: FxCrosses | undefined): Promise<FxCrosses | undefined> {
+  if (previous && Date.now() - new Date(previous.at).getTime() < TRAIL_SECONDS * 1000) {
+    return previous;
+  }
+
+  const now = Date.now();
+  const until = now + FX_BUDGET_MS;
+
+  for (let back = 0; back <= FX_LOOKBACK_DAYS; back++) {
+    if (Date.now() > until) break;
+    const day = isoDay(now - back * DAY_MS);
+
+    let body: unknown;
+    try {
+      body = await get(`${FX_DAY}@${day}/v1/currencies/usd.json`);
+    } catch {
+      continue; // No file for that day; try the day before it.
+    }
+
+    const perUsd = crossesFrom(body, day);
+    if (perUsd) return { day, perUsd, at: new Date().toISOString() };
+  }
+
+  console.warn("market-rates: no currency crosses this time");
+  return previous;
+}
+
 /** The rupee: Yahoo's live spot, which is sound, over its own daily history. */
 async function rupeeWithTrail(symbol: string, previous: Quote | undefined): Promise<Quote> {
   const quote = await yahoo(symbol);
@@ -520,7 +618,46 @@ async function rupeeWithTrail(symbol: string, previous: Quote | undefined): Prom
 }
 
 /**
- * A metal's spot price, with the matching COMEX contract's session range.
+ * The day's move for a metal, as a per cent and in spot dollars.
+ *
+ * Spot has no previous close anybody publishes free, so the move is the COMEX
+ * contract's: its price against its own previous close, from the one meta
+ * block, so the two are a consistent pair. A percentage carries across from
+ * the contract to spot honestly — the front month and spot move together
+ * through a session, and differ by a level, not by a rate of change.
+ *
+ * The cash figure is that percentage applied to the spot price on the board,
+ * not the contract's own dollar move. The contract trades some dollars above
+ * spot, so its move is a few cents larger, and printing it beside the spot
+ * price would put two figures side by side that do not add up. Worked this
+ * way, the price shown less the move shown is exactly where the same per cent
+ * puts yesterday's spot.
+ *
+ * Nothing at all is returned when the contract's meta lacks either figure, and
+ * the row then shows no move, which is what it showed before this existed.
+ */
+export function dayMove(
+  spot: number,
+  meta: YahooMeta,
+): { changePercent: number; change: number } | null {
+  const price = meta.regularMarketPrice;
+  const close = meta.chartPreviousClose;
+  if (typeof price !== "number" || typeof close !== "number") return null;
+  if (!Number.isFinite(price) || !Number.isFinite(close) || close <= 0 || spot <= 0) return null;
+
+  const ratio = price / close;
+  // A session that moved more than a fifth is a bad answer, not a market.
+  if (!(ratio > 0.8 && ratio < 1.2)) return null;
+
+  return {
+    changePercent: (ratio - 1) * 100,
+    change: spot - spot / ratio,
+  };
+}
+
+/**
+ * A metal's spot price, with the matching COMEX contract's session range and
+ * the day's move.
  *
  * Two calls, deliberately unequal. The price is the spot figure the board has
  * always shown, and a failure there fails the instrument; the range is a
@@ -536,6 +673,13 @@ async function metalWithRange(
 
   try {
     const meta = await yahooMeta(contract);
+
+    const move = dayMove(quote.usd, meta);
+    if (move) {
+      quote.changePercent = move.changePercent;
+      quote.change = move.change;
+    }
+
     const range = sessionRange(meta);
     if (range) {
       const change = sessionChange(meta);
@@ -833,14 +977,15 @@ function published(calendar: Calendar | undefined) {
  * the alternative is a deploy that drops the board on the floor until the next
  * fetch lands.
  */
-type Stored = { board: Board; calendar?: Calendar };
+type Stored = { board: Board; calendar?: Calendar; fx?: FxCrosses };
 
 function stored(payload: unknown): Stored {
   if (payload && typeof payload === "object" && "board" in payload) {
-    const held = payload as { board?: unknown; calendar?: unknown };
+    const held = payload as { board?: unknown; calendar?: unknown; fx?: unknown };
     return {
       board: (held.board ?? {}) as Board,
       ...(held.calendar ? { calendar: held.calendar as Calendar } : {}),
+      ...(held.fx ? { fx: held.fx as FxCrosses } : {}),
     };
   }
 
@@ -910,6 +1055,7 @@ export default {
       return json({
         board: held.board,
         ...published(held.calendar),
+        ...(held.fx ? { fx: held.fx } : {}),
         fetchedAt: cached.fetched_at,
         cached: true,
       });
@@ -920,9 +1066,15 @@ export default {
      * wait for the other — and `currentCalendar` cannot throw, so the board is
      * never at risk from a calendar that is down or has had enough of us.
      */
-    const [board, calendar] = await Promise.all([
+    /*
+     * The crosses go alongside on their own hourly clock, and like the
+     * calendar they cannot throw: a currency that will not load costs the app
+     * that currency, never the board.
+     */
+    const [board, calendar, fx] = await Promise.all([
       fetchBoard(held.board),
       currentCalendar(held.calendar),
+      currentCrosses(held.fx),
     ]);
 
     // Nothing answered and nothing was kept: say so rather than returning an
@@ -931,10 +1083,11 @@ export default {
       return json({ error: "no market data available" }, 503);
     }
 
-    await writeCache({ board, ...(calendar ? { calendar } : {}) });
+    await writeCache({ board, ...(calendar ? { calendar } : {}), ...(fx ? { fx } : {}) });
     return json({
       board,
       ...published(calendar),
+      ...(fx ? { fx } : {}),
       fetchedAt: new Date().toISOString(),
       cached: false,
     });

@@ -3,13 +3,10 @@ import { useState } from "react";
 import {
   driversFor,
   formatPct,
-  spreadPct,
   type MarketBoard,
   type RateDrivers as Drivers,
   type TrailWindow,
 } from "@/lib/markets";
-import { BUY_KARAT, rateFor, type RateSnapshot } from "@/lib/rates";
-import { formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,19 +25,13 @@ import { cn } from "@/lib/utils";
  * different things about what happens next, and the board already carries
  * both numbers — it had simply never put them together.
  *
- * Then the line that actually decides a jewellery purchase, which no market
- * figure does: the gap between what the shop sells a tola at and what it pays
- * for one is usually larger than a month of market moves. A customer timing
- * the market to save one per cent is optimising the smaller number. That is
- * worked from the shop's own published rates, not asserted.
+ * It used to go on to set the shop's own buy-and-sell gap beside the month's
+ * move and tell the customer which was the bigger number. The shop asked for
+ * that to go: it read as the shop advising somebody on when to buy, which is
+ * the one thing this panel exists not to do. What is left is the market's own
+ * figures and nothing else.
  */
-export function RateDrivers({
-  board,
-  snapshot,
-}: {
-  board: MarketBoard;
-  snapshot: RateSnapshot | null;
-}) {
+export function RateDrivers({ board }: { board: MarketBoard }) {
   const [window, setWindow] = useState<TrailWindow>("month");
 
   const drivers = driversFor(board, "gold", window);
@@ -58,7 +49,6 @@ export function RateDrivers({
 
       <Split drivers={drivers} />
       <Sentence drivers={drivers} />
-      <Spread snapshot={snapshot} drivers={drivers} />
 
       <p className="mt-3 border-t border-rate-gold/20 pt-3 text-[11px] leading-relaxed text-warmgrey">
         This is what the market has done, not what it will do. We do not forecast the rate and this
@@ -187,40 +177,6 @@ function Sentence({ drivers }: { drivers: Drivers }) {
       Over the last {period} the rupee price of a tola is {direction}{" "}
       <span className="nums">{formatPct(Math.abs(drivers.tolaPct)).replace("+", "")}</span>.{" "}
       {because}
-    </p>
-  );
-}
-
-/**
- * The gap, and what it is for.
- *
- * Drawn only when both published rates are on the board. The shop does not
- * always publish 20K, and a spread worked from a rate that is missing would
- * be a made-up number in the one place on this screen where a customer is
- * deciding whether to spend money.
- */
-function Spread({ snapshot, drivers }: { snapshot: RateSnapshot | null; drivers: Drivers }) {
-  if (!snapshot) return null;
-
-  const sell = rateFor(snapshot, "22K");
-  const buy = rateFor(snapshot, BUY_KARAT);
-  if (!sell || !buy) return null;
-
-  const gap = spreadPct(sell.perTola, buy.perTola);
-  if (gap === null) return null;
-
-  const period = drivers.window === "week" ? "week" : "month";
-  const moved = Math.abs(drivers.tolaPct);
-
-  return (
-    <p className="mt-3 rounded-lg bg-champagne/30 px-3.5 py-3 text-[12px] leading-relaxed text-ink">
-      Today the shop sells 22K at <span className="nums">{formatPKR(sell.perTola)}</span> a tola and
-      buys at <span className="nums">{formatPKR(buy.perTola)}</span> — a gap of{" "}
-      <span className="nums">{gap.toFixed(1)}%</span>, which is the melting and the making that has
-      to be done again.{" "}
-      {moved < gap
-        ? `The market moved ${formatPct(moved).replace("+", "")} in the last ${period}, so waiting for a better day is the smaller number.`
-        : `The market moved ${formatPct(moved).replace("+", "")} in the last ${period}, more than the gap.`}
     </p>
   );
 }

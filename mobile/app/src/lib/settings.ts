@@ -22,7 +22,26 @@ import { useSyncExternalStore } from "react";
 export const THEMES = ["light", "dark", "phone"] as const;
 export type Theme = (typeof THEMES)[number];
 
-export const CURRENCIES = ["PKR", "USD"] as const;
+/**
+ * Rupees, and the ten a price can be said again in.
+ *
+ * The ten are the ones the server fetches crosses for — FX_CODES in
+ * supabase/functions/market-rates. A code added here and not there is a
+ * choice that can never show anything.
+ */
+export const CURRENCIES = [
+  "PKR",
+  "USD",
+  "GBP",
+  "EUR",
+  "AED",
+  "SAR",
+  "QAR",
+  "KWD",
+  "OMR",
+  "CAD",
+  "AUD",
+] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
 export type Settings = { theme: Theme; currency: Currency };

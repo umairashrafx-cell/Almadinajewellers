@@ -43,7 +43,7 @@ export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
       <Toggle board={board} onChange={setBoard} />
 
       {board === "international" ? (
-        <International snapshot={rates.data} />
+        <International />
       ) : (
         <Local snapshot={rates.data} rates={rates} />
       )}
@@ -155,7 +155,7 @@ function Local({ snapshot, rates }: { snapshot: RateSnapshot; rates: Cached<Rate
  * It repolls every fifteen seconds, which is worth doing for a board somebody
  * is watching and not worth doing in the background of a different one.
  */
-function International({ snapshot }: { snapshot: RateSnapshot | null }) {
+function International() {
   const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 15000);
 
   return (
@@ -169,12 +169,9 @@ function International({ snapshot }: { snapshot: RateSnapshot | null }) {
 
       {/*
         Under the board rather than over it, because it is the reading of
-        those figures and a reading is no use before the figures. The shop's
-        own snapshot comes down with it so the panel can put the buy-and-sell
-        gap beside the market move — the comparison that actually answers
-        "should I wait", and the one no international figure can make alone.
+        those figures and a reading is no use before the figures.
       */}
-      {markets.data ? <RateDrivers board={markets.data.board} snapshot={snapshot} /> : null}
+      {markets.data ? <RateDrivers board={markets.data.board} /> : null}
     </div>
   );
 }

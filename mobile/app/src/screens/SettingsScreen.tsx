@@ -11,7 +11,8 @@ import {
 import { cn } from "@/lib/utils";
 
 import { AppButton } from "../components/AppButton";
-import { useDollar } from "../components/Money";
+import { useRate } from "../components/Money";
+import type { Foreign } from "../lib/money";
 import { updateSettings, useSettings, type Currency, type Theme } from "../lib/settings";
 
 /**
@@ -110,12 +111,18 @@ function Choices<T extends string>({
   choices,
   value,
   disabled,
+  compact,
   onChange,
 }: {
   labelledBy: string;
   choices: ReadonlyArray<Choice<T>>;
   value: T;
   disabled?: boolean;
+  /**
+   * Shorter rows, for a list of eleven. Still 44px, which is the floor for a
+   * thumb; a choice with no sentence under it does not need the rest.
+   */
+  compact?: boolean;
   onChange: (next: T) => void;
 }) {
   return (
@@ -133,7 +140,10 @@ function Choices<T extends string>({
             onClick={() => {
               if (!chosen) onChange(choice.id);
             }}
-            className="flex min-h-14 w-full items-center gap-3.5 rounded-xl px-2.5 py-3 text-left transition-colors active:bg-champagne/40 disabled:opacity-60"
+            className={cn(
+              "flex w-full items-center gap-3.5 rounded-xl px-2.5 text-left transition-colors active:bg-champagne/40 disabled:opacity-60",
+              compact && !choice.detail ? "min-h-11 py-2" : "min-h-14 py-3",
+            )}
           >
             <span
               aria-hidden
@@ -381,39 +391,54 @@ function Appearance() {
 // Currency
 // ---------------------------------------------------------------------------
 
+/**
+ * The ten, in the order a customer in Mandi Bahauddin would look for them:
+ * the dollar, then the Gulf, where most of the town's family abroad earns,
+ * then Britain and Europe, then the rest.
+ */
+const FOREIGN: ReadonlyArray<{ id: Foreign; name: string }> = [
+  { id: "USD", name: "US dollar" },
+  { id: "SAR", name: "Saudi riyal" },
+  { id: "AED", name: "UAE dirham" },
+  { id: "QAR", name: "Qatari riyal" },
+  { id: "KWD", name: "Kuwaiti dinar" },
+  { id: "OMR", name: "Omani rial" },
+  { id: "GBP", name: "British pound" },
+  { id: "EUR", name: "Euro" },
+  { id: "CAD", name: "Canadian dollar" },
+  { id: "AUD", name: "Australian dollar" },
+];
+
 const CURRENCY_CHOICES: ReadonlyArray<Choice<Currency>> = [
   {
     id: "PKR",
-    label: "Pakistani rupees",
+    label: "Pakistani rupees only",
     detail: "What the shop prices and bills in.",
   },
-  {
-    id: "USD",
-    label: "Rupees, with US dollars",
-    detail: "Adds an approximate dollar figure under each price and rate.",
-  },
+  ...FOREIGN.map(({ id, name }) => ({ id, label: `Rupees, with ${name} · ${id}` })),
 ];
 
 /**
  * Which money the figures are read in.
  *
- * Two choices, and the second is deliberately "rupees, with dollars" rather
- * than "dollars". The shop sells in rupees; a screen that showed only a dollar
- * figure would be showing a price nobody can be charged. So the rupee figure
- * never leaves, and the dollar is a line under it.
+ * Every choice but the first is "rupees, with" something, never the
+ * something on its own. The shop sells in rupees; a screen that showed only a
+ * pound figure would be showing a price nobody can be charged. So the rupee
+ * figure never leaves, and the other currency is a line under it.
  *
- * Only the dollar, because it is the one rate the app actually holds — the
- * interbank figure the international board is already fetched with. A dirham
- * or a pound would need a rate from somewhere, and one typed into the app
- * would be a made-up number wearing a currency sign.
+ * Ten and no more, because each needs a real rate and the server fetches
+ * those ten. The dollar is the interbank figure the international board
+ * already carries; the other nine are that same dollar crossed with the day's
+ * reference rate for each currency, from a dated source. A rate typed into
+ * the app would be a made-up number wearing a currency sign.
  *
- * With dollars chosen the note says which rate, how old it is, and what it is
- * not. When no usable rate is on the phone it says that instead, and every
- * screen quietly shows rupees alone.
+ * With a currency chosen, the note says what it was worked from, how old it
+ * is, and what it is not. When no usable rate is on the phone it says that
+ * instead, and every screen quietly shows rupees alone.
  */
 function Money() {
   const { currency } = useSettings();
-  const dollar = useDollar();
+  const rate = useRate();
 
   return (
     <Section icon={Banknote} title="Currency">
@@ -422,31 +447,54 @@ function Money() {
         labelledBy="settings-currency"
         choices={CURRENCY_CHOICES}
         value={currency}
+        compact
         onChange={(next) => updateSettings({ currency: next })}
       />
 
-      {currency === "USD" ? (
-        dollar ? (
-          <Note>
-            Converted at <span className="nums font-semibold text-ink">Rs. {rate(dollar.pkr)}</span>{" "}
-            to the dollar — the interbank rate, taken {taken(dollar.at)}. A money changer&rsquo;s
-            rate is a little higher, and the shop bills in rupees: the dollar figure is a guide, not
-            a quotation.
-          </Note>
-        ) : (
-          <Note>
-            No recent dollar rate has reached this phone, so prices are in rupees only for now. It
-            needs a connection, and then it keeps.
-          </Note>
-        )
-      ) : null}
+      {currency === "PKR" ? null : rate ? (
+        <Note>
+          {rate.code === "USD" ? (
+            <>
+              Converted at{" "}
+              <span className="nums font-semibold text-ink">Rs. {paisa(rate.pkr)}</span> to the
+              dollar — the interbank rate, taken {taken(rate.dollar.at)}.
+            </>
+          ) : (
+            <>
+              Converted at{" "}
+              <span className="nums font-semibold text-ink">
+                Rs. {paisa(rate.pkr)} to 1 {rate.code}
+              </span>{" "}
+              — the interbank dollar (Rs. {paisa(rate.dollar.pkr)}, taken {taken(rate.dollar.at)})
+              crossed at the reference rate for {onDay(rate.day)}.
+            </>
+          )}{" "}
+          A money changer&rsquo;s rate differs, and the shop bills in rupees: the second figure is a
+          guide, not a quotation.
+        </Note>
+      ) : (
+        <Note>
+          No recent rate for {currency} has reached this phone, so prices are in rupees only for
+          now. It needs a connection, and then it keeps.
+        </Note>
+      )}
     </Section>
   );
 }
 
-/** The rate to the paisa, which is how the interbank dollar is quoted. */
-function rate(pkr: number): string {
+/** A rate to the paisa, which is how the interbank dollar is quoted. */
+function paisa(pkr: number): string {
   return pkr.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** The day of a cross, as a date and nothing else: it is a day's rate. */
+function onDay(day: string | undefined): string {
+  if (!day) return "the day";
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
 }
 
 /** When the rate was taken, in the phone's own time. */
