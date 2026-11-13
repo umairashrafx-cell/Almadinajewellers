@@ -6,6 +6,7 @@ import {
   Coins,
   Globe,
   Phone,
+  Settings,
   Store,
   X,
   type LucideIcon,
@@ -48,6 +49,10 @@ import type { View } from "../lib/views";
  * row leading to a third telling of it was one entry too many for a drawer
  * that is read with a thumb.
  *
+ * Settings is the last of the app's own screens, which is where every phone
+ * keeps it: after the things somebody came to do, before the door out to the
+ * website.
+ *
  * Opening and closing is history, not state — see App.tsx. Android's back
  * button closes this drawer because the drawer is an entry, which is the same
  * arrangement as a piece opened over the grid.
@@ -63,6 +68,7 @@ const ENTRIES: readonly Entry[] = [
   { kind: "view", id: "store", label: "Our store", icon: Store },
   { kind: "view", id: "story", label: "Our story", icon: BookOpen },
   { kind: "view", id: "contact", label: "Contact", icon: Phone },
+  { kind: "view", id: "settings", label: "Settings", icon: Settings },
   { kind: "page", path: "/collections", label: "Our Website", icon: Globe },
 ];
 

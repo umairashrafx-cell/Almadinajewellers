@@ -45,7 +45,7 @@ describe("the screen a history entry is for", () => {
   });
 
   test("covers every screen the app can show", () => {
-    // The tab bar has five; the drawer opens the other six. A screen missing
+    // The tab bar has five; the drawer opens the other seven. A screen missing
     // from here is one the back button cannot return to.
     expect([...VIEWS]).toEqual([
       "home",
@@ -59,6 +59,7 @@ describe("the screen a history entry is for", () => {
       "story",
       "contact",
       "appointment",
+      "settings",
     ]);
   });
 });

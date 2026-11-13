@@ -42,10 +42,13 @@ export function GoldRateBoard({
    */
   showBrand = true,
   showFooter = true,
+  /** Handed straight to each card; see RateCard. Only the Android app sets it. */
+  approx,
 }: {
   snapshot: RateSnapshot;
   showBrand?: boolean | undefined;
   showFooter?: boolean | undefined;
+  approx?: ((pkr: number) => string | null) | undefined;
 }) {
   const cards = rateCards(snapshot);
   const ageNote = rateAgeNote(snapshot);
@@ -162,7 +165,7 @@ export function GoldRateBoard({
 
         <ul className="mt-7 grid gap-3 sm:gap-4">
           {cards.map((rate) => (
-            <RateCard key={rate.karat} rate={rate} />
+            <RateCard key={rate.karat} rate={rate} approx={approx} />
           ))}
         </ul>
 

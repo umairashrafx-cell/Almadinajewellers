@@ -10,6 +10,7 @@ import type { RateSnapshot } from "@/lib/rates";
 import { cn } from "@/lib/utils";
 
 import { Kept } from "../components/Kept";
+import { useApprox } from "../components/Money";
 import { MarketsBoard } from "../components/MarketsBoard";
 import { RateDrivers } from "../components/RateDrivers";
 import { MARKETS_KEY, useCached } from "../lib/cache";
@@ -100,6 +101,8 @@ function Toggle({ board, onChange }: { board: Board; onChange: (next: Board) => 
 
 /** The shop's own board, and the offer to be told about tomorrow's. */
 function Local({ snapshot, rates }: { snapshot: RateSnapshot; rates: Cached<RateSnapshot> }) {
+  const approx = useApprox();
+
   return (
     <div role="tabpanel" id="rates-panel-local" aria-labelledby="rates-tab-local" className="mt-5">
       <Kept
@@ -125,7 +128,7 @@ function Local({ snapshot, rates }: { snapshot: RateSnapshot; rates: Cached<Rate
         Dropping it lifts the first rate to around 290px: visible on launch, on
         every phone, with the stamp and the staleness line above it.
       */}
-      <GoldRateBoard snapshot={snapshot} showBrand={false} showFooter={false} />
+      <GoldRateBoard snapshot={snapshot} showBrand={false} showFooter={false} approx={approx} />
 
       {/*
         The offer to be told tomorrow, on the screen somebody opened to find

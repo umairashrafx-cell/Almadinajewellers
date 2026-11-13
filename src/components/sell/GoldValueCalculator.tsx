@@ -100,9 +100,16 @@ function calculatorLink(side: CalculatorSide, purity: string, amount: string, un
 export function GoldValueCalculator({
   snapshot,
   side = "sell",
+  /**
+   * The Android app's, and never passed by the website: the estimate said
+   * again in another currency, already formatted and marked approximate, or
+   * nothing. The same arrangement as RateCard.
+   */
+  approx,
 }: {
   snapshot: RateSnapshot;
   side?: CalculatorSide;
+  approx?: ((pkr: number) => string | null) | undefined;
 }) {
   const selling = side === "sell";
   const [amount, setAmount] = useState("10");
@@ -381,6 +388,9 @@ export function GoldValueCalculator({
                   <span className="text-3xl text-champagne/70">Enter a weight</span>
                 )}
               </p>
+              {result && approx?.(result.value) ? (
+                <p className="nums mt-3 text-base text-champagne/85">{approx(result.value)}</p>
+              ) : null}
               {result ? (
                 <p className="nums mt-4 text-sm text-champagne/85">
                   {weightText} {unit === "g" ? "g" : "tola"} × Rs.{" "}

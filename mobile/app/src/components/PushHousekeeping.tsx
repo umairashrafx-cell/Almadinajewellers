@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 
-import { RATE_ALERT_PATH, onNotificationTap, refreshRegistration } from "@/lib/push";
+import {
+  NEW_PIECES_PATH,
+  RATE_ALERT_PATH,
+  onNotificationTap,
+  refreshRegistration,
+} from "@/lib/push";
 
 import { openShop } from "../lib/shop";
 
@@ -18,7 +23,13 @@ import { openShop } from "../lib/shop";
  * Renders nothing, and does nothing outside the app — both calls behind it
  * return as soon as they find they are not in it.
  */
-export function PushHousekeeping({ showRates }: { showRates: () => void }) {
+export function PushHousekeeping({
+  showRates,
+  showPieces,
+}: {
+  showRates: () => void;
+  showPieces: () => void;
+}) {
   /*
    * Held in a ref, and read only when a notification is actually tapped.
    *
@@ -28,8 +39,8 @@ export function PushHousekeeping({ showRates }: { showRates: () => void }) {
    * so the handler cannot be the one that was passed at launch — it has to be
    * the current one.
    */
-  const show = useRef(showRates);
-  show.current = showRates;
+  const show = useRef({ showRates, showPieces });
+  show.current = { showRates, showPieces };
 
   useEffect(() => {
     let stop: (() => void) | undefined;
@@ -37,15 +48,20 @@ export function PushHousekeeping({ showRates }: { showRates: () => void }) {
 
     void onNotificationTap((path) => {
       /*
-       * The one notification the shop sends is the morning's board, and the
-       * app has a screen for exactly that which opens with no connection.
-       * Leaving for the website to read the same figures would be slower and
-       * would need a signal, so the tap just shows the board.
+       * The rate — the morning's board or a change to it — and the app has a
+       * screen for exactly that which opens with no connection. Leaving for
+       * the website to read the same figures would be slower and would need a
+       * signal, so the tap just shows the board.
+       *
+       * New pieces are answered the same way and for the same reason: the
+       * app's own catalogue, which asks the shop for what is new as it opens
+       * and shows what it last had if the answer does not come.
        *
        * Anything else the shop may send one day is a page on the website, and
        * goes there.
        */
-      if (path === RATE_ALERT_PATH) show.current();
+      if (path === RATE_ALERT_PATH) show.current.showRates();
+      else if (path === NEW_PIECES_PATH) show.current.showPieces();
       else openShop(path);
     }).then((remove) => {
       if (cancelled) remove();

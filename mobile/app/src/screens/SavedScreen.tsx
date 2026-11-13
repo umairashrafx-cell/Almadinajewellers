@@ -7,6 +7,7 @@ import { formatPKR } from "@/lib/site";
 
 import { AppButton } from "../components/AppButton";
 import { Kept } from "../components/Kept";
+import { Approx } from "../components/Money";
 import { SAVED_KEY, savedSkus, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
 
@@ -163,6 +164,7 @@ function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
             {piece.karat} · {weight} g
           </span>
           <span className="mt-2 block text-sm font-semibold text-ink">{formatPKR(price)}</span>
+          <Approx pkr={price} className="mt-0.5 text-[11px]" />
         </span>
       </button>
 
