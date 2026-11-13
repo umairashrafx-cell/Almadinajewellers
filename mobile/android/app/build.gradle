@@ -64,8 +64,34 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            /*
+             * R8 shrinks and optimises the Java side of the release build.
+             *
+             * Almost none of what is linked in is used: the app is one empty
+             * Activity over a WebView, and appcompat, Firebase and the two
+             * Capacitor plugins drag in far more than it calls. Without this
+             * the bundle ships every class of all of them.
+             *
+             * Capacitor finds its plugins by reflection, so the classes it
+             * instantiates have to survive, and they do without a rule being
+             * written here: capacitor-android declares its keep rules as
+             * consumerProguardFiles, so Gradle applies them to this build on
+             * its own (node_modules/@capacitor/android/capacitor/
+             * proguard-rules.pro keeps everything extending
+             * com.getcapacitor.Plugin and the annotations read at runtime).
+             * Firebase ships its rules the same way, and the classes named in
+             * AndroidManifest.xml are kept by the keep rules AGP generates
+             * from the manifest. proguard-rules.pro next to this file is
+             * therefore still empty, and -optimize is the variant of the
+             * default file Capacitor's own libraries build against.
+             *
+             * Resource shrinking is deliberately left off. The app's screens
+             * live in assets/, which it does not look at, so it would trim
+             * only the Android resources of libraries that are already gone
+             * after this — risk without much to gain.
+             */
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             }
