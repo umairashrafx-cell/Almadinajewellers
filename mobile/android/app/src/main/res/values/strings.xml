@@ -4,4 +4,13 @@
     <string name="title_activity_main">Al-Madina Jewellers</string>
     <string name="package_name">com.almadinajeweller.app</string>
     <string name="custom_url_scheme">com.almadinajeweller.app</string>
+    <!-- The long-press shortcuts: see res/xml/shortcuts.xml. Short labels fit under an icon. -->
+    <string name="shortcut_rate_short">Gold rate</string>
+    <string name="shortcut_rate_long">Today\'s gold rate</string>
+    <string name="shortcut_calculator_short">Calculator</string>
+    <string name="shortcut_calculator_long">Gold calculator</string>
+    <string name="shortcut_shop_short">Shop</string>
+    <string name="shortcut_shop_long">Browse the pieces</string>
+    <string name="shortcut_saved_short">Saved</string>
+    <string name="shortcut_saved_long">Saved pieces</string>
 </resources>
