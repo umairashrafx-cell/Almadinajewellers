@@ -22,6 +22,12 @@ describe("settings read back from the phone", () => {
     expect(DEFAULTS).toEqual({ theme: "light", currency: "PKR" });
   });
 
+  test("keep every one of the ten currencies", () => {
+    for (const currency of ["USD", "GBP", "EUR", "AED", "SAR", "QAR", "KWD", "OMR", "CAD", "AUD"]) {
+      expect(readSettings(JSON.stringify({ theme: "light", currency })).currency).toBe(currency);
+    }
+  });
+
   test("are what was stored", () => {
     expect(readSettings('{"theme":"dark","currency":"USD"}')).toEqual({
       theme: "dark",
@@ -40,7 +46,7 @@ describe("settings read back from the phone", () => {
       theme: "light",
       currency: "USD",
     });
-    expect(readSettings('{"theme":"dark","currency":"AED"}')).toEqual({
+    expect(readSettings('{"theme":"dark","currency":"JPY"}')).toEqual({
       theme: "dark",
       currency: "PKR",
     });

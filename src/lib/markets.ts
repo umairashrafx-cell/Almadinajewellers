@@ -148,12 +148,29 @@ export type MarketCalendar = {
   fetchedAt?: string;
 };
 
+/**
+ * How many of each currency one US dollar buys, on a day the source names.
+ *
+ * Read by the Android app to say a rupee price again in another currency: the
+ * board's own interbank dollar, crossed with these. Codes are lower case, as
+ * the source writes them. Absent from a deployment that predates them.
+ */
+export type MarketFx = {
+  /** yyyy-mm-dd, the day the figures are for. */
+  day: string;
+  perUsd: Record<string, number>;
+  /** When the server read them, ISO. */
+  at: string;
+};
+
 export type MarketSnapshot = {
   board: MarketBoard;
   /** When the server last went out for these, ISO. */
   fetchedAt: string;
   /** The week's releases, where the server has them. */
   calendar?: MarketCalendar;
+  /** The day's currency crosses against the dollar, where the server has them. */
+  fx?: MarketFx;
 };
 
 /** How the five read on a board, in the order they belong in. */
@@ -362,10 +379,20 @@ export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
   const calendar =
     snapshot.calendar && Array.isArray(snapshot.calendar.events) ? snapshot.calendar : undefined;
 
+  // The same for the crosses: carried only in the shape the app reads.
+  const fx =
+    snapshot.fx &&
+    typeof snapshot.fx.day === "string" &&
+    typeof snapshot.fx.perUsd === "object" &&
+    snapshot.fx.perUsd !== null
+      ? snapshot.fx
+      : undefined;
+
   return {
     board: snapshot.board,
     fetchedAt: snapshot.fetchedAt ?? new Date().toISOString(),
     ...(calendar ? { calendar } : {}),
+    ...(fx ? { fx } : {}),
   };
 }
 
