@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { MoneyProvider } from "./components/Money";
 import { NecklaceBustIcon } from "./components/NecklaceBustIcon";
 import { PushHousekeeping } from "./components/PushHousekeeping";
+import { ShortcutHousekeeping } from "./components/ShortcutHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
 import { viewFromHistory, type View } from "./lib/views";
@@ -267,6 +268,20 @@ export function App() {
         website where the same work was already being done.
       */}
       <PushHousekeeping showRates={() => go("rate")} showPieces={showAllPieces} />
+
+      {/*
+        The long-press shortcuts on the app's icon. With the drawer open the
+        move replaces the drawer's entry, the way a drawer row does, so back
+        does not reopen a menu nobody asked for; the Shop shortcut is the
+        whole catalogue, like every other way into it.
+      */}
+      <ShortcutHousekeeping
+        show={(next) => {
+          if (next === "pieces") setCollection(null);
+          if (drawer) goFromDrawer(next);
+          else go(next);
+        }}
+      />
 
       <header className="flex items-center gap-3 border-b border-gold/20 bg-ivory px-4 py-3">
         {/*

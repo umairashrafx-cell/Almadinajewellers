@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What a long press on the app's icon offers, the way WhatsApp offers Camera
+  and a chat.
+
+  Four, because most launchers show four and drop the rest. They are the four
+  reasons somebody opens this app from the home screen: today's rate, what
+  their gold is worth, the cases, and what they have already picked out.
+
+  Each opens MainActivity with the screen named in an extra. The activity is
+  singleTask, so a warm app is brought forward and told through onNewIntent; a
+  cold one reads the extra at launch. AppShortcutsPlugin hands the name to the
+  bundled screens, which check it against their own list before moving -
+  so these four values are agreed with VIEWS in mobile/app/src/lib/views.ts.
+
+  Android 7.1 (API 25) and later. On 7.0 the manifest entry pointing here is
+  simply ignored and the icon long-press offers nothing, as it does today.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="rate"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_rate"
+        android:shortcutShortLabel="@string/shortcut_rate_short"
+        android:shortcutLongLabel="@string/shortcut_rate_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.almadinajeweller.app"
+            android:targetClass="com.almadinajeweller.app.MainActivity">
+            <extra android:name="amj_view" android:value="rate" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="calculator"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_calculator"
+        android:shortcutShortLabel="@string/shortcut_calculator_short"
+        android:shortcutLongLabel="@string/shortcut_calculator_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.almadinajeweller.app"
+            android:targetClass="com.almadinajeweller.app.MainActivity">
+            <extra android:name="amj_view" android:value="calculator" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="pieces"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_shop"
+        android:shortcutShortLabel="@string/shortcut_shop_short"
+        android:shortcutLongLabel="@string/shortcut_shop_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.almadinajeweller.app"
+            android:targetClass="com.almadinajeweller.app.MainActivity">
+            <extra android:name="amj_view" android:value="pieces" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="saved"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_saved"
+        android:shortcutShortLabel="@string/shortcut_saved_short"
+        android:shortcutLongLabel="@string/shortcut_saved_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.almadinajeweller.app"
+            android:targetClass="com.almadinajeweller.app.MainActivity">
+            <extra android:name="amj_view" android:value="saved" />
+        </intent>
+    </shortcut>
+</shortcuts>
