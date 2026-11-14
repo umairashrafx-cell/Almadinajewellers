@@ -33,7 +33,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * The Play Console showed 3 live on 8 November 2026, so this is 4.
+         * The Play Console showed 4 (2.0) live, at 100%, on 13 November 2026,
+         * and nothing has been uploaded since, so this is 5. 3 was live on
+         * 8 November, which is how 4 was chosen.
          *
          * Until then this comment said production was on 2, and it was wrong:
          * 3 had already gone out. A signed bundle was built against it and
@@ -41,10 +43,12 @@ android {
          * Console before every release — what is written here is a note of
          * what was true once, not a source of truth.
          *
-         * versionName is what a customer sees: the second app.
+         * versionName is what a customer sees. 2.1 for the release that adds
+         * the Settings screen (notifications, dark theme, currencies) and the
+         * long-press shortcuts on the icon.
          */
-        versionCode 4
-        versionName "2.0"
+        versionCode 5
+        versionName "2.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
