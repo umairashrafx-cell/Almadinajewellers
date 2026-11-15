@@ -34,6 +34,13 @@ export const Route = createFileRoute("/admin")({
       // Staff tooling. It must never appear in a search result, and there is
       // nothing here worth following links out of.
       { name: "robots", content: "noindex, nofollow" },
+      // The installed admin app's own name and status-bar colour, matching its
+      // icon (public/admin.webmanifest). The root links that manifest on these
+      // pages — see isAdminPage in __root.tsx. These override the site's
+      // because the router keeps the deepest route's meta of the same name.
+      { name: "theme-color", content: "#201E1B" },
+      { name: "application-name", content: "Al-Madina Admin" },
+      { name: "apple-mobile-web-app-title", content: "AMJ Admin" },
     ],
   }),
   component: AdminLayout,

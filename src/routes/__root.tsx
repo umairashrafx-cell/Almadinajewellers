@@ -144,8 +144,23 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+/**
+ * Whether the page being rendered is part of the admin panel.
+ *
+ * The admin installs on the shop's phone as an app of its own — "Al-Madina
+ * Admin", opening straight to the sign-in — rather than as the customer
+ * website. Which app a browser offers to install is decided by the manifest
+ * the page links, and only one may be linked: the router joins every route's
+ * links together without removing duplicates, and a browser reads the first.
+ * So the choice is made here, once, rather than by the admin route adding a
+ * second manifest that would lose to this one.
+ */
+function isAdminPage(matches: ReadonlyArray<{ routeId: string }>): boolean {
+  return matches.some((m) => m.routeId === "/admin" || m.routeId.startsWith("/admin/"));
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: ({ matches }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -184,8 +199,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // than badly downscaling a large PNG.
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
-      { rel: "manifest", href: "/site.webmanifest" },
+      // Both pairs swap together: the manifest is what Android installs from,
+      // the touch icon what an iPhone puts on its home screen.
+      ...(isAdminPage(matches)
+        ? [
+            { rel: "apple-touch-icon", href: "/admin-apple-touch-icon.png", sizes: "180x180" },
+            { rel: "manifest", href: "/admin.webmanifest" },
+          ]
+        : [
+            { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+            { rel: "manifest", href: "/site.webmanifest" },
+          ]),
     ],
   }),
 
