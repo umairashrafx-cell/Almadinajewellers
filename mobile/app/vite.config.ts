@@ -32,6 +32,16 @@ export default defineConfig({
 
   plugins: [react(), tailwindcss()],
 
+  /*
+   * Tells the shared catalogue code it is running in the app's own screens.
+   *
+   * The website shows sold pieces labelled SOLD; these screens were never
+   * taught to, so src/lib/catalogue.ts does not ask the database for them when
+   * this is set. The shop's website, opened inside the app, is the website's
+   * own build and is not affected.
+   */
+  define: { __APP_SHELL__: "true" },
+
   resolve: {
     alias: { "@": resolve(repo, "src") },
     // One React, however the shared components reach it.

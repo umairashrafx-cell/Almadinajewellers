@@ -33,6 +33,7 @@ import {
   formatPKR,
   productEnquiryLink,
   productUrl,
+  similarPieceLink,
   whatsappLink,
 } from "@/lib/site";
 import { useWishlist } from "@/hooks/use-wishlist";
@@ -68,6 +69,7 @@ export const Route = createFileRoute("/products/$slug")({
     const product = loaderData?.product;
     if (!product) return { meta: [{ title: `${SITE.name}` }] };
 
+    const sold = Boolean(product.soldAt);
     const price = formatPKR(product.salePricePkr ?? product.pricePkr);
     // May be the brand card rather than the piece, when this one has no
     // photograph of its own yet — so the alt text has to follow the image.
@@ -76,8 +78,15 @@ export const Route = createFileRoute("/products/$slug")({
       shareImage === shareImageUrl()
         ? `${SITE.name} — ${SITE.tagline}`
         : `${product.name} — ${product.karat}`;
-    const title = `${product.name} — ${product.karat} · ${SITE.name}`;
-    const description = `${product.name}: ${formatGrams(product.grossWeightG)} in ${product.karat}, ${product.stones.toLowerCase()}. ${price}. Hallmarked and weighed in front of you. Enquire on WhatsApp.`;
+    const title = sold
+      ? `${product.name} (Sold) — ${product.karat} · ${SITE.name}`
+      : `${product.name} — ${product.karat} · ${SITE.name}`;
+    // A sold piece's link still gets pasted into WhatsApp and found on Google.
+    // Its preview should say it has gone and what to do instead, never quote a
+    // price for something that cannot be bought.
+    const description = sold
+      ? `${product.name}: ${formatGrams(product.grossWeightG)} in ${product.karat}. This piece has sold — ask us on WhatsApp for something similar, or have one made.`
+      : `${product.name}: ${formatGrams(product.grossWeightG)} in ${product.karat}, ${product.stones.toLowerCase()}. ${price}. Hallmarked and weighed in front of you. Enquire on WhatsApp.`;
 
     return {
       meta: [
@@ -92,12 +101,17 @@ export const Route = createFileRoute("/products/$slug")({
         { property: "og:image", content: shareImage },
         { property: "og:image:alt", content: shareAlt },
         { name: "twitter:image", content: shareImage },
-        // Read by Facebook and Pinterest; harmless elsewhere.
-        {
-          property: "product:price:amount",
-          content: String(product.salePricePkr ?? product.pricePkr),
-        },
-        { property: "product:price:currency", content: "PKR" },
+        // Read by Facebook and Pinterest; harmless elsewhere. Left off a sold
+        // piece, for the same reason as the description.
+        ...(sold
+          ? []
+          : [
+              {
+                property: "product:price:amount",
+                content: String(product.salePricePkr ?? product.pricePkr),
+              },
+              { property: "product:price:currency", content: "PKR" },
+            ]),
       ],
       links: [{ rel: "canonical", href: productUrl(params.slug) }],
     };
@@ -114,7 +128,8 @@ function ProductDetailPage() {
   const { has, toggle } = useWishlist();
 
   const url = productUrl(product.slug);
-  const onSale = typeof product.salePricePkr === "number";
+  const sold = Boolean(product.soldAt);
+  const onSale = !sold && typeof product.salePricePkr === "number";
   const listed = product.salePricePkr ?? product.pricePkr;
   const wished = has(product.sku);
 
@@ -170,44 +185,84 @@ function ProductDetailPage() {
                 {product.name}
               </h1>
 
-              <p className="nums mt-5 flex items-baseline gap-3">
-                <span className="text-2xl font-semibold text-ink">{formatPKR(listed)}</span>
-                {onSale && (
-                  <span className="text-sm font-normal text-warmgrey line-through">
-                    {formatPKR(product.pricePkr)}
+              {sold ? (
+                /*
+                 * No price. Today's rate times this weight is a figure for a
+                 * piece nobody can buy, and shown here it reads as an offer.
+                 */
+                <div className="mt-5">
+                  <span className="inline-block bg-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-ivory">
+                    Sold
                   </span>
-                )}
-              </p>
+                  <p className="mt-4 max-w-md text-sm leading-relaxed text-warmgrey">
+                    This piece has found its home. We often have something close to it at the
+                    counter, and the workshop can make one to the same design.
+                  </p>
+                </div>
+              ) : (
+                <p className="nums mt-5 flex items-baseline gap-3">
+                  <span className="text-2xl font-semibold text-ink">{formatPKR(listed)}</span>
+                  {onSale && (
+                    <span className="text-sm font-normal text-warmgrey line-through">
+                      {formatPKR(product.pricePkr)}
+                    </span>
+                  )}
+                </p>
+              )}
               <p className="mt-2 text-xs text-warmgrey">
                 SKU {product.sku} · {product.stones}
               </p>
 
               <SpecTable product={product} />
 
-              <PriceBreakdownPanel product={product} listed={listed} />
+              {sold ? null : <PriceBreakdownPanel product={product} listed={listed} />}
 
               {/* Actions */}
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <AddToOrder sku={product.sku} />
-                <ActionLink
-                  href={productEnquiryLink(product.name, product.sku, url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="sm:flex-1"
-                >
-                  Enquire on WhatsApp
-                </ActionLink>
-                <ActionLink
-                  variant="outline"
-                  href={whatsappLink(
-                    `Assalam-o-Alaikum, please call me back about ${product.name} (SKU: ${product.sku}) - ${url}`,
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Request a callback
-                </ActionLink>
-              </div>
+              {sold ? (
+                /*
+                 * Nothing that orders, reserves or books a viewing of the piece
+                 * itself. What a visitor can usefully do is ask for one like it,
+                 * have one made, or go back to what is still in stock.
+                 */
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <ActionLink
+                    href={similarPieceLink(product.name, product.sku, url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sm:flex-1"
+                  >
+                    Ask for something similar
+                  </ActionLink>
+                  <ActionLink variant="outline" href="/custom-order">
+                    Have one made
+                  </ActionLink>
+                  <ActionLink variant="outline" href={`/collections/${product.categorySlug}`}>
+                    Browse {categoryName}
+                  </ActionLink>
+                </div>
+              ) : (
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <AddToOrder sku={product.sku} />
+                  <ActionLink
+                    href={productEnquiryLink(product.name, product.sku, url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sm:flex-1"
+                  >
+                    Enquire on WhatsApp
+                  </ActionLink>
+                  <ActionLink
+                    variant="outline"
+                    href={whatsappLink(
+                      `Assalam-o-Alaikum, please call me back about ${product.name} (SKU: ${product.sku}) - ${url}`,
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Request a callback
+                  </ActionLink>
+                </div>
+              )}
 
               {/*
                 Each of these was a line of 11px uppercase — seventeen pixels
@@ -230,37 +285,46 @@ function ProductDetailPage() {
                   {wished ? "Saved to wishlist" : "Save to wishlist"}
                 </button>
 
-                <a
-                  href={shareOnWhatsApp(productShareMessage(product, listed))}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
-                >
-                  <WhatsAppIcon className="h-4 w-4 text-primary" />
-                  Share this piece
-                </a>
+                {/*
+                  Sharing and viewing are for a piece someone can have. Both
+                  share formats carry today's price, and a viewing of a sold
+                  piece is a trip to the shop for nothing.
+                */}
+                {sold ? null : (
+                  <>
+                    <a
+                      href={shareOnWhatsApp(productShareMessage(product, listed))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
+                    >
+                      <WhatsAppIcon className="h-4 w-4 text-primary" />
+                      Share this piece
+                    </a>
 
-                {/* The piece as a picture, photograph and price together. */}
-                <ShareCardButton
-                  render={() => renderProductCard(product, listed)}
-                  title={product.name}
-                  text={productShareMessage(product, listed)}
-                  filename={`${product.slug}.jpg`}
-                  className="min-h-11 px-0 py-0 text-[11px] tracking-widest text-ink hover:text-gold"
-                >
-                  Share as picture
-                </ShareCardButton>
+                    {/* The piece as a picture, photograph and price together. */}
+                    <ShareCardButton
+                      render={() => renderProductCard(product, listed)}
+                      title={product.name}
+                      text={productShareMessage(product, listed)}
+                      filename={`${product.slug}.jpg`}
+                      className="min-h-11 px-0 py-0 text-[11px] tracking-widest text-ink hover:text-gold"
+                    >
+                      Share as picture
+                    </ShareCardButton>
 
-                <a
-                  href={whatsappLink(
-                    `Assalam-o-Alaikum, I would like to view ${product.name} (SKU: ${product.sku}) at the shop. When is a good time?`,
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
-                >
-                  <span className="border-b border-gold pb-0.5">Book a store viewing</span>
-                </a>
+                    <a
+                      href={whatsappLink(
+                        `Assalam-o-Alaikum, I would like to view ${product.name} (SKU: ${product.sku}) at the shop. When is a good time?`,
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center text-[11px] font-semibold uppercase tracking-widest text-ink transition-colors hover:text-gold"
+                    >
+                      <span className="border-b border-gold pb-0.5">Book a store viewing</span>
+                    </a>
+                  </>
+                )}
               </div>
 
               <Details product={product} />
@@ -666,7 +730,9 @@ function ProductSchema({
       url,
       priceCurrency: "PKR",
       price: product.salePricePkr ?? product.pricePkr,
-      availability: "https://schema.org/InStock",
+      // SoldOut rather than dropping the offer: Google keeps the page as a
+      // product it can describe, and is told plainly it cannot be bought.
+      availability: product.soldAt ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
       /*
        * Both, because the shop does both.
        *

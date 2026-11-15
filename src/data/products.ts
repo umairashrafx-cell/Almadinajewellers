@@ -26,6 +26,11 @@ export type Product = {
   salePricePkr?: number;
   images: [string, string];
   isNew?: boolean;
+  /**
+   * When the piece sold. Present only on a sold piece, which is shown labelled
+   * SOLD with no price and no way to order it — see lib/catalogue.
+   */
+  soldAt?: string;
 };
 
 export const categories = [

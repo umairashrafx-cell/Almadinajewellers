@@ -105,7 +105,23 @@ export function countFor(
   ).length;
 }
 
+/**
+ * Sold pieces after the ones for sale, each group in the order it came.
+ *
+ * A collection is the shop's stock first. A sold piece is worth seeing — it is
+ * a picture of what the workshop makes — but a visitor scrolling for something
+ * to buy should reach every piece they can have before any they cannot. Stable,
+ * so whatever order was asked for still holds inside each group.
+ */
+export function soldLast<T extends Pick<Product, "soldAt">>(products: T[]): T[] {
+  return [...products.filter((p) => !p.soldAt), ...products.filter((p) => p.soldAt)];
+}
+
 export function sortProducts(products: Product[], sort: SortKey): Product[] {
+  return soldLast(sortAll(products, sort));
+}
+
+function sortAll(products: Product[], sort: SortKey): Product[] {
   const out = [...products];
 
   switch (sort) {

@@ -19,6 +19,48 @@ import { supabase } from "@/integrations/supabase/client";
 const untypedDb = supabase as unknown as SupabaseClient;
 import { fetchRateSnapshot, type RateSnapshot } from "@/lib/rates";
 import { livePriceFor, liveSalePrice, pricedWeightFor } from "@/lib/pricing";
+import { soldLast } from "@/lib/filters";
+
+// ---------------------------------------------------------------------------
+// Sold pieces
+// ---------------------------------------------------------------------------
+
+/**
+ * Set to true by the Android app's own build — see mobile/app/vite.config.ts —
+ * and undefined everywhere else: the website, its server render, and tests.
+ * `typeof` because an undefined global is not an error to ask about.
+ */
+declare const __APP_SHELL__: boolean | undefined;
+
+/**
+ * Whether this build may be handed sold pieces.
+ *
+ * The database shows a sold piece only to a request carrying x-include-sold
+ * (migration 20261115200000), because a client that does not know what sold_at
+ * means would draw a sold piece as an ordinary one, priced, with an Enquire
+ * button. The website knows; it shows them labelled and unorderable.
+ *
+ * The app's own screens do not ask. They are not taught to draw a sold piece,
+ * and the installed copies on customers' phones cannot be — so the app keeps
+ * the catalogue it has always had, and the shop's website inside it, which is
+ * this build, is where sold pieces appear.
+ */
+const MAY_SHOW_SOLD = !(typeof __APP_SHELL__ !== "undefined" && __APP_SHELL__ === true);
+
+/**
+ * The products table, asking for sold pieces too where `withSold` is set.
+ *
+ * Opt-in per query on purpose. The browsing surfaces ask: a collection, the
+ * new arrivals, search, the saved list and a piece's own page. The surfaces
+ * that are selling something do not, and the database keeps sold pieces out
+ * of them without any code here having to remember: the homepage rails, "You
+ * may also like", and above all the cart, which must never be able to order
+ * a piece that has gone.
+ */
+function productsTable(columns: string, { withSold }: { withSold: boolean }) {
+  const query = untypedDb.from("products").select(columns);
+  return withSold && MAY_SHOW_SOLD ? query.setHeader("x-include-sold", "1") : query;
+}
 
 /**
  * Bundled placeholder art, keyed by the short strings ("bridal", "rings") that
@@ -91,6 +133,7 @@ type ProductRow = {
   image_keys: string[];
   is_new: boolean;
   created_at: string;
+  sold_at?: string | null;
 };
 
 /**
@@ -173,6 +216,7 @@ export function mapProduct(
     ...(salePricePkr !== undefined ? { salePricePkr } : {}),
     images: [imageFor(row.image_keys?.[0]), imageFor(row.image_keys?.[1] ?? row.image_keys?.[0])],
     isNew: row.is_new,
+    ...(row.sold_at ? { soldAt: row.sold_at } : {}),
   };
 }
 
@@ -348,9 +392,7 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
    */
   const slugs = [slug, ...children.map((c) => c.slug)];
 
-  const productsResult = await untypedDb
-    .from("products")
-    .select(BASE_COLUMNS)
+  const productsResult = await productsTable(BASE_COLUMNS, { withSold: true })
     .in("category_slug", slugs)
     .order("created_at", { ascending: false });
 
@@ -362,10 +404,12 @@ export async function fetchCollection(slug: string): Promise<CollectionData> {
   return {
     category,
     children,
-    products: (productsResult.data ?? []).map((row) => {
-      const r = row as ProductRow;
-      return mapProduct(r, names.get(r.category_slug) ?? category.name, snapshot);
-    }),
+    products: soldLast(
+      (productsResult.data ?? []).map((row) => {
+        const r = row as unknown as ProductRow;
+        return mapProduct(r, names.get(r.category_slug) ?? category.name, snapshot);
+      }),
+    ),
   };
 }
 
@@ -431,51 +475,63 @@ export async function fetchAllProducts(): Promise<Product[]> {
   const [snapshot, names, productsResult] = await Promise.all([
     safeRateSnapshot(),
     categoryNames(),
-    untypedDb.from("products").select(BASE_COLUMNS).order("created_at", { ascending: false }),
+    productsTable(BASE_COLUMNS, { withSold: true }).order("created_at", { ascending: false }),
   ]);
 
   if (productsResult.error) throw new Error(productsResult.error.message);
 
-  return (productsResult.data ?? []).map((row) => {
-    const r = row as ProductRow;
-    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
-  });
+  return soldLast(
+    (productsResult.data ?? []).map((row) => {
+      const r = row as unknown as ProductRow;
+      return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
+    }),
+  );
 }
 
-/** Pieces flagged new, newest first. */
+/** Pieces flagged new, newest first, with any that have sold after the rest. */
 export async function fetchNewArrivals(): Promise<Product[]> {
   const [snapshot, names, productsResult] = await Promise.all([
     safeRateSnapshot(),
     categoryNames(),
-    untypedDb
-      .from("products")
-      .select(BASE_COLUMNS)
+    productsTable(BASE_COLUMNS, { withSold: true })
       .eq("is_new", true)
       .order("created_at", { ascending: false }),
   ]);
 
   if (productsResult.error) throw new Error(productsResult.error.message);
 
-  return (productsResult.data ?? []).map((row) => {
-    const r = row as ProductRow;
-    return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
-  });
+  return soldLast(
+    (productsResult.data ?? []).map((row) => {
+      const r = row as unknown as ProductRow;
+      return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
+    }),
+  );
 }
 
-/** Looks up saved wishlist entries by SKU. Returns [] for an empty list. */
-export async function fetchProductsBySkus(skus: string[]): Promise<Product[]> {
+/**
+ * Looks up pieces by SKU, in the order given. Returns [] for an empty list.
+ *
+ * `withSold` is for the saved list, where a piece that has gone should stay
+ * and say so rather than vanish from under the person who saved it. The cart
+ * leaves it off and must: it drops whatever this does not return, which is how
+ * a piece that sells while it sits in somebody's order stops being orderable.
+ */
+export async function fetchProductsBySkus(
+  skus: string[],
+  { withSold = false }: { withSold?: boolean } = {},
+): Promise<Product[]> {
   if (skus.length === 0) return [];
 
   const [snapshot, names, productsResult] = await Promise.all([
     safeRateSnapshot(),
     categoryNames(),
-    untypedDb.from("products").select(BASE_COLUMNS).in("sku", skus),
+    productsTable(BASE_COLUMNS, { withSold }).in("sku", skus),
   ]);
 
   if (productsResult.error) throw new Error(productsResult.error.message);
 
   const found = (productsResult.data ?? []).map((row) => {
-    const r = row as ProductRow;
+    const r = row as unknown as ProductRow;
     return mapProduct(r, names.get(r.category_slug) ?? r.category_slug, snapshot);
   });
 
@@ -557,7 +613,7 @@ export type ProductPage = {
  * a product card could only show the price the piece was last saved at.
  */
 const BASE_COLUMNS =
-  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, discount_pkr, making_charges_pkr, stone_value_pkr, polish_g_per_tola, image_keys, is_new, created_at";
+  "id, sku, name, slug, category_slug, metal, karat, gross_weight_g, net_weight_g, stones, price_pkr, sale_price_pkr, discount_pkr, making_charges_pkr, stone_value_pkr, polish_g_per_tola, image_keys, is_new, created_at, sold_at";
 
 const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_g, dimensions, sizes, metal_value_pkr, rate_basis_pkr_per_g`;
 
@@ -576,15 +632,15 @@ const DETAIL_COLUMNS = `${BASE_COLUMNS}, description, stone_weight_g, dimensions
  * being applied.
  */
 async function selectProductRow(slug: string): Promise<ProductDetailRow | null> {
-  const full = await supabase
-    .from("products")
-    .select(DETAIL_COLUMNS)
+  // withSold: the link to a sold piece keeps working, and the page says it has
+  // sold and offers something like it, rather than turning into a dead end.
+  const full = await productsTable(DETAIL_COLUMNS, { withSold: true })
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!full.error) return (full.data as ProductDetailRow | null) ?? null;
+  if (!full.error) return (full.data as unknown as ProductDetailRow | null) ?? null;
 
-  const base = await untypedDb.from("products").select(BASE_COLUMNS).eq("slug", slug).maybeSingle();
+  const base = await productsTable(BASE_COLUMNS, { withSold: true }).eq("slug", slug).maybeSingle();
 
   if (base.error) throw new Error(base.error.message);
   if (!base.data) return null;
@@ -592,7 +648,7 @@ async function selectProductRow(slug: string): Promise<ProductDetailRow | null> 
   console.warn(
     "[catalogue] Product detail columns are missing — run the product_detail_and_gold_rates migration.",
   );
-  return base.data as ProductDetailRow;
+  return base.data as unknown as ProductDetailRow;
 }
 
 function mapDetail(
