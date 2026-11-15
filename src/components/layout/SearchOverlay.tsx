@@ -152,9 +152,15 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         {product.karat} · {formatGrams(listedWeightG(product))} · {product.category}
                       </p>
                     </div>
-                    <p className="nums shrink-0 text-sm font-semibold text-ink">
-                      {formatPKR(product.salePricePkr ?? product.pricePkr)}
-                    </p>
+                    {product.soldAt ? (
+                      <p className="shrink-0 text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
+                        Sold
+                      </p>
+                    ) : (
+                      <p className="nums shrink-0 text-sm font-semibold text-ink">
+                        {formatPKR(product.salePricePkr ?? product.pricePkr)}
+                      </p>
+                    )}
                   </Link>
                 </li>
               ))}

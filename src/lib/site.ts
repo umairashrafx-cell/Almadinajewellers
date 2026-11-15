@@ -246,6 +246,20 @@ export function productSchemaId(slug: string) {
   return `${productUrl(slug)}#product`;
 }
 
+/**
+ * Pre-filled message about a piece that has sold.
+ *
+ * The enquiry for a sold piece is not "is this available" — the page has
+ * already said no — but "have you got one like it", which is a question the
+ * shop can say yes to: from stock, or made in the workshop to the same design.
+ */
+export function similarPieceLink(name: string, sku: string, url?: string) {
+  const pageUrl = url ?? "";
+  return whatsappLink(
+    `Assalam-o-Alaikum, I saw that ${name} (SKU: ${sku}) has sold. Do you have something similar, or could one be made?${pageUrl ? ` - ${pageUrl}` : ""}`,
+  );
+}
+
 /** Pre-filled product enquiry message. */
 export function productEnquiryLink(name: string, sku: string, url?: string) {
   // Note: pass the page URL explicitly. Reading window here would break SSR hydration.

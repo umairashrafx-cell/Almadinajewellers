@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { Product } from "@/data/products";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { CARD_SIZES, CARD_WIDTHS, responsiveImage } from "@/lib/images";
-import { formatGrams, formatPKR, productEnquiryLink } from "@/lib/site";
+import { formatGrams, formatPKR, productEnquiryLink, similarPieceLink } from "@/lib/site";
 import { listedWeightG } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,13 @@ import { cn } from "@/lib/utils";
 export function ProductCard({ product }: { product: Product }) {
   const { has, toggle } = useWishlist();
   const wished = has(product.sku);
-  const onSale = typeof product.salePricePkr === "number";
+  /*
+   * A sold piece stays in the grid as a picture of what the workshop makes,
+   * but it is not for sale: no price, no Sale or New badge, and the hover
+   * action asks for something like it rather than enquiring about it.
+   */
+  const sold = Boolean(product.soldAt);
+  const onSale = !sold && typeof product.salePricePkr === "number";
   const alternate = product.images[1] && product.images[1] !== product.images[0];
 
   return (
@@ -34,7 +40,12 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-0"
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] group-hover:opacity-0",
+              // Quieter than the stock around it, so the eye lands on what can
+              // still be had — but still the piece, not a grey box.
+              sold && "saturate-50",
+            )}
           />
           {/*
             The second view only appears on hover, so it is only rendered where
@@ -58,16 +69,22 @@ export function ProductCard({ product }: { product: Product }) {
           {product.karat}
         </span>
 
-        {/* New / Sale badge */}
-        {(product.isNew || onSale) && (
-          <span
-            className={cn(
-              "pointer-events-none absolute right-0 top-0 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-ivory",
-              onSale ? "bg-rose" : "bg-gold text-primary",
-            )}
-          >
-            {onSale ? "Sale" : "New"}
+        {/* Sold / Sale / New badge — Sold outranks the other two. */}
+        {sold ? (
+          <span className="pointer-events-none absolute right-0 top-0 bg-ink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-ivory">
+            Sold
           </span>
+        ) : (
+          (product.isNew || onSale) && (
+            <span
+              className={cn(
+                "pointer-events-none absolute right-0 top-0 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-ivory",
+                onSale ? "bg-rose" : "bg-gold text-primary",
+              )}
+            >
+              {onSale ? "Sale" : "New"}
+            </span>
+          )
         )}
 
         {/*
@@ -102,12 +119,16 @@ export function ProductCard({ product }: { product: Product }) {
 
         {/* Single hover action */}
         <a
-          href={productEnquiryLink(product.name, product.sku)}
+          href={
+            sold
+              ? similarPieceLink(product.name, product.sku)
+              : productEnquiryLink(product.name, product.sku)
+          }
           target="_blank"
           rel="noopener noreferrer"
           className="absolute inset-x-0 bottom-0 translate-y-full bg-gold py-3.5 text-center text-[11px] font-semibold uppercase tracking-widest text-primary transition-transform duration-300 ease-out focus-visible:translate-y-0 group-hover:translate-y-0"
         >
-          Enquire
+          {sold ? "Ask for similar" : "Enquire"}
         </a>
       </div>
 
@@ -124,14 +145,20 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="nums mt-1 text-xs text-warmgrey">
           {formatGrams(listedWeightG(product))} · {product.stones}
         </p>
-        <p className="nums mt-3 flex items-baseline gap-2 text-sm font-semibold text-ink">
-          {formatPKR(product.salePricePkr ?? product.pricePkr)}
-          {onSale && (
-            <span className="text-xs font-normal text-warmgrey line-through">
-              {formatPKR(product.pricePkr)}
-            </span>
-          )}
-        </p>
+        {sold ? (
+          <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest text-warmgrey">
+            Sold
+          </p>
+        ) : (
+          <p className="nums mt-3 flex items-baseline gap-2 text-sm font-semibold text-ink">
+            {formatPKR(product.salePricePkr ?? product.pricePkr)}
+            {onSale && (
+              <span className="text-xs font-normal text-warmgrey line-through">
+                {formatPKR(product.pricePkr)}
+              </span>
+            )}
+          </p>
+        )}
       </div>
     </article>
   );

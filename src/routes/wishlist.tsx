@@ -38,7 +38,9 @@ function WishlistPage() {
 
   const { data, isPending } = useQuery({
     queryKey: ["wishlist", skus],
-    queryFn: () => fetchProductsBySkus(skus),
+    // A saved piece that has since sold stays on the list, labelled, instead of
+    // disappearing from under the person who saved it.
+    queryFn: () => fetchProductsBySkus(skus, { withSold: true }),
     enabled: skus.length > 0,
   });
 
@@ -154,11 +156,14 @@ function EmptyWishlist() {
 
 /** One line per saved piece, so the shop can price the list straight away. */
 function wishlistMessage(products: Product[]): string {
-  const lines = products.map(
-    (p) =>
-      `• ${p.name} (${p.sku}) — ${p.karat}, ${formatGrams(listedWeightG(p))}, ${formatPKR(
-        p.salePricePkr ?? p.pricePkr,
-      )}\n  ${productUrl(p.slug)}`,
+  // A sold piece is not quoted a price: there is nothing to price, and a figure
+  // beside it reads as an offer. It asks for something like it instead.
+  const lines = products.map((p) =>
+    p.soldAt
+      ? `• ${p.name} (${p.sku}) — sold; do you have something similar?\n  ${productUrl(p.slug)}`
+      : `• ${p.name} (${p.sku}) — ${p.karat}, ${formatGrams(listedWeightG(p))}, ${formatPKR(
+          p.salePricePkr ?? p.pricePkr,
+        )}\n  ${productUrl(p.slug)}`,
   );
 
   return [
