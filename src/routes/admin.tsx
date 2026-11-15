@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
+  BarChart3,
   Calculator,
   CalendarCheck,
   Coins,
@@ -132,6 +133,9 @@ function AdminLayout() {
             </NavTab>
             <NavTab to="/admin/calculator" icon={Calculator}>
               Calculator
+            </NavTab>
+            <NavTab to="/admin/reports" icon={BarChart3}>
+              Reports
             </NavTab>
           </nav>
 
