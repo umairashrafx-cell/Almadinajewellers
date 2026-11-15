@@ -124,11 +124,25 @@ Worth knowing before you go looking for a button that is not there.
 The screens are built for a phone — the nine tabs are a grid of icons, not a row
 squeezed off the side of the screen.
 
-The website can be installed like an app: in Chrome, open the shop, then the ⋮
-menu, then **Install app** (or **Add to Home screen**). You get an icon with no
-address bar across the top. Note that the installed icon opens the shop's front
-page, not the admin — tap through from there, or keep the admin bookmarked. An
-icon that opens straight to the admin would need a small change to the site.
+The admin installs as an app of its own, **Al-Madina Admin**. It does not go
+through Google Play, and nobody else can find it there.
+
+1. On the phone, open **Chrome** and go to **almadinajeweller.com/admin**.
+2. Tap the **⋮** menu, then **Install app** (on some phones it says **Add to
+   Home screen**). Confirm.
+3. An icon appears with the rest of your apps: the gold diamond on black with
+   **ADMIN** under it. The shop's own icon is the same diamond on green, so the
+   two are easy to tell apart.
+
+Open it and it goes straight to the sign-in, full screen, with no browser bar.
+Sign in once and it stays signed in. **Press and hold the icon** for shortcuts
+straight to **Gold rate**, **Products** and **Enquiries** — the morning's rate
+is one press away.
+
+There is nothing to update, ever. It is the website, so every change to the
+panel reaches the app the next time it is opened.
+
+Because it stays signed in, keep a screen lock on that phone.
 
 ## Is it safe?
 
@@ -146,6 +160,13 @@ pages are also kept out of Google.
 None of this relies on a password hidden in the website's code. There is none.
 
 ## Roman Urdu — rozana ka kaam
+
+**Phone par admin app lagana (sirf aik dafa):** phone mein **Chrome** kholen,
+**almadinajeweller.com/admin** par jayen, upar **⋮** dabayen, phir **Install
+app** (ya **Add to Home screen**). Kaale rang par sunehri heera aur neeche
+**ADMIN** likha icon aa jayega. Play Store ki zaroorat nahi, aur update khud
+aate rahenge. Icon ko daba kar rakhen to seedha **Gold rate** khul sakta hai.
+Phone par screen lock zaroor rakhen.
 
 **Rate lagana (har subah):** almadinajeweller.com/admin kholen, sign in karen,
 **Gold rate** par jayen. Pehle **Piece (24k)** ka per tola rate likhen — baqi
