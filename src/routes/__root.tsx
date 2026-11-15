@@ -145,7 +145,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: ({ matches }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -185,7 +185,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
-      { rel: "manifest", href: "/site.webmanifest" },
+      /*
+       * One manifest, chosen here, because a document may only have one.
+       *
+       * A browser reads the first <link rel="manifest"> and ignores every
+       * other, so the admin cannot add its own alongside this: the site
+       * manifest would simply win. The choice has to be made wherever the one
+       * link is written, which is here.
+       *
+       * The difference matters to the shop. The site manifest is called
+       * Al-Madina Jewellers and starts at "/", so installing from behind the
+       * counter would put the storefront on the phone and open it at the
+       * catalogue every time. The admin one is called Admin, starts at
+       * /admin and is scoped to it, so it installs as its own icon that opens
+       * where the work is.
+       */
+      {
+        rel: "manifest",
+        href: matches.some((match) => match.routeId.startsWith("/admin"))
+          ? "/admin.webmanifest"
+          : "/site.webmanifest",
+      },
     ],
   }),
 
