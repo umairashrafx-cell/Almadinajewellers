@@ -66,6 +66,26 @@ can; the website crops to a square.
 **Show in New Arrivals** is a tick box — that is what puts a piece on the front
 page.
 
+## When a piece sells
+
+Open the piece and press **Mark as sold**. It comes off the website straight
+away — out of the collections, off the front page, out of search results — and
+nothing about it is lost. The weight, the making charges, the rate it was priced
+against and any reviews of it all stay exactly where they were.
+
+If it comes back, or you marked the wrong one, open it again and press **Put
+back on the website**. There is no warning on either, because neither one throws
+anything away.
+
+The list at the top of **Products** shows **For sale** by default. Switch it to
+**Sold** to see what has gone, or **All** to see everything; a sold piece is
+greyed out and carries the date it sold. The count under the heading is how many
+pieces a customer can see right now.
+
+**Use this instead of Delete when a piece sells.** Delete is for something that
+should never have been there — a duplicate, or a piece entered wrongly. It
+removes the record for good.
+
 ## The other screens
 
 **Enquiries** — the page you land on. Everyone who has written in, with a
@@ -92,10 +112,6 @@ heading.
 
 Worth knowing before you go looking for a button that is not there.
 
-- **A piece cannot be hidden.** There is no "sold" or "hide" switch. A piece is
-  either on the website or deleted, and deleting loses the record of it. If you
-  want pieces to come off the site when they sell without losing them, that is a
-  change worth asking for.
 - **Pieces cannot be dragged into a different order.** Categories can; the
   pieces inside them cannot.
 - **An enquiry cannot be deleted** — only marked handled. That is on purpose, so
@@ -145,6 +161,11 @@ theek ho jati hai.
 
 **Naya piece:** **Products** → **New product**. Net weight likhne par daam khud
 ban jata hai. Zyada se zyada 4 tasveerein.
+
+**Piece bik jaye:** us piece ko kholen aur **Mark as sold** dabayen. Website se
+foran hat jayega, lekin uska record (wazan, making, rate) mehfooz rahega. Wapas
+lana ho to **Put back on the website**. **Delete na karen** — delete se record
+hamesha ke liye khatam ho jata hai.
 
 **Naya paigham:** **Enquiries** wale safhe par woh sab hain jinhon ne rabta kiya.
 

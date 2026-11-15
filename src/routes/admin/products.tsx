@@ -24,7 +24,9 @@ import {
   productToForm,
   removeProductImage,
   saveProduct,
+  setProductSold,
   slugify,
+  soldOn,
   toNumber,
   uploadProductImage,
   type AdminCategory,
@@ -43,23 +45,41 @@ export const Route = createFileRoute("/admin/products")({
 
 type Editing = { mode: "new" } | { mode: "edit"; row: AdminProduct } | null;
 
+/**
+ * Which pieces the list is showing.
+ *
+ * "For sale" is the default because it is the catalogue as a customer sees it,
+ * and that is what the shop is usually looking at. Sold pieces are not gone —
+ * they are one choice away, which is the whole point of marking rather than
+ * deleting.
+ */
+type Showing = "live" | "sold" | "all";
+
 function ProductsScreen() {
   const [editing, setEditing] = useState<Editing>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [showing, setShowing] = useState<Showing>("live");
   const queryClient = useQueryClient();
 
   const products = useQuery({ queryKey: ["admin", "products"], queryFn: fetchAdminProducts });
   const categories = useQuery({ queryKey: ["admin", "categories"], queryFn: fetchAdminCategories });
 
+  const liveCount = useMemo(
+    () => (products.data ?? []).filter((p) => !p.sold_at).length,
+    [products.data],
+  );
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (products.data ?? []).filter((p) => {
+      if (showing === "live" && p.sold_at) return false;
+      if (showing === "sold" && !p.sold_at) return false;
       if (category && p.category_slug !== category) return false;
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
     });
-  }, [products.data, query, category]);
+  }, [products.data, query, category, showing]);
 
   async function afterSave() {
     setEditing(null);
@@ -80,7 +100,7 @@ function ProductsScreen() {
 
   return (
     <>
-      <PageHeading title="Products" hint={`${products.data?.length ?? 0} pieces in the catalogue.`}>
+      <PageHeading title="Products" hint={`${liveCount} pieces on the website.`}>
         <Button onClick={() => setEditing({ mode: "new" })} disabled={!categories.data?.length}>
           <Plus aria-hidden="true" />
           Add product
@@ -108,6 +128,16 @@ function ProductsScreen() {
             </option>
           ))}
         </select>
+        <select
+          value={showing}
+          onChange={(e) => setShowing(e.target.value as Showing)}
+          className="h-9 rounded-lg border border-input bg-card px-3 text-sm"
+          aria-label="Which pieces to show"
+        >
+          <option value="live">For sale</option>
+          <option value="sold">Sold</option>
+          <option value="all">All</option>
+        </select>
       </div>
 
       {products.isPending ? (
@@ -130,17 +160,27 @@ function ProductsScreen() {
                     src={imageFor(p.image_keys?.[0])}
                     alt=""
                     loading="lazy"
-                    className="h-14 w-14 shrink-0 rounded-lg border border-gold/20 object-cover"
+                    className={cn(
+                      "h-14 w-14 shrink-0 rounded-lg border border-gold/20 object-cover",
+                      // A sold piece is still in the list but is no longer the
+                      // shop's stock, so it reads quieter than the rest.
+                      p.sold_at && "opacity-50",
+                    )}
                   />
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="truncate font-medium text-ink">{p.name}</span>
                       <Chip tone={p.metal === "silver" ? "neutral" : "product"}>{p.karat}</Chip>
-                      {p.is_new ? <Chip tone="settled">New</Chip> : null}
-                      {p.sale_price_pkr != null ? <Chip tone="bridal">Sale</Chip> : null}
+                      {p.sold_at ? <Chip tone="settled">Sold</Chip> : null}
+                      {p.is_new && !p.sold_at ? <Chip tone="settled">New</Chip> : null}
+                      {p.sale_price_pkr != null && !p.sold_at ? (
+                        <Chip tone="bridal">Sale</Chip>
+                      ) : null}
                     </span>
                     <span className="nums mt-1 block truncate text-xs text-warmgrey">
-                      {p.sku} · {Number(p.gross_weight_g).toFixed(3)} g · {p.stones || "No stones"}
+                      {p.sold_at
+                        ? `${p.sku} · sold ${soldOn(p.sold_at)}`
+                        : `${p.sku} · ${Number(p.gross_weight_g).toFixed(3)} g · ${p.stones || "No stones"}`}
                     </span>
                   </span>
                   <span className="shrink-0 text-right">
@@ -187,6 +227,7 @@ function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [marking, setMarking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   /**
@@ -345,9 +386,37 @@ function ProductForm({
     }
   }
 
+  /**
+   * Marks the piece sold, or puts it back on the website.
+   *
+   * No confirmation, unlike delete — this one is reversible by the button
+   * beside it, and asking twice for something undoable is how a panel trains
+   * the shop to click through warnings.
+   */
+  async function onToggleSold() {
+    if (!row) return;
+    setMarking(true);
+    try {
+      await setProductSold(row.id, !row.sold_at);
+      onDone();
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : "Could not change that.");
+      setMarking(false);
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <PageHeading title={row ? row.name : "New product"} hint={row ? row.sku : undefined}>
+      <PageHeading
+        title={row ? row.name : "New product"}
+        hint={
+          row
+            ? row.sold_at
+              ? `${row.sku} · sold ${soldOn(row.sold_at)} · not on the website`
+              : row.sku
+            : undefined
+        }
+      >
         <Button type="button" variant="outline" onClick={() => void onAbandon()}>
           <ArrowLeft aria-hidden="true" />
           Back
@@ -683,6 +752,18 @@ function ProductForm({
         <Button type="button" variant="outline" onClick={() => void onAbandon()}>
           Cancel
         </Button>
+
+        {row ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={marking}
+            onClick={() => void onToggleSold()}
+          >
+            {marking ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+            {row.sold_at ? "Put back on the website" : "Mark as sold"}
+          </Button>
+        ) : null}
 
         {row ? (
           <div className="ml-auto flex items-center gap-2">
