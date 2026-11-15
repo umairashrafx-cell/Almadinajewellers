@@ -124,6 +124,8 @@ export type AdminProduct = Tables<"products"> & {
   polish_g_per_tola?: number | null;
   discount_pkr?: number | null;
   stone_weight_g?: number | null;
+  /** When the piece sold. NULL while it is still for sale. */
+  sold_at?: string | null;
 };
 /**
  * parent_slug is newer than the generated Database type, so it is declared
@@ -416,6 +418,45 @@ export async function saveProduct(values: ProductForm, id?: string): Promise<voi
 export async function deleteProduct(id: string): Promise<void> {
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) throw readableError(error, "Could not delete the product");
+}
+
+/**
+ * Takes a piece off the website, or puts it back.
+ *
+ * Marking sold writes a timestamp; putting it back clears it. The piece itself
+ * is untouched either way — this is the alternative to deleting, which is the
+ * only other way the panel had to stop showing something.
+ *
+ * Nothing here hides the row. The database does that: the public read policy on
+ * products matches only rows with sold_at NULL, so every surface that reads the
+ * catalogue — the website, the sitemap, the Android app — drops the piece
+ * without being told to. Staff keep seeing it through a second policy.
+ */
+export async function setProductSold(id: string, sold: boolean): Promise<void> {
+  const { error } = await untyped
+    .from("products")
+    .update({ sold_at: sold ? new Date().toISOString() : null })
+    .eq("id", id);
+
+  if (error) {
+    throw readableError(error, sold ? "Could not mark it sold" : "Could not put it back");
+  }
+}
+
+/**
+ * The day a piece sold, written the way the shop would say it.
+ *
+ * Asia/Karachi explicitly. A timestamp late in a Pakistani evening is already
+ * the next day in UTC, and a sold date that reads a day late in the shop's own
+ * panel would be quietly wrong every night.
+ */
+export function soldOn(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Karachi",
+  });
 }
 
 // ---------------------------------------------------------------------------
