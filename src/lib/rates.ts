@@ -212,6 +212,34 @@ export async function fetchRateHistory(days = 10): Promise<RateSnapshot[]> {
   return [...byDate.entries()].slice(0, days).map(([date, rates]) => ({ date, rates }));
 }
 
+/** One published day's rate for a single karat. */
+export type RatePoint = { date: string; perTola: number };
+
+/**
+ * One karat's rate over a window of days, newest first.
+ *
+ * Separate from `fetchRateHistory` because that one asks for `days * 5` rows
+ * on the assumption of five metal rows a day. That holds for most days and is
+ * short for the handful carrying six or seven, so the number of days it hands
+ * back is close to what was asked for rather than equal to it. That is fine
+ * for a table somebody reads a few rows of, and not fine for a chart that
+ * names its own window: plotting eighty days under a label saying ninety is
+ * worse than plotting fewer and saying so. Narrowing to one karat in the query
+ * makes the row count exact rather than estimated.
+ */
+export async function fetchKaratSeries(karat: string, days = 90): Promise<RatePoint[]> {
+  const { data, error } = await supabase
+    .from("gold_rates")
+    .select("rate_date, rate_per_tola_pkr")
+    .eq("karat", karat)
+    .order("rate_date", { ascending: false })
+    .limit(days);
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => ({ date: row.rate_date, perTola: row.rate_per_tola_pkr }));
+}
+
 /** Gold rows only, in 24K → 18K order, for the public rate table. */
 export function goldOnly(snapshot: RateSnapshot): MetalRate[] {
   return GOLD_KARATS.map((k) => snapshot.rates.find((r) => r.karat === k)).filter(
