@@ -4,9 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 import { Banner, Card, PageHeading } from "@/components/admin/ui";
+import { ActionLink } from "@/components/ui/ActionButton";
 import { Button } from "@/components/ui/button";
+import { CopyTextButton } from "@/components/ui/CopyTextButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ShareCardButton } from "@/components/ui/ShareCardButton";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 import { perGramFromTola, publishRates } from "@/lib/admin";
 import {
@@ -15,8 +19,11 @@ import {
   fetchRateSnapshot,
   formatRateDate,
   roundRateToHundred,
+  type RateSnapshot,
 } from "@/lib/rates";
-import { formatPKR } from "@/lib/site";
+import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
+import { renderRateCard } from "@/lib/share-card";
+import { SITE, formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/rates")({
@@ -124,7 +131,7 @@ function RatesScreen() {
       await queryClient.invalidateQueries();
       setStatus({
         tone: "ok",
-        text: `Published ${drafts.length} rates for ${formatRateDate(rateDate)}.`,
+        text: `Published ${drafts.length} rates for ${formatRateDate(rateDate)}. Share them from Currently live.`,
       });
     } catch (e) {
       setStatus({ tone: "error", text: e instanceof Error ? e.message : "Could not publish." });
@@ -254,10 +261,56 @@ function RatesScreen() {
                   </div>
                 ))}
               </dl>
+              <ShareRates snapshot={published} />
             </>
           )}
         </Card>
       </div>
     </>
+  );
+}
+
+/**
+ * Sends the published rates on, the way the shop does every morning.
+ *
+ * The same three ways the public rate page offers, built by the same
+ * functions — so what goes out from here is word for word, and pixel for
+ * pixel, what a customer forwarding the page would send. That also means the
+ * buying rate stays private: neither the message nor the picture carries it.
+ *
+ * Fed from the published snapshot, never the form. A figure typed and not yet
+ * published is not the shop's rate, and must not reach a WhatsApp group as one.
+ * After Publish the snapshot is refetched, so these follow at once.
+ */
+function ShareRates({ snapshot }: { snapshot: RateSnapshot }) {
+  // One message behind WhatsApp and Copy, so the two can never differ.
+  const text = rateShareMessage(snapshot);
+
+  return (
+    <div className="mt-6 border-t border-border pt-5">
+      <h3 className="text-sm font-medium">Share today's rate</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        The picture is ready for a WhatsApp status or a broadcast list.
+      </p>
+      <div className="mt-4 flex flex-col gap-2 [&>*]:w-full">
+        <ShareCardButton
+          render={() => renderRateCard(snapshot)}
+          title="Today's Gold Rate"
+          // The caption is the address only: every figure is in the picture.
+          text={`${SITE.origin}/gold-rate-in-mandi-bahauddin-today`}
+          filename={`al-madina-gold-rate-${snapshot.date}.jpg`}
+        />
+        <ActionLink
+          variant="outline"
+          href={shareOnWhatsApp(text)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <WhatsAppIcon className="h-4 w-4" />
+          Send as message
+        </ActionLink>
+        <CopyTextButton text={text} label="Copy rates" />
+      </div>
+    </div>
   );
 }
