@@ -171,8 +171,7 @@ the analytics with Meta (see _Analytics_ below).
 contact page, as the privacy policy explains. The app has no user accounts.
 
 **Data collected** — for every type below: _collected_, _not shared_,
-_optional_ (the user chooses to send it), purpose **App functionality** and
-**Customer support**:
+_optional_ (the user chooses to send it), purpose **App functionality** (Play has no customer-support purpose):
 
 | Category            | Data type                    | Where it comes from                                                                                            |
 | ------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
