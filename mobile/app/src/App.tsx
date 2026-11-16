@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { MoneyProvider } from "./components/Money";
 import { NecklaceBustIcon } from "./components/NecklaceBustIcon";
 import { PushHousekeeping } from "./components/PushHousekeeping";
+import { ReviewPrompt } from "./components/ReviewPrompt";
 import { ShortcutHousekeeping } from "./components/ShortcutHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
@@ -282,6 +283,13 @@ export function App() {
           else go(next);
         }}
       />
+
+      {/*
+        The Play review card, asked for once: on the third separate look at
+        the rate. A board on screen is what makes it a look, so the empty and
+        loading states of the rate screen count for nothing.
+      */}
+      <ReviewPrompt onRates={view === "rate"} hasBoard={Boolean(rates.data)} />
 
       <header className="flex items-center gap-3 border-b border-gold/20 bg-ivory px-4 py-3">
         {/*
