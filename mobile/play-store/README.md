@@ -117,6 +117,14 @@ Weighed Honestly, Made Beautifully.
 
 ## What's new (500 characters max)
 
+For version 2.1.1 (versionCode 6):
+
+```
+Small improvements. If the app has been useful to you, it may ask you once
+whether you would like to rate it on Google Play — one question, asked a single
+time, and you can simply close it. Everything else works as it did.
+```
+
 Pasted into the release notes for version 2.0:
 
 ```
@@ -239,16 +247,24 @@ it is what Play's link verification reads.
 1. Website PR merged and live. The app reads the live site, so anything the
    release depends on has to be there first.
 2. Read the live **versionCode** off the Play Console and raise the one in
-   `mobile/android/app/build.gradle` above it. As of 30 October 2026 production
-   is on **2** (released 5 October 2026), so the repository is set to 3. There
-   is also an empty **draft release** sitting in the production track from
-   before — discard it, or upload into it, rather than leaving both.
+   `mobile/android/app/build.gradle` above it. On 16 November 2026 production
+   was on **5 (2.1)** and 5 was the highest code ever uploaded, so the
+   repository is set to **6 (2.1.1)**. _App bundle explorer_ lists every code
+   uploaded, test tracks included, and is the quickest place to check.
 3. `cd mobile && bun run release`, with `android/keystore.properties` pointing
-   at the upload keystore (see [`../README.md`](../README.md)).
+   at the upload keystore (see [`../README.md`](../README.md)). That script
+   dies at its last step, `gradlew.bat`, after the sync has already landed, so
+   finish it by hand: `cd mobile/android && ./gradlew.bat clean bundleRelease`.
+   Check the bundle's timestamp, so you know it is not one left over from the
+   last release.
 4. Upload `mobile/android/app/build/outputs/bundle/release/app-release.aab` to
    **Internal testing**, with Play App Signing on. Install it from the test
    track on a real phone and check it against the list below before promoting
-   it.
+   it. Upload `mobile/android/app/build/outputs/mapping/release/mapping.txt`
+   with it (the release's _App bundle explorer_ page → _Downloads_ →
+   deobfuscation file). R8 renames the Java classes, so without that file
+   crash reports are unreadable, and Play keeps flagging R8 against the
+   release.
 5. Complete App content and Data safety from this file; paste the release
    notes; upload the listing assets.
 
@@ -287,3 +303,9 @@ it is what Play's link verification reads.
   not ask again.
 - Publishing a rate from the admin panel reaches the phone as one notification,
   not four, and tapping it opens the rate page.
+- The Play review card appears on the third separate visit to the rate
+  screen, each an hour or more after the last, once the board has been on
+  screen for a few seconds. On an internal-testing install the card shows but
+  its Submit button is greyed out, which is Play's own behaviour. A copy that
+  was side-loaded rather than installed from Play never shows it. To see it
+  again, clear the app's storage.

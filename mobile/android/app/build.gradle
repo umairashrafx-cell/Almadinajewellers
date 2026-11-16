@@ -33,22 +33,22 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * The Play Console showed 4 (2.0) live, at 100%, on 13 November 2026,
-         * and nothing has been uploaded since, so this is 5. 3 was live on
-         * 8 November, which is how 4 was chosen.
+         * On 16 November 2026 the Play Console showed 5 (2.1) live in production,
+         * and its bundle explorer listed 5 as the highest code ever uploaded
+         * (internal testing is still on 1), so this is 6.
          *
-         * Until then this comment said production was on 2, and it was wrong:
-         * 3 had already gone out. A signed bundle was built against it and
-         * would have been rejected at upload. So read the live number off the
-         * Console before every release — what is written here is a note of
-         * what was true once, not a source of truth.
+         * Read the live number off the Console before every release — what is
+         * written here is a note of what was true once, not a source of truth.
+         * The comment before this one said production was on 2 when 3 had
+         * already gone out, and a bundle built against it would have been
+         * rejected at upload.
          *
-         * versionName is what a customer sees. 2.1 for the release that adds
-         * the Settings screen (notifications, dark theme, currencies) and the
-         * long-press shortcuts on the icon.
+         * versionName is what a customer sees. 2.1.1, because the only change
+         * a customer meets is the one-time Play review prompt (lib/review.ts);
+         * 2.1 added the Settings screen and the long-press shortcuts.
          */
-        versionCode 5
-        versionName "2.1"
+        versionCode 6
+        versionName "2.1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
