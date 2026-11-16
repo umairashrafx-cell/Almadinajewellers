@@ -9,7 +9,9 @@
     "build": "vite build --config app/vite.config.ts",
     "sync": "bun run build && cap sync android",
     "debug": "bun run sync && cd android && gradlew.bat assembleDebug",
-    "release": "bun run sync && cd android && gradlew.bat clean bundleRelease"
+    "release": "bun run sync && cd android && gradlew.bat clean bundleRelease",
+    "store:shots": "node scripts/store-shots.mjs",
+    "store:check": "node scripts/check-store-images.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.6.0",

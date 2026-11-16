@@ -16,15 +16,46 @@ Google checks that they agree.
 
 ## Files to upload
 
-| Play Console field | File                           | Spec                      |
-| ------------------ | ------------------------------ | ------------------------- |
-| App icon           | `play-icon-512.png`            | 512 × 512 PNG             |
-| Feature graphic    | `feature-graphic-1024x500.png` | 1024 × 500 PNG            |
-| Phone screenshots  | `screenshots/phone-1…6-*.png`  | 1080 × 1920 PNG, 6 images |
+| Play Console field | File                                                     | Spec                      |
+| ------------------ | -------------------------------------------------------- | ------------------------- |
+| App icon           | `play-icon-512.png`                                      | 512 × 512 PNG             |
+| Feature graphic    | `feature-graphic-2026-1024x500.png` (new, built on the app) or `feature-graphic-1024x500.png` (brand only) | 1024 × 500 PNG, no alpha |
+| Phone screenshots  | `screenshots-2026/phone-1…8-*.png`                       | 1080 × 1920 PNG, 8 images |
+
+**The 2026 set** (`screenshots-2026/`) is real captures of the app's own
+screens, framed with a caption in English and Urdu. It replaces `screenshots/`,
+which shows the website the app used to be and is kept only until the new set
+is uploaded.
+
+- `raw/` — the captures as taken, 1080 × 1920, before framing.
+- `captions.json` — the caption for each screen, in listing order. Every claim
+  must be one [`docs/aso/FEATURE_AUDIT.md`](../../docs/aso/FEATURE_AUDIT.md)
+  marks Implemented.
+- `templates/` — the frame and the feature graphic, as HTML in the brand's
+  colours and type.
+
+To rebuild them, with the app's dev server running (`bun run dev`):
+
+```
+bun run store:shots      # capture raw/, then frame them and the feature graphic
+bun run store:check      # every image against Play's sizes, alpha and file-size rules
+```
+
+`store:shots -- frames` re-frames without re-capturing, and `SHOT=rate,saved`
+retakes only those screens. The figures in the pictures are whatever the shop
+had published when they were taken — the current set shows the board of
+16 November 2026.
 
 ---
 
 ## App details
+
+The listing text below is what this file has carried until now. Its
+replacement — new title, short and full description, English and Urdu — is
+[`docs/aso/PLAY_STORE_METADATA.md`](../../docs/aso/PLAY_STORE_METADATA.md),
+checked against Play's limits by `bun run check:play-metadata` at the repo
+root. Two lines below over-claim for the app and are dropped there: the
+estimator under _Sell your gold_ and sharing the rate as a picture.
 
 **App name** (30 characters max)
 
@@ -124,8 +155,15 @@ information and prices are settled in store.
 
 ## Data safety
 
-**Does the app collect or share user data?** Yes, it collects data. It does
-not share data with third parties.
+The full audit — every SDK and flow, each data type collected or shared and
+why, and a comparison with what is filed — is
+[`docs/aso/DATA_SAFETY_AUDIT.md`](../../docs/aso/DATA_SAFETY_AUDIT.md). Where
+this section and that one disagree, that one was checked against the code
+later.
+
+**Does the app collect or share user data?** Yes, both. It collects what
+customers send and, through the website pages it shows, analytics; it shares
+the analytics with Meta (see _Analytics_ below).
 
 **Is data encrypted in transit?** Yes (HTTPS only).
 
@@ -147,8 +185,15 @@ _optional_ (the user chooses to send it), purpose **App functionality** and
 | App activity        | Other user-generated content | Messages, piece descriptions, product reviews                                                                  |
 | Device or other IDs | Device or other IDs          | The notification token, if the customer turns on rate alerts (see below)                                       |
 
-**Not collected:** location, financial or payment info, contacts, calendar,
-health, files, web browsing history.
+**Not collected:** precise location, financial or payment info, contacts,
+calendar, health, files, web browsing history, search history.
+
+**Approximate location _is_ collected**, and this file used to say otherwise.
+The app asks for no location permission, but Google Analytics and the Meta
+Pixel infer a coarse location from the IP address, and Play says location
+"inferred, such as via IP address" must be declared. Declare **Location →
+Approximate location**: collected, shared (Meta), required, purposes
+**Analytics** and **Advertising or marketing**. Never _Precise_.
 
 **Notifications.** The app asks for the notification permission only when
 somebody taps to turn rate alerts on, and sends one message a day: the morning
@@ -159,9 +204,11 @@ policy describes it under "Rate alerts in the app"; the two must agree.
 
 **Analytics: both are ON.** Google Analytics and the Meta Pixel run on the
 website the app displays, so Data safety must declare, under **App activity →
-App interactions** and **Device or other IDs**: collected, **shared** (with
-Google and Meta), not ephemeral, collection required, purposes **Analytics**
-and — for the Pixel — **Advertising or marketing**. The privacy policy names
+App interactions**, **Device or other IDs** and **Location → Approximate
+location**: collected, **shared** (Meta builds ad audiences from it, so it is a
+third party; Google, used only for the shop's analytics, is a service
+provider), not ephemeral, collection required, purposes **Analytics** and — for
+the Pixel — **Advertising or marketing**. The privacy policy names
 both and says how to block them. If the IDs are ever removed from the Vercel
 environment, reverse all of that.
 
@@ -205,11 +252,9 @@ it is what Play's link verification reads.
 5. Complete App content and Data safety from this file; paste the release
    notes; upload the listing assets.
 
-   **The phone screenshots are out of date.** All six show the website, which
-   is what the app used to be. Take fresh ones on the test device — Android's
-   own screenshot is the right size — of the rate board, the calculator and
-   the saved pieces, and keep the website ones that still hold (bridal, custom
-   order, stores).
+   **Screenshots:** upload `screenshots-2026/` (eight, of the app's own
+   screens) in place of `screenshots/` (six, of the website it used to be).
+   Run `bun run store:check` first.
 
    Play has two open recommendations against the current build, both about
    edge-to-edge display. The Capacitor build targets SDK 36 and lets Capacitor

@@ -1,0 +1,53 @@
+{
+  "$comment": "The phone screenshots for Play, in listing order. Each is a real capture of the app's own screen (raw/<id>.png), framed with the caption below by templates/frame.html. Every claim here must be one docs/aso/FEATURE_AUDIT.md marks Implemented. Run `bun run store:shots` in mobile/ to rebuild, then `bun run store:check`.",
+  "shots": [
+    {
+      "id": "rate",
+      "title": "Today’s gold rate, as the shop sets it",
+      "urdu": "آج کا سونے کا ریٹ، دکان کے بورڈ سے",
+      "sub": "24K, 23.65K and 22K gold and silver, per tola and per gram"
+    },
+    {
+      "id": "calculator",
+      "title": "What is my gold worth?",
+      "urdu": "میرے سونے کی قیمت کتنی ہے؟",
+      "sub": "Enter a weight in grams or tola, pick a purity, see the value"
+    },
+    {
+      "id": "pieces",
+      "title": "Hallmarked jewellery, priced at today's rate",
+      "urdu": "ہال مارک زیورات، آج کے ریٹ پر",
+      "sub": "Browse by collection, or search by karat or piece number"
+    },
+    {
+      "id": "saved",
+      "title": "Keep the pieces you love",
+      "urdu": "پسند کے زیورات محفوظ کریں",
+      "sub": "Your saved pieces stay on the phone and open without a signal"
+    },
+    {
+      "id": "sell",
+      "title": "Selling gold? See the buying rate first",
+      "urdu": "سونا بیچنا ہے؟ پہلے آج کا خرید ریٹ دیکھیں",
+      "sub": "Tested and weighed in front of you, with no obligation to sell"
+    },
+    {
+      "id": "custom",
+      "title": "Have a piece made for you",
+      "urdu": "اپنی پسند کا زیور بنوائیں",
+      "sub": "Send a photo, a description or a voice note to the workshop"
+    },
+    {
+      "id": "international",
+      "title": "World gold, silver and the dollar",
+      "urdu": "عالمی سونا، چاندی اور ڈالر کا ریٹ",
+      "sub": "International prices beside the shop's own board"
+    },
+    {
+      "id": "settings",
+      "title": "Prices in your currency too",
+      "urdu": "قیمت اپنی کرنسی میں بھی دیکھیں",
+      "sub": "Rupees, with dollars, pounds, dirhams, riyals and more"
+    }
+  ]
+}
