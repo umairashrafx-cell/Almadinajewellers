@@ -299,6 +299,10 @@ function ShareRates({ snapshot }: { snapshot: RateSnapshot }) {
           // The caption is the address only: every figure is in the picture.
           text={`${SITE.origin}/gold-rate-in-mandi-bahauddin-today`}
           filename={`al-madina-gold-rate-${snapshot.date}.jpg`}
+          // ShareCardButton draws its own shape but no colour, so a caller that
+          // passes nothing gets bare text. The outline here is the one the two
+          // buttons below it already wear, so the three read as one set.
+          className="w-full border border-gold bg-transparent text-ink hover:bg-champagne/50"
         />
         <ActionLink
           variant="outline"
