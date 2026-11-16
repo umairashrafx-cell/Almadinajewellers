@@ -260,11 +260,10 @@ it is what Play's link verification reads.
 4. Upload `mobile/android/app/build/outputs/bundle/release/app-release.aab` to
    **Internal testing**, with Play App Signing on. Install it from the test
    track on a real phone and check it against the list below before promoting
-   it. Upload `mobile/android/app/build/outputs/mapping/release/mapping.txt`
-   with it (the release's _App bundle explorer_ page → _Downloads_ →
-   deobfuscation file). R8 renames the Java classes, so without that file
-   crash reports are unreadable, and Play keeps flagging R8 against the
-   release.
+   it. Nothing else needs uploading: R8's `mapping.txt` travels inside the
+   bundle, and Play shows it under the version's _App bundle explorer_ →
+   _Downloads_ → _ReTrace mapping file_. Check it is there; versions 5 and 6
+   both have it, so crash reports come back readable.
 5. Complete App content and Data safety from this file; paste the release
    notes; upload the listing assets.
 
