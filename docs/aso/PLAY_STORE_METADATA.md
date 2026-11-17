@@ -1,34 +1,30 @@
 # Play Store metadata — Al-Madina Jewellers
 
-The listing text for `com.almadinajeweller.app`, ready to paste into the Play
-Console's **Main store listing**. Nothing here has been published: the live
-listing changes only when the owner pastes it in.
+The listing text for `com.almadinajeweller.app`: the default English (en-US)
+listing, and an Urdu (ur) translation of it. The first version went live on
+16 November 2026. This revision, from 17 November, is the search pass in
+[`ASO_PLAN.md`](ASO_PLAN.md): it puts "Pakistan" in the title and adds the
+Roman-Urdu and Urdu ways people actually ask for the rate.
 
 Every feature named below is one [`FEATURE_AUDIT.md`](FEATURE_AUDIT.md) marks
-**Implemented**, found by reading the app's code — not by trusting an older
-listing. Two claims in the listing that is live today do not pass that test and
-are left out on purpose:
-
-- _"Estimate the value of your gold by purity and weight"_ under selling. The
-  app's Sell screen shows the buying rate and deliberately has no estimator
-  (`mobile/app/src/screens/SellGoldScreen.tsx`); the estimator is on the
-  website only.
-- _"Share the day's rates on WhatsApp, as text or as a picture"_. That is the
-  website's rate page; the app's board hides that footer.
+**Implemented**, found by reading the app's code, not by trusting an older
+listing. Two claims are deliberately absent, because the app's own screens do
+not do them: a sell-gold estimator (website only), and sharing the rate as a
+picture (website only).
 
 **Check before pasting:** `node scripts/check-play-metadata.mjs` from the repo
-root reads this file and fails if any field is over Play's limit. Edit the text
-here, run the check, then paste — never the other way round.
+root reads this file and fails if any field is over Play's limit. Edit the
+text here, run the check, then paste — never the other way round.
 
-The three fields are the fenced blocks under the next three headings; the
-script reads them from there, so keep each one a single `text` block.
+Each field is the fenced `text` block under its heading, and the script reads
+it from there, so keep each one a single block.
 
 ## Title
 
 Play limit: 30 characters.
 
 ```text
-Al-Madina Jewellers: Gold Rate
+Al-Madina: Gold Rate Pakistan
 ```
 
 ## Short description
@@ -36,22 +32,24 @@ Al-Madina Jewellers: Gold Rate
 Play limit: 80 characters.
 
 ```text
-Gold rate today Pakistan, hallmarked jewellery & sell gold – Mandi Bahauddin
+Gold rate today Pakistan — aaj ka sone ka rate per tola, 24K, 22K & silver
 ```
 
 ## Full description
 
-Play limit: 4,000 characters. English first, then the same in Urdu, in the one
-English listing. (A separate Urdu listing is a Console task — see the end.)
+Play limit: 4,000 characters. English, a line of Roman Urdu, then the same
+again in Urdu script, all in the one default listing.
 
 ```text
 Today's gold rate in Pakistan, as Al-Madina Jewellers sets it each day in Sarafa Market, Mandi Bahauddin — on your phone, with the time it was published, and still there when the signal is not.
+
+Aaj ka gold rate aur sone ka rate, per tola aur per gram — Mandi Bahauddin ke Sarafa Bazaar se, roz.
 
 TODAY'S RATE
 • 24K (Piece), 23.65K (Pathor) and 22K (Jewellery) gold, and silver
 • Per tola and per gram, with the time the shop last set the board
 • The shop's buying rate for your old gold, before you make the trip
-• International prices beside the shop's own: gold and silver, the dollar index, crude oil and bitcoin
+• International gold price and silver price beside the shop's own, with the dollar index, crude oil and bitcoin
 
 WORKS WITHOUT A SIGNAL
 • The rate board, the calculator, the catalogue and your saved pieces open with no connection
@@ -114,20 +112,95 @@ Weighed Honestly, Made Beautifully.
 وزن میں ایمانداری، بناوٹ میں خوبصورتی۔
 ```
 
+## Urdu title
+
+The Urdu (ur) translation, shown to phones set to Urdu and searched in Urdu
+script. Play limit: 30 characters.
+
+```text
+المدینہ: سونے کا ریٹ پاکستان
+```
+
+## Urdu short description
+
+Play limit: 80 characters.
+
+```text
+آج کا سونے کا ریٹ فی تولہ: 24 اور 22 کیرٹ، چاندی، کیلکولیٹر اور زیورات
+```
+
+## Urdu full description
+
+Play limit: 4,000 characters.
+
+```text
+آج پاکستان میں سونے کا ریٹ — المدینہ جیولرز (Al-Madina Jewellers)، صرافہ بازار منڈی بہاؤالدین، روزانہ جو ریٹ لگاتے ہیں وہی آپ کے فون پر، ریٹ لگنے کے وقت کے ساتھ۔ سگنل نہ ہو تب بھی آخری دیکھا ہوا ریٹ کھل جاتا ہے۔
+
+آج کا ریٹ
+• 24 کیرٹ (پیس)، 23.65 کیرٹ (پتھر) اور 22 کیرٹ (زیور) سونا، اور چاندی
+• فی تولہ اور فی گرام، اور یہ بھی کہ دکان نے ریٹ کب لگایا
+• پرانا سونا بیچنا ہو تو دکان کا آج کا خرید ریٹ پہلے دیکھ لیں
+• عالمی منڈی: سونے اور چاندی کی قیمت، ڈالر انڈیکس، خام تیل اور بٹ کوائن
+
+انٹرنیٹ کے بغیر بھی
+• ریٹ بورڈ، کیلکولیٹر، زیورات اور آپ کے محفوظ کیے ہوئے زیور سگنل کے بغیر بھی کھلتے ہیں
+• ہر جگہ لکھا ہوتا ہے کہ ریٹ کب لیے گئے تھے
+
+سونے کا کیلکولیٹر
+• وزن گرام یا تولے میں لکھیں
+• 24، 23.65، 22، 21، 20 یا 18 کیرٹ چنیں، یا کوئی بھی اور کیرٹ لکھیں
+• آج کے ریٹ پر سونے کی قیمت دیکھیں، پھر واٹس ایپ پر دکان سے ریٹ پوچھیں
+
+زیورات
+• دکان کے زیورات کلیکشن کے حساب سے دیکھیں، یا نام، کیرٹ یا پیس نمبر سے تلاش کریں
+• ہر پیس کا کیرٹ اور وزن، آج کے ریٹ پر قیمت کے ساتھ
+• دل کے نشان سے پسند کا زیور محفوظ کریں — وہ فون پر ہی رہتا ہے
+• کوئی بھی پیس ایک ٹیپ میں گھر والوں کو بھیجیں
+
+سونا بیچیں
+• آج کا خرید ریٹ، دکان کیا خریدتی ہے، ادائیگی کیسے ہوتی ہے اور ساتھ کیا لانا ہے
+• سونا آپ کے سامنے پرکھا اور تولا جاتا ہے، اور بیچنے کی کوئی پابندی نہیں
+
+اپنی پسند کا زیور بنوائیں
+• جو زیور چاہیے اس کی تصویر، تفصیل یا آواز کا پیغام بھیجیں
+• آپ کی درخواست سیدھی کاریگروں تک جاتی ہے، ایک ریفرنس نمبر کے ساتھ
+
+ریٹ الرٹ
+• صبح بورڈ لگتے ہی ایک اطلاع، یا جب بھی سونے کا ریٹ بدلے — جیسے آپ چاہیں
+• نئے زیورات آنے کی اطلاع، دن میں ایک بار سے زیادہ نہیں
+• سیٹنگز میں جب چاہیں بدلیں یا بند کریں
+
+آپ کی مرضی
+• قیمت ڈالر، پاؤنڈ، یورو، درہم، ریال اور دینار میں بھی دیکھیں
+• لائٹ یا ڈارک تھیم
+• ایپ کے آئیکن کو دبا کر رکھیں اور سیدھا ریٹ، کیلکولیٹر، دکان یا محفوظ زیورات پر جائیں
+
+دکان آئیں یا پوچھیں
+• ملاقات کا وقت مانگیں، راستہ دیکھیں، اوقات دیکھیں یا دکان پر کال کریں
+• واٹس ایپ پر ایک ٹیپ میں کچھ بھی پوچھیں
+
+کوئی اکاؤنٹ بنانے کی ضرورت نہیں۔ آپ کی قیمت خریداری کے وقت کے ریٹ پر دکان میں طے ہوتی ہے، اور ہر پیس آپ کے سامنے تولا جاتا ہے۔
+
+وزن میں ایمانداری، بناوٹ میں خوبصورتی۔
+```
+
 ## Notes for whoever pastes this
 
-- **Title change.** The live title is `Al-Madina Jewellers`. Changing it is a
-  listing edit, which Play reviews like an update; the app itself does not
-  change. Play forbids emoji, ALL-CAPS words and ranking claims ("best", "#1")
-  in the title — this one has none, and the check script refuses them.
-- **Urdu.** The Urdu section rides in the English listing, which is what most
-  customers here will be shown. A separate **Urdu (ur)** translation of the
-  listing would show Urdu to phones set to Urdu; that is a Console task (Main
-  store listing → Manage translations), and the Urdu block above is a starting
-  point for it.
+- **Title change.** The title went from `Al-Madina Jewellers: Gold Rate` to
+  `Al-Madina: Gold Rate Pakistan` on 17 November, for the reason in
+  [`ASO_PLAN.md`](ASO_PLAN.md). A title change is a listing edit, which Play
+  reviews like an update; the app itself does not change. Play forbids emoji,
+  ALL-CAPS words and ranking claims ("best", "#1") in a title, and the check
+  script refuses all three.
+- **Urdu.** The default listing carries Urdu script and Roman Urdu, which is
+  what most customers here are shown, because their phones are set to English.
+  The **Urdu (ur)** translation above is what Play shows to phones set to Urdu.
+  It is added in the Console under Store listings → Default listing → the
+  language menu → Add language.
 - **Screenshots and feature graphic** are in
   [`mobile/play-store/`](../../mobile/play-store/README.md): the 2026 set is
-  `screenshots-2026/` and `feature-graphic-2026-1024x500.png`.
+  `screenshots-2026/` and `feature-graphic-2026-1024x500.png`. The Urdu
+  translation uses the same ones, whose captions are already in both languages.
 - **When a feature changes**, change [`FEATURE_AUDIT.md`](FEATURE_AUDIT.md)
   first, then this file, then `mobile/play-store/captions.json`, and run both
   checks.
