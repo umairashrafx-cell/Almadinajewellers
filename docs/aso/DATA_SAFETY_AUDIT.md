@@ -116,7 +116,7 @@ marketing, and each as required. It collects Name, Email, Phone, Other info,
 Photos, Voice recordings and other user-generated content, all optional and
 none shared. Encryption in transit and deletion on request are both answered.
 One gap was found: Device or other IDs gave no **App functionality** purpose,
-which the push token needs. It was added as a **draft**, not sent for review.
+which the push token needs. It was added and published on 16 November 2026.
 Personal info is filed as App functionality only. That is right, because Play
 has no "customer support" purpose, although an earlier version of this repo
 said it did.
