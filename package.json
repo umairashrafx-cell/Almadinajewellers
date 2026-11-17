@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "check:migrations": "bun scripts/check-migrations.mjs",
     "check:play-metadata": "node scripts/check-play-metadata.mjs",
+    "check:play-ranks": "node scripts/check-play-ranks.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
