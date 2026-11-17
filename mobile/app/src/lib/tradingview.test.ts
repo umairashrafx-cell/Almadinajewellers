@@ -1,6 +1,13 @@
 import { describe, expect, test } from "vitest";
 
-import { TICKERS_SCRIPT, TICKER_SYMBOLS, tickersConfig } from "./tradingview";
+import {
+  BOARD_TICKERS,
+  TICKERS_SCRIPT,
+  TICKER_SYMBOLS,
+  minutesBehind,
+  rowCaption,
+  tickersConfig,
+} from "./tradingview";
 
 /**
  * The TradingView strip's configuration. The widget itself is TradingView's
@@ -39,5 +46,52 @@ describe("the TradingView strip", () => {
   test("survives being written into a script tag as JSON", () => {
     const config = tickersConfig(false);
     expect(JSON.parse(JSON.stringify(config))).toEqual(config);
+  });
+});
+
+describe("the board's rows, against TradingView", () => {
+  test("streams the very bitcoin market the strip shows", () => {
+    expect(TICKER_SYMBOLS.map((symbol) => symbol.proName)).toContain("BINANCE:BTCUSDT");
+    expect(BOARD_TICKERS.bitcoin).toBe("BTCUSDT");
+  });
+
+  test("names each row's TradingView ticker under its unit", () => {
+    expect(rowCaption("per ounce", BOARD_TICKERS.gold, null)).toBe("per ounce · XAUUSD");
+  });
+
+  test("does not say the dollar index's ticker twice", () => {
+    expect(rowCaption("DXY", BOARD_TICKERS.dollarIndex, null)).toBe("DXY");
+  });
+
+  test("owns up to a delayed figure", () => {
+    expect(rowCaption("WTI, per barrel", BOARD_TICKERS.crude, 10)).toBe(
+      "WTI, per barrel · CL1! · 10 min behind",
+    );
+  });
+});
+
+describe("how far behind a quote is", () => {
+  const fetched = "2026-11-17T18:02:00Z";
+
+  test("is not mentioned for a live quote", () => {
+    expect(minutesBehind("2026-11-17T18:01:30Z", fetched)).toBeNull();
+  });
+
+  test("is the delay, in minutes, for a delayed feed", () => {
+    // Yahoo's crude, stamped 17:52 on a board fetched at 18:02.
+    expect(minutesBehind("2026-11-17T17:52:26Z", fetched)).toBe(10);
+  });
+
+  test("is not mentioned for a market that is shut", () => {
+    expect(minutesBehind("2026-11-14T22:00:00Z", fetched)).toBeNull();
+  });
+
+  test("is not mentioned when a time cannot be read", () => {
+    expect(minutesBehind("whenever", fetched)).toBeNull();
+  });
+
+  test("is not mentioned for a quote stamped after the fetch", () => {
+    // The live bitcoin is stamped as it arrives, after the board was fetched.
+    expect(minutesBehind("2026-11-17T18:02:04Z", fetched)).toBeNull();
   });
 });

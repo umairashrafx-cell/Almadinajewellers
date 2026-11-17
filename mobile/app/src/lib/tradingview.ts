@@ -18,25 +18,70 @@ export const TICKERS_SCRIPT =
   "https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js";
 
 /**
- * The same five the board carries, as TradingView names them.
+ * The same five the board carries, as TradingView names them -- chosen, each
+ * one, as the TradingView symbol the board's own figure agrees with.
  *
- * Spot metals from OANDA, spot like the board's own gold and silver; WTI as
- * TradingView's own composite quote; bitcoin against the dollar on Bitstamp, a
- * dollar market rather than a stablecoin one.
- *
- * The dollar index is Capital.com's, because TradingView's own TVC:DXY is not
- * licensed for widgets and draws an error mark in the tape. It is a CFD on the
- * index rather than the ICE quote the board carries, and the two can sit a few
- * tenths of a point apart -- one more reason the strip is labelled as
- * TradingView's and not set beside the board's figures as the same thing.
+ * Measured side by side on 17 November 2026:
+ *   - Gold and silver: OANDA spot. The board's Swissquote spot sat twenty
+ *     cents from it on gold and a cent on silver.
+ *   - Dollar index: Pepperstone's USDX, 103.395 against the board's ICE
+ *     103.399. TradingView's own TVC:DXY is the ICE figure itself but is not
+ *     licensed for widgets and draws a blank; Capital.com's DXY, tried first,
+ *     sat a third of a point away.
+ *   - Bitcoin: Binance's BTCUSDT, the very market the board streams, so the
+ *     two agree to the cent.
+ *   - Crude: TradingView's USOIL. The board's NYMEX contract is the same oil
+ *     but reaches the board about ten minutes late, so these two differ by
+ *     however far oil has moved in that time; the board's row says so.
  */
 export const TICKER_SYMBOLS = [
   { proName: "OANDA:XAUUSD", title: "Gold" },
   { proName: "OANDA:XAGUSD", title: "Silver" },
-  { proName: "CAPITALCOM:DXY", title: "Dollar index" },
-  { proName: "BITSTAMP:BTCUSD", title: "Bitcoin" },
+  { proName: "PEPPERSTONE:USDX", title: "Dollar index" },
+  { proName: "BINANCE:BTCUSDT", title: "Bitcoin" },
   { proName: "TVC:USOIL", title: "Crude oil" },
 ] as const;
+
+/**
+ * What each row of the board is, as somebody would type it into TradingView
+ * to find the same thing. Shown under the row's name so the figure can be
+ * checked there.
+ */
+export const BOARD_TICKERS = {
+  gold: "XAUUSD",
+  silver: "XAGUSD",
+  dollarIndex: "DXY",
+  bitcoin: "BTCUSDT",
+  crude: "CL1!",
+} as const;
+
+/**
+ * How many whole minutes a quote is behind the moment it was fetched, when
+ * that is worth saying.
+ *
+ * Under two minutes is a live quote and says nothing. Over an hour is a market
+ * that is shut -- a weekend, a holiday -- where "behind" is the wrong word and
+ * the board's own timestamp already tells the story. In between is a feed that
+ * is delayed, which is crude's NYMEX contract on every weekday, and a figure
+ * shown beside a live TradingView one must own up to it.
+ */
+/**
+ * The small line under a row's name: its unit, its TradingView ticker, and how
+ * late it is if it is late. The ticker is left off where the unit already is
+ * the ticker, so the dollar index reads "DXY" and not "DXY · DXY".
+ */
+export function rowCaption(unit: string, ticker: string, behind: number | null): string {
+  const parts = unit === ticker ? [unit] : [unit, ticker];
+  if (behind !== null) parts.push(`${behind} min behind`);
+  return parts.join(" · ");
+}
+
+export function minutesBehind(at: string, fetchedAt: string): number | null {
+  const lag = Date.parse(fetchedAt) - Date.parse(at);
+  if (!Number.isFinite(lag)) return null;
+  const minutes = Math.round(lag / 60000);
+  return minutes >= 2 && minutes <= 60 ? minutes : null;
+}
 
 /** What the widget script is handed, as the JSON body of its own tag. */
 export function tickersConfig(dark: boolean) {

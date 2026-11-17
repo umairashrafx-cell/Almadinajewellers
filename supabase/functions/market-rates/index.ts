@@ -138,7 +138,7 @@ type Range = {
  *
  * `last` is the series' own latest close, and every move is measured against
  * it rather than against the live spot price. The two come from different
- * sources for the metals -- spot from gold-api, history from the COMEX
+ * sources for the metals -- spot from Swissquote or gold-api, history from the COMEX
  * contract -- and mixing them would put a roll gap and a source difference
  * into a figure presented as a market move.
  */
@@ -164,7 +164,7 @@ type Quote = {
    * bitcoin and crude, index points for the dollar index.
    *
    * For everything but the metals it comes from the same quote as the price.
-   * For the metals it cannot: spot is from gold-api, which publishes a price
+   * For the metals it cannot: spot is from Swissquote or gold-api, which publish a price
    * and nothing else. See dayMove for how the metals get theirs.
    */
   change?: number;
@@ -220,7 +220,59 @@ async function get(url: string): Promise<unknown> {
 }
 
 /** gold-api.com: one instrument per call, no key, spot in dollars an ounce. */
+/**
+ * The middle of a Swissquote quote, and when it was taken.
+ *
+ * Their public feed answers with one entry per platform, each carrying a
+ * bid and an ask for several spread profiles. The spreads are symmetric, so
+ * every profile has the same middle to a fraction of a cent; the first one
+ * that is a real two-sided price is taken. Null when nothing in the answer
+ * is, so the caller falls back rather than printing half a quote.
+ */
+export function swissquoteMid(body: unknown): { usd: number; at: string } | null {
+  if (!Array.isArray(body)) return null;
+
+  for (const entry of body as Array<{ ts?: unknown; spreadProfilePrices?: unknown }>) {
+    if (!Array.isArray(entry?.spreadProfilePrices)) continue;
+    for (const profile of entry.spreadProfilePrices as Array<{ bid?: unknown; ask?: unknown }>) {
+      const bid = profile?.bid;
+      const ask = profile?.ask;
+      if (typeof bid !== "number" || typeof ask !== "number") continue;
+      if (!Number.isFinite(bid) || !Number.isFinite(ask) || bid <= 0 || ask < bid) continue;
+
+      const at = typeof entry.ts === "number" ? new Date(entry.ts) : new Date();
+      return {
+        usd: (bid + ask) / 2,
+        at: Number.isNaN(at.getTime()) ? new Date().toISOString() : at.toISOString(),
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Spot gold or silver, in dollars an ounce.
+ *
+ * Swissquote first, because it is the free quote that sits with TradingView's
+ * OANDA:XAUUSD and OANDA:XAGUSD -- measured side by side, twenty cents apart
+ * on gold where gold-api.com stood nearly six dollars off -- and it updates
+ * as the metal trades rather than every half minute. gold-api.com stays as
+ * the fallback, so a refusal from one costs the board nothing.
+ */
 async function metal(symbol: "XAU" | "XAG"): Promise<Quote> {
+  try {
+    const quote = swissquoteMid(
+      await get(
+        `https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/${symbol}/USD`,
+      ),
+    );
+    if (quote) return quote;
+    throw new Error("no two-sided price in the answer");
+  } catch (error) {
+    console.warn(`market-rates: Swissquote ${symbol} failed, falling back:`, error);
+  }
+
   const body = (await get(`https://api.gold-api.com/price/${symbol}`)) as {
     price?: number;
     updatedAt?: string;

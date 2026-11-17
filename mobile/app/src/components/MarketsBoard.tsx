@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { useLiveBitcoin } from "../lib/btc-stream";
 import type { Cached } from "../lib/cache";
 import { useTicks } from "../lib/ticks";
+import { BOARD_TICKERS, minutesBehind, rowCaption } from "../lib/tradingview";
 import type { Tick } from "../lib/ticks";
 
 /**
@@ -207,7 +208,11 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
           <Row
             key={row.key}
             label={row.label}
-            unit={unitLabel(row.key, showing, usdPkr, row.unit)}
+            unit={rowCaption(
+              unitLabel(row.key, showing, usdPkr, row.unit),
+              BOARD_TICKERS[row.key],
+              markets.data ? minutesBehind(row.quote.at, markets.data.fetchedAt) : null,
+            )}
             price={price}
             change={change}
             quote={row.quote}
