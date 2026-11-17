@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 
 import { useLiveBitcoin } from "../lib/btc-stream";
 import type { Cached } from "../lib/cache";
+import { useTicks } from "../lib/ticks";
+import type { Tick } from "../lib/ticks";
 
 /**
  * The world's prices, under the shop's own.
@@ -162,10 +164,6 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
     const quote = board[row.key];
     return quote ? [{ ...row, quote, events: eventsToday(row.key, calendar) }] : [];
   });
-  if (rows.length === 0) return null;
-
-  const anyRange = rows.some((row) => row.quote.range);
-  const anyEvents = rows.some((row) => row.events !== null);
 
   /*
    * No dollar rate, no choice to offer. An older deployment of the edge
@@ -177,6 +175,20 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   const showing: Unit = usdPkr === null ? "usd" : unit;
   const price = priceIn(showing, usdPkr);
   const change = changeIn(price);
+
+  /*
+   * Up or down since the last figure, row by row. Asked of the figure as it
+   * is printed, so the arrow only ever moves when the digits do -- see
+   * ticks.ts. Ahead of the early return below because it is a hook.
+   */
+  const ticks = useTicks(
+    rows.map((row) => ({ key: row.key, usd: row.quote.usd, shown: price(row.key, row.quote.usd) })),
+  );
+
+  if (rows.length === 0) return null;
+
+  const anyRange = rows.some((row) => row.quote.range);
+  const anyEvents = rows.some((row) => row.events !== null);
 
   return (
     <section className="mt-10 border border-warmgrey/25 bg-white/50">
@@ -201,6 +213,7 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
             quote={row.quote}
             rowKey={row.key}
             events={row.events}
+            tick={ticks[row.key]}
             live={row.key === "bitcoin" && Boolean(live)}
             open={open === row.key}
             onToggle={() => setOpen((current) => (current === row.key ? null : row.key))}
@@ -212,7 +225,9 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         {markets.data ? (
           <>
             Reference prices from public sources, taken {taken(markets.data.fetchedAt)} and
-            refreshed every fifteen seconds while this screen is open.
+            refreshed every five seconds while this screen is open.{" "}
+            {live ? "Bitcoin ticks every second from the exchange; the" : "The"} arrow beside a
+            price shows which way it last moved, and only moves when the source does.
           </>
         ) : (
           <>Streamed from the exchange. The rest of the board is not reachable just now.</>
@@ -306,6 +321,7 @@ function Row({
   change,
   quote,
   events,
+  tick,
   live,
   open,
   onToggle,
@@ -319,6 +335,8 @@ function Row({
   change: (key: keyof Board, value: number) => string;
   quote: MarketQuote;
   events: MarketEvent[] | null;
+  /** Which way the printed figure last moved, and how many times it has. */
+  tick: Tick | undefined;
   live: boolean;
   open: boolean;
   onToggle: () => void;
@@ -370,9 +388,7 @@ function Row({
 
       <span className="flex shrink-0 items-center gap-2">
         <span className="text-right">
-          <span className="block text-sm font-semibold text-ink tabular-nums">
-            {price(rowKey, quote.usd)}
-          </span>
+          <TickedPrice tick={tick}>{price(rowKey, quote.usd)}</TickedPrice>
           {moved === null ? null : (
             <span
               className={cn(
@@ -438,6 +454,44 @@ function Row({
         </div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * A price with the arrow of its last move beside it.
+ *
+ * The arrow stays until the next move, so a glance at any moment says which
+ * way each figure last went; the flash behind the figure is the moment it
+ * went. The flash is keyed on the tick's count so it replays on every move,
+ * two rises in a row included, and it is only ever drawn after a real move --
+ * a board that has just opened shows its figures plain until one changes.
+ *
+ * The arrow's slot is reserved before there is an arrow to put in it, so the
+ * first tick does not shove the figure sideways.
+ */
+function TickedPrice({ tick, children }: { tick: Tick | undefined; children: string }) {
+  const direction = tick?.direction;
+
+  return (
+    <span
+      key={tick?.seq ?? 0}
+      className={cn(
+        "-mx-1 flex items-center justify-end gap-1 rounded-sm px-1 text-sm font-semibold tabular-nums",
+        direction === "up" && "text-primary",
+        direction === "down" && "text-red-700",
+        direction && "tick-flash",
+      )}
+    >
+      <span className="w-2 text-[9px] leading-none" aria-hidden>
+        {direction === "up" ? "▲" : direction === "down" ? "▼" : null}
+      </span>
+      <span className="text-ink">{children}</span>
+      {direction ? (
+        <span className="sr-only">
+          {direction === "up" ? ", last moved up" : ", last moved down"}
+        </span>
+      ) : null}
+    </span>
   );
 }
 

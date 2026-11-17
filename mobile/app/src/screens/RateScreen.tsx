@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Kept } from "../components/Kept";
 import { useApprox } from "../components/Money";
 import { MarketsBoard } from "../components/MarketsBoard";
+import { TradingViewTickers } from "../components/TradingViewTickers";
 import { RateDrivers } from "../components/RateDrivers";
 import { MARKETS_KEY, useCached } from "../lib/cache";
 import type { Cached } from "../lib/cache";
@@ -152,11 +153,11 @@ function Local({ snapshot, rates }: { snapshot: RateSnapshot; rates: Cached<Rate
  *
  * The fetch lives in here rather than in the screen, so it starts when
  * somebody asks for these figures and not while they are reading the shop's.
- * It repolls every fifteen seconds, which is worth doing for a board somebody
+ * It repolls every five seconds, which is worth doing for a board somebody
  * is watching and not worth doing in the background of a different one.
  */
 function International() {
-  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 15000);
+  const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 5000);
 
   return (
     <div
@@ -165,6 +166,8 @@ function International() {
       aria-labelledby="rates-tab-international"
       className="mt-1"
     >
+      <TradingViewTickers />
+
       <MarketsBoard markets={markets} />
 
       {/*

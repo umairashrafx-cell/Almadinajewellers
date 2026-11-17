@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { FX_CODES, crossesFrom, dayMove } from "./index.ts";
+import { FX_CODES, crossesFrom, dayMove, due } from "./index.ts";
 
 /**
  * The two pieces of the board that are arithmetic rather than fetching: the
@@ -90,5 +90,29 @@ describe("the currency crosses out of a dated file", () => {
     expect(crossesFrom({ date: "2026-11-13", usd: { pkr: 277 } }, "2026-11-13")).toBeNull();
     expect(crossesFrom(null, "2026-11-13")).toBeNull();
     expect(crossesFrom("nonsense", "2026-11-13")).toBeNull();
+  });
+});
+
+/**
+ * The clock that keeps CoinGecko on fifteen seconds while the rest of the
+ * board refreshes every five.
+ */
+describe("whether a clock is due", () => {
+  const now = Date.parse("2026-11-17T12:00:15Z");
+
+  test("is due when it has never been read", () => {
+    expect(due(undefined, 15, now)).toBe(true);
+  });
+
+  test("is due when the stored time cannot be read", () => {
+    expect(due("not a time", 15, now)).toBe(true);
+  });
+
+  test("is not due before its seconds have run", () => {
+    expect(due("2026-11-17T12:00:05Z", 15, now)).toBe(false);
+  });
+
+  test("is due once its seconds have run", () => {
+    expect(due("2026-11-17T12:00:00Z", 15, now)).toBe(true);
   });
 });
