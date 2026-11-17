@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Kept } from "../components/Kept";
 import { useApprox } from "../components/Money";
 import { MarketsBoard } from "../components/MarketsBoard";
+import { TradingViewTickers } from "../components/TradingViewTickers";
 import { RateDrivers } from "../components/RateDrivers";
 import { MARKETS_KEY, useCached } from "../lib/cache";
 import type { Cached } from "../lib/cache";
@@ -165,6 +166,8 @@ function International() {
       aria-labelledby="rates-tab-international"
       className="mt-1"
     >
+      <TradingViewTickers />
+
       <MarketsBoard markets={markets} />
 
       {/*
