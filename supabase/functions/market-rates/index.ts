@@ -31,19 +31,39 @@
 /**
  * How long a fetched board stays good.
  *
- * Fifteen seconds, matching how often the app asks while its rate screen is
- * open — so a customer watching the board sees it move, and the upstreams see
- * four requests a minute no matter how many phones are watching. That is the
- * whole point of caching here rather than in the app: the cost of this board
- * does not grow with the number of customers.
+ * Five seconds, matching how often the app asks while its rate screen is
+ * open — so a customer watching the board sees each move soon after the
+ * source publishes it, and the upstreams see twelve requests a minute no
+ * matter how many phones are watching. That is the whole point of caching
+ * here rather than in the app: the cost of this board does not grow with the
+ * number of customers.
  *
- * Shorter than this buys nothing. Gold and the dollar index are republished
- * about once a minute at these sources, so asking sixty times a minute would
- * return the same figure fifty-nine times and get us refused on the sixtieth.
- * Bitcoin is the one instrument that genuinely moves faster, and the app
- * streams that straight from the exchange rather than through here.
+ * Measured, not guessed: polled every three seconds for a hundred, the dollar
+ * index and crude changed every twelve to fifteen seconds and gold and silver
+ * about every thirty. Five seconds catches each of those within a few seconds
+ * of it happening; anything shorter mostly re-reads the same figure. Bitcoin
+ * genuinely moves faster, and the app streams it straight from the exchange
+ * rather than through here — which is why its call has a slower clock of its
+ * own, BITCOIN_SECONDS.
  */
-const CACHE_SECONDS = 15;
+const CACHE_SECONDS = 5;
+
+/**
+ * How often CoinGecko is asked for bitcoin, apart from the rest of the board.
+ *
+ * Its keyless tier allows a handful of calls a minute, and twelve is enough to
+ * be refused. The app shows bitcoin from the exchange's own stream whenever
+ * that is open, so the figure here is the fallback and the source of the
+ * twenty-four hour range — neither of which is worth losing to a rate limit
+ * for the sake of being five seconds fresher.
+ */
+const BITCOIN_SECONDS = 15;
+
+/** Whether a clock last read at `last` has run `seconds` by `now`. */
+export function due(last: string | undefined, seconds: number, now: number): boolean {
+  const at = last ? Date.parse(last) : Number.NaN;
+  return !Number.isFinite(at) || now - at >= seconds * 1000;
+}
 
 /** Nothing upstream is allowed to hold the whole board up. */
 const UPSTREAM_TIMEOUT_MS = 8000;
@@ -764,12 +784,13 @@ async function bitcoin(): Promise<Quote> {
  * answer keeps its old figure and its old timestamp, which the app shows as
  * what it is: a number from earlier.
  */
-async function fetchBoard(previous: Board): Promise<Board> {
+async function fetchBoard(previous: Board, askBitcoin: boolean): Promise<Board> {
   const work = {
     gold: metalWithRange("XAU", "GC=F", previous.gold),
     silver: metalWithRange("XAG", "SI=F", previous.silver),
     dollarIndex: yahoo("DX-Y.NYB"),
-    bitcoin: bitcoin(),
+    // Kept as it was between its own fetches; see BITCOIN_SECONDS.
+    bitcoin: askBitcoin || !previous.bitcoin ? bitcoin() : Promise.resolve(previous.bitcoin),
     crude: yahoo("CL=F"),
     usdPkr: rupeeWithTrail("USDPKR=X", previous.usdPkr),
   } satisfies Record<keyof Board, Promise<Quote>>;
@@ -970,22 +991,31 @@ function published(calendar: Calendar | undefined) {
 /**
  * What the cache row holds.
  *
- * The board and the calendar refresh on clocks fifteen seconds and fifteen
+ * The board and the calendar refresh on clocks five seconds and fifteen
  * minutes apart, so they are stored together in the one row and aged
  * separately. Earlier deployments stored the board alone at the top level, and
  * a row left behind by one of those is still read correctly — four lines, where
  * the alternative is a deploy that drops the board on the floor until the next
  * fetch lands.
+ *
+ * `bitcoinAt` is when CoinGecko was last asked, which is this function's own
+ * bookkeeping and is never sent to a phone. A row without one simply asks.
  */
-type Stored = { board: Board; calendar?: Calendar; fx?: FxCrosses };
+type Stored = { board: Board; calendar?: Calendar; fx?: FxCrosses; bitcoinAt?: string };
 
 function stored(payload: unknown): Stored {
   if (payload && typeof payload === "object" && "board" in payload) {
-    const held = payload as { board?: unknown; calendar?: unknown; fx?: unknown };
+    const held = payload as {
+      board?: unknown;
+      calendar?: unknown;
+      fx?: unknown;
+      bitcoinAt?: unknown;
+    };
     return {
       board: (held.board ?? {}) as Board,
       ...(held.calendar ? { calendar: held.calendar as Calendar } : {}),
       ...(held.fx ? { fx: held.fx as FxCrosses } : {}),
+      ...(typeof held.bitcoinAt === "string" ? { bitcoinAt: held.bitcoinAt } : {}),
     };
   }
 
@@ -1071,8 +1101,11 @@ export default {
      * calendar they cannot throw: a currency that will not load costs the app
      * that currency, never the board.
      */
+    const askBitcoin = due(held.bitcoinAt, BITCOIN_SECONDS, Date.now());
+    const bitcoinAt = askBitcoin ? new Date().toISOString() : held.bitcoinAt;
+
     const [board, calendar, fx] = await Promise.all([
-      fetchBoard(held.board),
+      fetchBoard(held.board, askBitcoin),
       currentCalendar(held.calendar),
       currentCrosses(held.fx),
     ]);
@@ -1083,7 +1116,12 @@ export default {
       return json({ error: "no market data available" }, 503);
     }
 
-    await writeCache({ board, ...(calendar ? { calendar } : {}), ...(fx ? { fx } : {}) });
+    await writeCache({
+      board,
+      ...(calendar ? { calendar } : {}),
+      ...(fx ? { fx } : {}),
+      ...(bitcoinAt ? { bitcoinAt } : {}),
+    });
     return json({
       board,
       ...published(calendar),

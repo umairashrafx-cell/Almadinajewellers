@@ -225,7 +225,7 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         {markets.data ? (
           <>
             Reference prices from public sources, taken {taken(markets.data.fetchedAt)} and
-            refreshed every fifteen seconds while this screen is open.{" "}
+            refreshed every five seconds while this screen is open.{" "}
             {live ? "Bitcoin ticks every second from the exchange; the" : "The"} arrow beside a
             price shows which way it last moved, and only moves when the source does.
           </>

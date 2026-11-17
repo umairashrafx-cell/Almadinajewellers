@@ -6,7 +6,7 @@ import { useRef } from "react";
  * A ticker's arrow is a promise that the number beside it has just changed, so
  * it is only ever raised by a change somebody can see. Bitcoin's figure is
  * pushed once a second by the exchange and earns an arrow most seconds; the
- * metals, the dollar index and crude are re-read every fifteen seconds and
+ * metals, the dollar index and crude are re-read every five seconds and
  * earn one only when their source has actually published something new. No
  * figure is ever nudged to keep an arrow busy.
  *
