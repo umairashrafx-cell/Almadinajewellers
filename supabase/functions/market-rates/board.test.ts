@@ -1,6 +1,14 @@
 import { describe, expect, test } from "vitest";
 
-import { FX_CODES, crossesFrom, dayMove, due } from "./index.ts";
+import {
+  DXY_WEIGHTS,
+  FX_CODES,
+  crossesFrom,
+  dayMove,
+  dollarIndexFrom,
+  due,
+  swissquoteMid,
+} from "./index.ts";
 
 /**
  * The two pieces of the board that are arithmetic rather than fetching: the
@@ -114,5 +122,103 @@ describe("whether a clock is due", () => {
 
   test("is due once its seconds have run", () => {
     expect(due("2026-11-17T12:00:00Z", 15, now)).toBe(true);
+  });
+});
+
+/**
+ * Swissquote's spot quote, which the metals now come from. Its answer is one
+ * entry per platform with a bid and ask per spread profile; the shape below
+ * is cut down from a real answer of 17 November 2026.
+ */
+describe("a Swissquote quote", () => {
+  const answer = [
+    {
+      topo: { platform: "SwissquoteLtd", server: "Live5" },
+      spreadProfilePrices: [
+        {
+          spreadProfile: "premium",
+          bidSpread: 25.6,
+          askSpread: 25.6,
+          bid: 3863.104,
+          ask: 3863.766,
+        },
+        { spreadProfile: "elite", bidSpread: 17.7, askSpread: 17.7, bid: 3863.183, ask: 3863.687 },
+      ],
+      ts: 1794938540090,
+    },
+  ];
+
+  test("is the middle of the bid and the ask", () => {
+    expect(swissquoteMid(answer)?.usd).toBeCloseTo(3863.435, 6);
+  });
+
+  test("is stamped with the feed's own time", () => {
+    expect(swissquoteMid(answer)?.at).toBe(new Date(1794938540090).toISOString());
+  });
+
+  test("skips a profile that is not a real two-sided price", () => {
+    const crossed = [
+      {
+        spreadProfilePrices: [
+          { bid: 3864, ask: 3863 },
+          { bid: null, ask: 3863 },
+          { bid: 47.42, ask: 47.44 },
+        ],
+      },
+    ];
+    expect(swissquoteMid(crossed)?.usd).toBeCloseTo(47.43, 6);
+  });
+
+  test("is nothing for an empty or unreadable answer, so the metal falls back", () => {
+    expect(swissquoteMid([])).toBeNull();
+    expect(swissquoteMid(null)).toBeNull();
+    expect(swissquoteMid({ error: "nope" })).toBeNull();
+    expect(swissquoteMid([{ spreadProfilePrices: [{ bid: 0, ask: 0 }] }])).toBeNull();
+  });
+});
+
+/**
+ * The dollar index, computed from its own definition. The rates below are
+ * TradingView's FX quotes of 17 November 2026, a moment when its live USDX
+ * stood at 103.390.
+ */
+describe("the dollar index from six rates", () => {
+  const rates = {
+    "EUR/USD": 1.10216,
+    "USD/JPY": 159.245,
+    "GBP/USD": 1.3226,
+    "USD/CAD": 1.42788,
+    "USD/SEK": 10.095,
+    "USD/CHF": 0.83864,
+  };
+
+  test("lands within two hundredths of the live index", () => {
+    const index = dollarIndexFrom(rates);
+    expect(index).not.toBeNull();
+    expect(Math.abs((index ?? 0) - 103.39)).toBeLessThan(0.02);
+  });
+
+  test("weights add up to the whole basket", () => {
+    const total = Object.values(DXY_WEIGHTS).reduce((sum, w) => sum + Math.abs(w), 0);
+    expect(total).toBeCloseTo(1, 10);
+  });
+
+  test("rises when the euro falls, because a cheaper euro is a dearer dollar", () => {
+    const base = dollarIndexFrom(rates) ?? 0;
+    const weakerEuro = dollarIndexFrom({ ...rates, "EUR/USD": 1.09 }) ?? 0;
+    expect(weakerEuro).toBeGreaterThan(base);
+  });
+
+  test("rises when the yen falls against the dollar", () => {
+    const base = dollarIndexFrom(rates) ?? 0;
+    const dearerDollar = dollarIndexFrom({ ...rates, "USD/JPY": 161 }) ?? 0;
+    expect(dearerDollar).toBeGreaterThan(base);
+  });
+
+  test("is nothing when a rate is missing, so the board falls back to Yahoo", () => {
+    const { "USD/SEK": _missing, ...five } = rates;
+    expect(dollarIndexFrom(five)).toBeNull();
+    expect(dollarIndexFrom({ ...rates, "USD/CHF": 0 })).toBeNull();
+    expect(dollarIndexFrom({ ...rates, "EUR/USD": Number.NaN })).toBeNull();
   });
 });

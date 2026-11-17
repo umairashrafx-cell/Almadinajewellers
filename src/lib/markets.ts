@@ -53,7 +53,7 @@ export type MarketRange = {
  *
  * `last` is the series' own most recent close and every move is measured
  * against it, never against the live price beside it. For the metals the two
- * come from different places — spot from gold-api, history from the COMEX
+ * come from different places — spot from Swissquote or gold-api, history from the COMEX
  * contract — and measuring one against the other would fold a source
  * difference and a contract roll into a figure shown as a market move.
  */
