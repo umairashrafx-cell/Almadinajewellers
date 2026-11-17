@@ -24,10 +24,10 @@ export const TICKERS_SCRIPT =
  * Measured side by side on 17 November 2026:
  *   - Gold and silver: OANDA spot. The board's Swissquote spot sat twenty
  *     cents from it on gold and a cent on silver.
- *   - Dollar index: Pepperstone's USDX, 103.395 against the board's ICE
- *     103.399. TradingView's own TVC:DXY is the ICE figure itself but is not
- *     licensed for widgets and draws a blank; Capital.com's DXY, tried first,
- *     sat a third of a point away.
+ *   - Dollar index: Pepperstone's USDX. The board computes the index live
+ *     from six FX rates by ICE's own formula and sat about 0.015 under it.
+ *     TradingView's own TVC:DXY is not licensed for widgets and draws a
+ *     blank; Capital.com's DXY, tried first, sat a third of a point away.
  *   - Bitcoin: Binance's BTCUSDT, the very market the board streams, so the
  *     two agree to the cent.
  *   - Crude: TradingView's USOIL. The board's NYMEX contract is the same oil

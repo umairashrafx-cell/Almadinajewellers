@@ -451,8 +451,104 @@ async function trailFor(
   }
 }
 
+/**
+ * The ICE dollar index's own definition: a constant times six exchange rates,
+ * each raised to its weight. A rate quoted as dollars per unit (EUR, GBP) has
+ * a negative weight, because a dearer euro is a cheaper dollar.
+ */
+export const DXY_WEIGHTS = {
+  "EUR/USD": -0.576,
+  "USD/JPY": 0.136,
+  "GBP/USD": -0.119,
+  "USD/CAD": 0.091,
+  "USD/SEK": 0.042,
+  "USD/CHF": 0.036,
+} as const;
+
+const DXY_CONSTANT = 50.14348112;
+
+export type DxyPair = keyof typeof DXY_WEIGHTS;
+
+/** The index from the six rates, or null if any of them is missing or nonsense. */
+export function dollarIndexFrom(rates: Partial<Record<DxyPair, number>>): number | null {
+  let index = DXY_CONSTANT;
+  for (const pair of Object.keys(DXY_WEIGHTS) as DxyPair[]) {
+    const rate = rates[pair];
+    if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) return null;
+    index *= rate ** DXY_WEIGHTS[pair];
+  }
+  return index;
+}
+
+/**
+ * The dollar index, worked out live.
+ *
+ * Yahoo's DX-Y.NYB is the published ICE figure but reaches us about ten
+ * minutes late, which put the board's dollar index visibly behind the
+ * TradingView strip above it. So the index is computed here from its own
+ * definition and six live Swissquote rates, which match TradingView's FX
+ * quotes to a pip. Measured on 17 November 2026 it sat about 0.015 under
+ * TradingView's live USDX, against Yahoo's ten-minute lag.
+ *
+ * Yahoo is still asked, in parallel, for the two things the live rates cannot
+ * give: the previous close, which the day's move is measured from, and the
+ * session's high and low. And if any of the six rates will not load, Yahoo's
+ * own figure is the board's dollar index exactly as it was before.
+ */
+async function dollarIndex(): Promise<Quote> {
+  const pairs = Object.keys(DXY_WEIGHTS) as DxyPair[];
+  const [official, ...mids] = await Promise.allSettled([
+    yahooMeta("DX-Y.NYB"),
+    ...pairs.map(async (pair) =>
+      swissquoteMid(
+        await get(
+          `https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/${pair}`,
+        ),
+      ),
+    ),
+  ]);
+
+  const rates: Partial<Record<DxyPair, number>> = {};
+  const stamps: string[] = [];
+  pairs.forEach((pair, i) => {
+    const outcome = mids[i];
+    if (outcome?.status === "fulfilled" && outcome.value) {
+      rates[pair] = outcome.value.usd;
+      stamps.push(outcome.value.at);
+    }
+  });
+
+  const meta = official.status === "fulfilled" ? official.value : undefined;
+  const live = dollarIndexFrom(rates);
+
+  if (live === null) {
+    console.warn("market-rates: live dollar index incomplete, using Yahoo's");
+    if (!meta) throw new Error("dollar index: neither the rates nor Yahoo answered");
+    return yahooQuote("DX-Y.NYB", meta);
+  }
+
+  // Stamped with the oldest of the six, so the index never claims to be
+  // fresher than the stalest rate inside it.
+  const at = stamps.sort()[0] ?? new Date().toISOString();
+  const quote: Quote = { usd: live, at };
+
+  const close = meta?.chartPreviousClose;
+  if (typeof close === "number" && close > 0) {
+    quote.change = live - close;
+    quote.changePercent = (quote.change / close) * 100;
+  }
+
+  const range = meta ? sessionRange(meta) : undefined;
+  if (range) quote.range = range;
+
+  return quote;
+}
+
 async function yahoo(symbol: string): Promise<Quote> {
-  const meta = await yahooMeta(symbol);
+  return yahooQuote(symbol, await yahooMeta(symbol));
+}
+
+function yahooQuote(symbol: string, meta: YahooMeta): Quote {
   if (typeof meta.regularMarketPrice !== "number") {
     throw new Error(`${symbol}: no price in the answer`);
   }
@@ -840,7 +936,7 @@ async function fetchBoard(previous: Board, askBitcoin: boolean): Promise<Board> 
   const work = {
     gold: metalWithRange("XAU", "GC=F", previous.gold),
     silver: metalWithRange("XAG", "SI=F", previous.silver),
-    dollarIndex: yahoo("DX-Y.NYB"),
+    dollarIndex: dollarIndex(),
     // Kept as it was between its own fetches; see BITCOIN_SECONDS.
     bitcoin: askBitcoin || !previous.bitcoin ? bitcoin() : Promise.resolve(previous.bitcoin),
     crude: yahoo("CL=F"),
