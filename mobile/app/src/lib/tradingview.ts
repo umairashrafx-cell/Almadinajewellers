@@ -82,15 +82,22 @@ export function minutesBehind(at: string, fetchedAt: string): number | null {
 }
 
 /** What the widget script is handed, as the JSON body of its own tag. */
-export function tickersConfig(dark: boolean) {
+/**
+ * Always TradingView's dark theme, in both of the app's.
+ *
+ * The strip sits on the emerald panel that crowns the International tab, the
+ * same green as the shop's own rate board, and on that green only the dark
+ * theme's pale figures can be read. Transparent, so the panel's gradient
+ * shows through instead of TradingView's own black.
+ */
+export function tickersConfig() {
   return {
     symbols: TICKER_SYMBOLS,
-    // Drawn on the app's own card, so it takes the card's colour in both themes.
     isTransparent: true,
     showSymbolLogo: false,
     // Price and move both, at any width; "compact" drops the move.
     displayMode: "adaptive",
-    colorTheme: dark ? "dark" : "light",
+    colorTheme: "dark",
     locale: "en",
   };
 }

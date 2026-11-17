@@ -32,17 +32,16 @@ describe("the TradingView strip", () => {
     expect(TICKER_SYMBOLS.map((symbol) => symbol.proName)).not.toContain("TVC:DXY");
   });
 
-  test("is drawn dark on a dark app and light on a light one", () => {
-    expect(tickersConfig(true).colorTheme).toBe("dark");
-    expect(tickersConfig(false).colorTheme).toBe("light");
+  test("is drawn in TradingView's dark theme, for the emerald panel it sits on", () => {
+    expect(tickersConfig().colorTheme).toBe("dark");
   });
 
-  test("is transparent, so it sits on the app's own card in either theme", () => {
-    expect(tickersConfig(false).isTransparent).toBe(true);
+  test("is transparent, so the panel's own green shows through", () => {
+    expect(tickersConfig().isTransparent).toBe(true);
   });
 
   test("survives being written into a script tag as JSON", () => {
-    const config = tickersConfig(false);
+    const config = tickersConfig();
     expect(JSON.parse(JSON.stringify(config))).toEqual(config);
   });
 });

@@ -1,6 +1,8 @@
 import { useState } from "react";
 
-import { ChevronDown, Globe, TrendingDown, TrendingUp } from "lucide-react";
+import { Bitcoin, ChevronDown, DollarSign, Droplet, TrendingDown, TrendingUp } from "lucide-react";
+
+import { MetalIcon } from "@/components/rate/MetalIcon";
 
 import {
   MARKET_ROWS,
@@ -32,11 +34,13 @@ import type { Tick } from "../lib/ticks";
 /**
  * The world's prices, under the shop's own.
  *
- * Deliberately quieter than the board above it: smaller type, no gold, a grey
- * rule between rows. Someone standing at the counter is being quoted a figure
- * in rupees a tola, and nothing on this block should be mistakable for it.
- * These are dollars an ounce from public endpoints — context, not a quotation,
- * and the footnote says so in those words.
+ * Drawn in the shop's own language since the shop asked for the tab to be as
+ * handsome as the Local one: each instrument a card with a gold medallion, its
+ * name in the display serif, its price set large. What keeps it from being
+ * mistaken for the shop's quotation is said rather than left to a duller
+ * style -- the figures are in dollars, the section is headed "Indicative", and
+ * the footnote says in so many words that the shop's own rate is the one that
+ * settles a transaction.
  *
  * An instrument that could not be fetched is simply absent. A board of four is
  * honest; a board of five with a zero in it is not.
@@ -192,18 +196,24 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   const anyEvents = rows.some((row) => row.events !== null);
 
   return (
-    <section className="mt-10 border border-warmgrey/25 bg-white/50">
-      <header className="flex items-center justify-between gap-3 border-b border-warmgrey/20 px-4 py-3">
-        <h2 className="flex items-center gap-2 text-[11px] font-semibold tracking-widest text-warmgrey uppercase">
-          <Globe className="h-3.5 w-3.5 text-warmgrey" aria-hidden />
-          International markets
-        </h2>
-        <span className="text-[10px] tracking-widest text-warmgrey/80 uppercase">Indicative</span>
+    <section className="mt-8">
+      <header className="flex items-end justify-between gap-3 px-1">
+        <div>
+          <p className="text-[10px] font-semibold tracking-[0.22em] text-rate-gold-deep uppercase">
+            Reference board
+          </p>
+          <h2 className="mt-0.5 font-display text-[26px] leading-tight font-semibold text-rate-emerald">
+            International rates
+          </h2>
+        </div>
+        <span className="mb-1 rounded-full border border-rate-gold/40 px-2.5 py-0.5 text-[9px] font-semibold tracking-[0.2em] text-rate-gold-deep uppercase">
+          Indicative
+        </span>
       </header>
 
       {usdPkr === null ? null : <UnitToggle unit={showing} usdPkr={usdPkr} onChange={setUnit} />}
 
-      <ul className="divide-y divide-warmgrey/15">
+      <ul className="mt-4 grid gap-3">
         {rows.map((row) => (
           <Row
             key={row.key}
@@ -226,7 +236,11 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         ))}
       </ul>
 
-      <p className="border-t border-warmgrey/20 px-4 py-3 text-[11px] leading-relaxed text-warmgrey">
+      <span
+        className="mx-auto mt-7 block h-px w-full max-w-xs bg-gradient-to-r from-transparent via-rate-gold/60 to-transparent"
+        aria-hidden
+      />
+      <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-rate-ink/70">
         {markets.data ? (
           <>
             Reference prices from public sources, taken {taken(markets.data.fetchedAt)} and
@@ -269,8 +283,8 @@ function tapHint(anyRange: boolean, anyEvents: boolean): string | null {
  * in neither: a customer who wants to check the conversion can see what it was
  * done at, and one who does not is reading two short words.
  *
- * Styled grey, like everything else in this block. A gold control here would
- * make the converted figure look like the shop quoting a price.
+ * The same pill as the Local and International tabs above it, so it reads as
+ * a control the app already taught rather than a new one.
  */
 function UnitToggle({
   unit,
@@ -282,37 +296,40 @@ function UnitToggle({
   onChange: (unit: Unit) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-warmgrey/20 px-4 py-2.5">
-      <span className="text-[10px] tracking-widest text-warmgrey uppercase">Metals in</span>
-
-      <span className="flex items-center gap-2">
+    <div className="mt-4 flex items-center justify-between gap-3 px-1">
+      <span className="flex flex-col">
+        <span className="text-[10px] font-semibold tracking-[0.2em] text-rate-ink/70 uppercase">
+          Metals in
+        </span>
         {unit === "tola" ? (
-          <span className="text-[10px] text-warmgrey/80 tabular-nums">
+          <span className="nums mt-0.5 text-[10px] text-rate-ink/60">
             $1 = Rs.&nbsp;{usdPkr.toFixed(2)}
           </span>
         ) : null}
+      </span>
 
-        <span className="flex overflow-hidden rounded-full border border-warmgrey/30">
-          {(
-            [
-              { id: "usd", label: "$ / oz" },
-              { id: "tola", label: "Rs / tola" },
-            ] as ReadonlyArray<{ id: Unit; label: string }>
-          ).map((choice) => (
-            <button
-              key={choice.id}
-              type="button"
-              aria-pressed={unit === choice.id}
-              onClick={() => onChange(choice.id)}
-              className={cn(
-                "px-2.5 py-1 text-[10px] font-semibold tracking-wide transition-colors",
-                unit === choice.id ? "bg-ink text-white" : "text-warmgrey active:bg-warmgrey/10",
-              )}
-            >
-              {choice.label}
-            </button>
-          ))}
-        </span>
+      <span className="card-lift-sm grid grid-cols-2 gap-1 rounded-full border border-gold/20 bg-white p-1">
+        {(
+          [
+            { id: "usd", label: "$ / oz" },
+            { id: "tola", label: "Rs / tola" },
+          ] as ReadonlyArray<{ id: Unit; label: string }>
+        ).map((choice) => (
+          <button
+            key={choice.id}
+            type="button"
+            aria-pressed={unit === choice.id}
+            onClick={() => onChange(choice.id)}
+            className={cn(
+              "rounded-full px-3.5 py-1.5 text-[11px] font-semibold tracking-wide transition-colors",
+              unit === choice.id
+                ? "bg-rate-emerald text-rate-ivory shadow-sm"
+                : "text-rate-ink/70 active:bg-rate-gold/10",
+            )}
+          >
+            {choice.label}
+          </button>
+        ))}
       </span>
     </div>
   );
@@ -373,9 +390,13 @@ function Row({
 
   const face = (
     <>
-      <span className="min-w-0 text-left">
-        <span className="block text-sm text-ink">{label}</span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-[10px] tracking-wide text-warmgrey">
+      <Medallion rowKey={rowKey} />
+
+      <span className="min-w-0 flex-1 text-left">
+        <span className="block font-display text-[19px] leading-tight font-semibold whitespace-nowrap text-rate-emerald">
+          {label}
+        </span>
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[10.5px] leading-snug text-rate-ink/65">
           {unit}
           {/*
             Said only where it is true. One instrument on this board streams
@@ -383,49 +404,51 @@ function Row({
             for the metals something only bitcoin can honestly offer.
           */}
           {live ? (
-            <span className="flex items-center gap-1 text-primary">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" aria-hidden />
+            <span className="flex items-center gap-1 font-semibold text-success">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
               live
             </span>
           ) : null}
         </span>
       </span>
 
-      <span className="flex shrink-0 items-center gap-2">
-        <span className="text-right">
-          <TickedPrice tick={tick}>{price(rowKey, quote.usd)}</TickedPrice>
-          {moved === null ? null : (
-            <span
-              className={cn(
-                "mt-0.5 flex items-center justify-end gap-1 text-[11px] tabular-nums",
-                rising && "text-primary",
-                falling && "text-red-700",
-                !rising && !falling && "text-warmgrey",
-              )}
-            >
-              {rising ? <TrendingUp className="h-3 w-3" aria-hidden /> : null}
-              {falling ? <TrendingDown className="h-3 w-3" aria-hidden /> : null}
-              {moved}
-            </span>
-          )}
-        </span>
-
-        {/*
-          Only drawn where there is something behind it. A chevron on a row
-          that cannot open is an invitation to a tap that does nothing.
-        */}
-        {expandable ? (
-          <ChevronDown
+      <span className="shrink-0 text-right">
+        <TickedPrice tick={tick}>{price(rowKey, quote.usd)}</TickedPrice>
+        {moved === null ? null : (
+          <span
             className={cn(
-              "h-4 w-4 shrink-0 text-warmgrey transition-transform",
-              open && "rotate-180",
+              "nums mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
+              rising && "bg-success/10 text-success",
+              falling && "bg-red-700/10 text-red-700",
+              !rising && !falling && "bg-rate-gold/10 text-rate-ink/60",
             )}
-            aria-hidden
-          />
-        ) : null}
+          >
+            {rising ? <TrendingUp className="h-3 w-3" aria-hidden /> : null}
+            {falling ? <TrendingDown className="h-3 w-3" aria-hidden /> : null}
+            {moved}
+          </span>
+        )}
       </span>
+
+      {/*
+        Only drawn where there is something behind it. A chevron on a row
+        that cannot open is an invitation to a tap that does nothing.
+      */}
+      {expandable ? (
+        <span
+          className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-rate-gold/10 text-rate-gold-deep"
+          aria-hidden
+        >
+          <ChevronDown
+            className={cn("h-3.5 w-3.5 transition-transform duration-300", open && "rotate-180")}
+          />
+        </span>
+      ) : null}
     </>
   );
+
+  const card =
+    "card-lift-sm overflow-hidden rounded-xl border border-rate-gold/35 bg-white/70 transition-colors";
 
   /*
    * A row with nothing behind it is not a button. The instrument is still on
@@ -435,23 +458,27 @@ function Row({
    * and bitcoin are here permanently: the metals calendar is not theirs.
    */
   if (!expandable) {
-    return <li className="flex items-baseline justify-between gap-4 px-4 py-3">{face}</li>;
+    return (
+      <li className={card}>
+        <div className="flex items-center gap-2.5 px-3 py-3.5">{face}</div>
+      </li>
+    );
   }
 
   return (
-    <li>
+    <li className={cn(card, open && "border-rate-gold/70")}>
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex w-full items-baseline justify-between gap-4 px-4 py-3 text-left active:bg-warmgrey/5"
+        className="flex w-full items-center gap-2.5 px-3 py-3.5 text-left active:bg-rate-gold/5"
       >
         {face}
       </button>
 
       {open ? (
-        <div id={panelId} className="space-y-3 px-4 pb-4">
+        <div id={panelId} className="space-y-4 border-t border-rate-gold/25 px-4 pt-3.5 pb-4">
           {range ? (
             <RangeBar rowKey={rowKey} usd={quote.usd} range={range} price={price} change={change} />
           ) : null}
@@ -459,6 +486,30 @@ function Row({
         </div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * The coin each instrument sits on, as each of the shop's own rates does.
+ *
+ * The metals take the shop's own artwork -- the gold piece and the silver
+ * bar the Local tab already uses -- so gold here is recognisably the same
+ * gold. The three that are not metals get a line drawing in the text gold.
+ */
+function Medallion({ rowKey }: { rowKey: keyof Board }) {
+  const drawn = "h-5 w-5 text-rate-gold-deep";
+
+  return (
+    <span
+      className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-rate-gold/60 bg-gradient-to-br from-white to-rate-ivory shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_3px_rgb(22_61_52/0.10)]"
+      aria-hidden
+    >
+      {rowKey === "gold" ? <MetalIcon karat="24K" className="h-7 w-7 object-contain" /> : null}
+      {rowKey === "silver" ? <MetalIcon karat="999" className="h-7 w-7 object-contain" /> : null}
+      {rowKey === "dollarIndex" ? <DollarSign className={drawn} strokeWidth={1.8} /> : null}
+      {rowKey === "bitcoin" ? <Bitcoin className={drawn} strokeWidth={1.8} /> : null}
+      {rowKey === "crude" ? <Droplet className={drawn} strokeWidth={1.8} /> : null}
+    </span>
   );
 }
 
@@ -481,8 +532,8 @@ function TickedPrice({ tick, children }: { tick: Tick | undefined; children: str
     <span
       key={tick?.seq ?? 0}
       className={cn(
-        "-mx-1 flex items-center justify-end gap-1 rounded-sm px-1 text-sm font-semibold tabular-nums",
-        direction === "up" && "text-primary",
+        "nums -mx-1 flex items-center justify-end gap-1 rounded-md px-1 text-[17px] leading-tight font-bold tracking-tight",
+        direction === "up" && "text-success",
         direction === "down" && "text-red-700",
         direction && "tick-flash",
       )}
@@ -490,7 +541,7 @@ function TickedPrice({ tick, children }: { tick: Tick | undefined; children: str
       <span className="w-2 text-[9px] leading-none" aria-hidden>
         {direction === "up" ? "▲" : direction === "down" ? "▼" : null}
       </span>
-      <span className="text-ink">{children}</span>
+      <span className="text-rate-emerald">{children}</span>
       {direction ? (
         <span className="sr-only">
           {direction === "up" ? ", last moved up" : ", last moved down"}
@@ -533,8 +584,8 @@ function RangeBar({
   const position = rangePosition(usd, range);
 
   return (
-    <div className="border-l-2 border-warmgrey/25 pl-3">
-      <p className="text-[10px] font-semibold tracking-widest text-warmgrey uppercase">
+    <div className="border-l-2 border-rate-gold/50 pl-3">
+      <p className="text-[10px] font-semibold tracking-[0.2em] text-rate-gold-deep uppercase">
         {rangeWindowLabel(range.window)}
       </p>
 
@@ -544,10 +595,13 @@ function RangeBar({
           {price(rowKey, range.low)}
         </span>
 
-        <span className="relative h-1 flex-1 rounded-full bg-warmgrey/25" aria-hidden>
+        <span
+          className="relative h-1.5 flex-1 rounded-full bg-gradient-to-r from-rate-gold/20 via-rate-gold/45 to-rate-gold/20"
+          aria-hidden
+        >
           {position === null ? null : (
             <span
-              className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink ring-2 ring-white"
+              className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rate-gold-deep shadow-sm ring-2 ring-white"
               style={{ left: `${position * 100}%` }}
             />
           )}
@@ -592,8 +646,8 @@ function RangeBar({
  */
 function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent[] }) {
   return (
-    <div className="border-l-2 border-warmgrey/25 pl-3">
-      <p className="text-[10px] font-semibold tracking-widest text-warmgrey uppercase">
+    <div className="border-l-2 border-rate-gold/50 pl-3">
+      <p className="text-[10px] font-semibold tracking-[0.2em] text-rate-gold-deep uppercase">
         Today&rsquo;s data
       </p>
 
