@@ -20,13 +20,11 @@ describe("the TradingView strip", () => {
     expect(TICKERS_SCRIPT).toMatch(/embed-widget-ticker-tape\.js$/);
   });
 
-  test("carries the board's five instruments, in the board's order", () => {
+  test("carries gold, silver and the dollar index, and nothing else", () => {
     expect(TICKER_SYMBOLS.map((symbol) => symbol.title)).toEqual([
       "Gold",
       "Silver",
       "Dollar index",
-      "Bitcoin",
-      "Crude oil",
     ]);
   });
 
@@ -50,9 +48,12 @@ describe("the TradingView strip", () => {
 });
 
 describe("the board's rows, against TradingView", () => {
-  test("streams the very bitcoin market the strip shows", () => {
-    expect(TICKER_SYMBOLS.map((symbol) => symbol.proName)).toContain("BINANCE:BTCUSDT");
-    expect(BOARD_TICKERS.bitcoin).toBe("BTCUSDT");
+  test("shows the metals and the index by the symbols the board agrees with", () => {
+    expect(TICKER_SYMBOLS.map((symbol) => symbol.proName)).toEqual([
+      "OANDA:XAUUSD",
+      "OANDA:XAGUSD",
+      "PEPPERSTONE:USDX",
+    ]);
   });
 
   test("names each row's TradingView ticker under its unit", () => {
