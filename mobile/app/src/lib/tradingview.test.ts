@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   BOARD_TICKERS,
   TICKERS_SCRIPT,
-  TICKER_SYMBOLS,
+  TICKER_SYMBOL,
   minutesBehind,
   rowCaption,
   tickersConfig,
@@ -15,21 +15,15 @@ import {
  * list it is handed and the theme it is drawn in.
  */
 describe("the TradingView strip", () => {
-  test("loads the ticker tape from TradingView's own host", () => {
+  test("loads the symbol-info widget from TradingView's own host", () => {
     expect(new URL(TICKERS_SCRIPT).host).toBe("s3.tradingview.com");
-    expect(TICKERS_SCRIPT).toMatch(/embed-widget-ticker-tape\.js$/);
+    expect(TICKERS_SCRIPT).toMatch(/embed-widget-symbol-info\.js$/);
   });
 
-  test("carries gold, silver and the dollar index, and nothing else", () => {
-    expect(TICKER_SYMBOLS.map((symbol) => symbol.title)).toEqual([
-      "Gold",
-      "Silver",
-      "Dollar index",
-    ]);
-  });
-
-  test("does not ask for TradingView's own dollar index, which widgets cannot show", () => {
-    expect(TICKER_SYMBOLS.map((symbol) => symbol.proName)).not.toContain("TVC:DXY");
+  test("shows gold, and nothing else", () => {
+    expect(tickersConfig().symbol).toBe("OANDA:XAUUSD");
+    expect(TICKER_SYMBOL.title).toBe("Gold");
+    expect(tickersConfig()).not.toHaveProperty("symbols");
   });
 
   test("is drawn in TradingView's dark theme, for the emerald panel it sits on", () => {
@@ -47,12 +41,9 @@ describe("the TradingView strip", () => {
 });
 
 describe("the board's rows, against TradingView", () => {
-  test("shows the metals and the index by the symbols the board agrees with", () => {
-    expect(TICKER_SYMBOLS.map((symbol) => symbol.proName)).toEqual([
-      "OANDA:XAUUSD",
-      "OANDA:XAGUSD",
-      "PEPPERSTONE:USDX",
-    ]);
+  test("shows gold by the symbol the board's own gold agrees with", () => {
+    expect(TICKER_SYMBOL.proName).toBe("OANDA:XAUUSD");
+    expect(BOARD_TICKERS.gold).toBe("XAUUSD");
   });
 
   test("names each row's TradingView ticker under its unit", () => {
