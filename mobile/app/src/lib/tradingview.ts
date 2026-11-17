@@ -15,7 +15,8 @@
  * symbol in the same small regular weight with no font setting, and the
  * single-quote widget, tried next, sets the price only a little larger than
  * the tape; this one is the large bold figure. It also carries a row of the
- * day's open, previous close and volume, which it offers no way to hide.
+ * day's open, previous close and volume, which it offers no way to hide;
+ * the panel cuts the frame off above it (see TradingViewTickers).
  */
 
 export const TICKERS_SCRIPT =

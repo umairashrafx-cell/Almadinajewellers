@@ -78,11 +78,21 @@ export function TradingViewTickers() {
               page marked dark draws any frame whose own document is not dark on
               an opaque backing, whatever that document asks for -- which is a
               slab across the green. The widget still draws in its dark theme.
+
+              Cut off at 205px, below the "market open" line. Under it the
+              widget draws a row of previous close, open and volume that it
+              offers no setting to hide, and the shop asked for it gone. The
+              row starts about 220px down the frame and the line above it ends
+              about 190px down, measured at 360 and 412 wide; the logo stays,
+              in the frame's top corner, and the link to TradingView below.
+
+              The cut is on a wrapper of our own. The widget's script writes
+              its full height onto the container it is given, inline, which
+              beats any class set there.
             */}
-            <div
-              ref={host}
-              className="tradingview-widget-container relative mt-1 min-h-[260px] [color-scheme:light]"
-            />
+            <div className="relative mt-1 h-[205px] overflow-hidden [color-scheme:light]">
+              <div ref={host} className="tradingview-widget-container" />
+            </div>
           </>
         )}
       </div>
