@@ -14,6 +14,7 @@ import { useApprox } from "../components/Money";
 import { MarketsBoard } from "../components/MarketsBoard";
 import { TradingViewTickers } from "../components/TradingViewTickers";
 import { RateDrivers } from "../components/RateDrivers";
+import { useKeepScreenOn } from "../lib/awake";
 import { MARKETS_KEY, useCached } from "../lib/cache";
 import type { Cached } from "../lib/cache";
 
@@ -158,6 +159,14 @@ function Local({ snapshot, rates }: { snapshot: RateSnapshot; rates: Cached<Rate
  */
 function International() {
   const markets = useCached<MarketSnapshot>(MARKETS_KEY, fetchMarketSnapshot, 5000);
+
+  /*
+   * The screen stays on while this tab is open, and only while it is: a
+   * board somebody sits and watches should not dim and lock under them.
+   * Leaving for Local, or for any other screen, unmounts this and hands the
+   * screen back to the phone's own timeout. See lib/awake.ts.
+   */
+  useKeepScreenOn();
 
   return (
     <div
