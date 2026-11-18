@@ -356,3 +356,32 @@ export function beaActual(event: Release, table: BeaTable): string | null {
   const latest = table.lines.get(rule.line)?.at(-1);
   return latest ? asPercent(latest.value) : null;
 }
+
+/* ------------------------------------------------------------- the pace */
+
+/** Right after a release, how long to keep asking every minute. */
+export const FAST_WINDOW_MS = 20 * 60 * 1000;
+
+/**
+ * Seconds to wait before asking the agencies again.
+ *
+ * One minute while any release still missing its actual came out within the
+ * last twenty minutes — the agencies publish at the stroke of the hour and
+ * their APIs catch up within a few minutes, which is when the figure matters.
+ * After that, a quarter of an hour. Asking stops altogether once the figure is
+ * in, so a normal release costs BLS's keyless API two or three requests of its
+ * daily allowance, and even a slow one no more than twenty.
+ */
+export function actualsWaitSeconds(pending: readonly Release[], now: Date): number {
+  const fresh = pending.some((event) => {
+    const at = Date.parse(event.at);
+    return !Number.isNaN(at) && now.getTime() - at >= 0 && now.getTime() - at <= FAST_WINDOW_MS;
+  });
+  return fresh ? 60 : 900;
+}
+
+/** BLS's registered API (500 requests a day) when a key is set, else the
+ *  keyless one. The key travels in the body, never the URL. */
+export function blsEndpoint(key: string | undefined): string {
+  return key ? "https://api.bls.gov/publicAPI/v2/timeseries/data/" : BLS_API;
+}
