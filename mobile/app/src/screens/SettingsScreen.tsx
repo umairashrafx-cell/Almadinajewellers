@@ -1,4 +1,4 @@
-import { Banknote, Bell, Check, Palette, type LucideIcon } from "lucide-react";
+import { Banknote, Bell, Check, DoorOpen, Palette, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
@@ -13,7 +13,13 @@ import { cn } from "@/lib/utils";
 import { AppButton } from "../components/AppButton";
 import { useRate } from "../components/Money";
 import type { Foreign } from "../lib/money";
-import { updateSettings, useSettings, type Currency, type Theme } from "../lib/settings";
+import {
+  updateSettings,
+  useSettings,
+  type Currency,
+  type Start,
+  type Theme,
+} from "../lib/settings";
 
 /**
  * The app, the way one customer wants it.
@@ -37,6 +43,7 @@ export function SettingsScreen() {
 
       <div className="mt-7 grid gap-6">
         <Notifications />
+        <StartScreen />
         <Appearance />
         <Money />
       </div>
@@ -353,6 +360,53 @@ function Notifications() {
           )}
         </>
       )}
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Start screen
+// ---------------------------------------------------------------------------
+
+const START_CHOICES: ReadonlyArray<Choice<Start>> = [
+  {
+    id: "home",
+    label: "Home",
+    detail: "The front page: today's rate, the collections and the shop.",
+  },
+  {
+    id: "rate-local",
+    label: "Gold rate · Local",
+    detail: "The shop's own board, straight away.",
+  },
+  {
+    id: "rate-international",
+    label: "Gold rate · International",
+    detail: "World gold and silver, the economic calendar and the US interest rate.",
+  },
+];
+
+/**
+ * Which screen the app opens on.
+ *
+ * For the customer who opens the app for one figure: they can land on it
+ * rather than tap through the front door every time. It is read when the app
+ * starts, so it takes effect from the next opening, and the Rates tab opens on
+ * the board chosen here too.
+ */
+function StartScreen() {
+  const { start } = useSettings();
+
+  return (
+    <Section icon={DoorOpen} title="Start screen">
+      <GroupLabel id="settings-start">When the app opens, show</GroupLabel>
+      <Choices
+        labelledBy="settings-start"
+        choices={START_CHOICES}
+        value={start}
+        onChange={(next) => updateSettings({ start: next })}
+      />
+      <Note>Takes effect the next time you open the app.</Note>
     </Section>
   );
 }

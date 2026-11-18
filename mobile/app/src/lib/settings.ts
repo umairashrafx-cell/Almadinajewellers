@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from "react";
 
+import { HOME, type View } from "./views";
+
 /**
- * What a customer has chosen about the app itself: how it looks, and which
- * money its figures are read in.
+ * What a customer has chosen about the app itself: how it looks, which money
+ * its figures are read in, and which screen it opens on.
  *
  * Two choices and no more. Which notifications to send is a third, but it is
  * not kept here — it is an agreement with the shop's server about a device
@@ -44,7 +46,17 @@ export const CURRENCIES = [
 ] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
-export type Settings = { theme: Theme; currency: Currency };
+/**
+ * Where the app opens: the front door, or straight to the rate board — the
+ * shop's own (Local) or the world's (International).
+ *
+ * Asked for by the shop, because a good part of its customers open the app for
+ * one figure and nothing else, and for them the front door is a tap in the way.
+ */
+export const STARTS = ["home", "rate-local", "rate-international"] as const;
+export type Start = (typeof STARTS)[number];
+
+export type Settings = { theme: Theme; currency: Currency; start: Start };
 
 /**
  * What an app that has never been asked looks like.
@@ -52,9 +64,20 @@ export type Settings = { theme: Theme; currency: Currency };
  * Light, not the phone's own setting: this app was light for everybody before
  * the choice existed, and an update that turned it dark for half its customers
  * overnight — the half whose phones happen to be — would be a change nobody
- * asked for. Rupees, because that is what the shop prices and bills in.
+ * asked for. Rupees, because that is what the shop prices and bills in. The
+ * front door, because that is where the app opened before the choice existed.
  */
-export const DEFAULTS: Settings = { theme: "light", currency: "PKR" };
+export const DEFAULTS: Settings = { theme: "light", currency: "PKR", start: "home" };
+
+/** The screen the app opens on. */
+export function startView(start: Start): View {
+  return start === "home" ? HOME : "rate";
+}
+
+/** Which of the two boards the rate screen opens on. */
+export function startBoard(start: Start): "local" | "international" {
+  return start === "rate-international" ? "international" : "local";
+}
 
 export const SETTINGS_KEY = "amj:settings";
 
@@ -92,11 +115,12 @@ export function readSettings(raw: string | null | undefined): Settings {
   }
 
   if (typeof stored !== "object" || stored === null) return DEFAULTS;
-  const fields = stored as { theme?: unknown; currency?: unknown };
+  const fields = stored as { theme?: unknown; currency?: unknown; start?: unknown };
 
   return {
     theme: oneOf(THEMES, fields.theme, DEFAULTS.theme),
     currency: oneOf(CURRENCIES, fields.currency, DEFAULTS.currency),
+    start: oneOf(STARTS, fields.start, DEFAULTS.start),
   };
 }
 
@@ -182,6 +206,12 @@ export function updateSettings(patch: Partial<Settings>): void {
 
   applyTheme(next.theme);
   listeners.forEach((listener) => listener());
+}
+
+/** The settings as they stand, for code that reads them once rather than
+ *  following them — the screen the app opens on, for one. */
+export function getSettings(): Settings {
+  return snapshot();
 }
 
 export function useSettings(): Settings {

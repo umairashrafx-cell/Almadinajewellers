@@ -18,6 +18,7 @@ import { TradingViewTickers } from "../components/TradingViewTickers";
 import { useKeepScreenOn } from "../lib/awake";
 import { MARKETS_KEY, useCached } from "../lib/cache";
 import type { Cached } from "../lib/cache";
+import { getSettings, startBoard } from "../lib/settings";
 
 /**
  * The board, as the shop sets it.
@@ -29,14 +30,15 @@ import type { Cached } from "../lib/cache";
  */
 export function RateScreen({ rates }: { rates: Cached<RateSnapshot> }) {
   /*
-   * Opens on the shop's own board, every time.
+   * Opens on the board chosen under Settings → Start screen: the shop's own
+   * unless the customer picked International.
    *
-   * Not remembered between visits, and deliberately: somebody who opened the
-   * world prices once on a Tuesday is not asking to be shown Comex instead of
-   * the shop's rate for the rest of the month. The figure this app exists for
-   * is the local one, and it is what the tab should land on.
+   * A choice made in Settings, never a guess from the last visit: somebody who
+   * opened the world prices once on a Tuesday is not asking to be shown Comex
+   * instead of the shop's rate for the rest of the month. Somebody who chose
+   * International as where the app opens is.
    */
-  const [board, setBoard] = useState<Board>("local");
+  const [board, setBoard] = useState<Board>(() => startBoard(getSettings().start));
 
   if (rates.empty) return <NoRatesYet refresh={rates.refresh} loading={rates.loading} />;
   if (!rates.data) return <Waiting />;
