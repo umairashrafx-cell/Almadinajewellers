@@ -10,6 +10,7 @@ import { Kept } from "../components/Kept";
 import { Approx } from "../components/Money";
 import { SAVED_KEY, savedSkus, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
+import { formatWeightGrams } from "../lib/weight";
 
 /**
  * The pieces somebody has kept.
@@ -161,7 +162,7 @@ function Piece({ piece, onRemove }: { piece: Product; onRemove: () => void }) {
             {piece.name}
           </span>
           <span className="mt-1 block text-[11px] tracking-wide text-warmgrey">
-            {piece.karat} · {weight} g
+            {piece.karat} · {formatWeightGrams(weight)}
           </span>
           <span className="mt-2 block text-sm font-semibold text-ink">{formatPKR(price)}</span>
           <Approx pkr={price} className="mt-0.5 text-[11px]" />

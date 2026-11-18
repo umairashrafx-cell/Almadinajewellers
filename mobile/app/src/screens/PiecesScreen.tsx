@@ -1,12 +1,12 @@
 import { Heart, Search, Share2, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import type { Product } from "@/data/products";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { fetchAllProducts, searchProducts } from "@/lib/catalogue";
 import { shareOnWhatsApp } from "@/lib/share";
-import { formatGrams, formatPKR, productEnquiryLink, productUrl } from "@/lib/site";
+import { formatPKR, productEnquiryLink, productUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 import { AppButton, AppLink } from "../components/AppButton";
@@ -14,6 +14,7 @@ import { Kept } from "../components/Kept";
 import { Approx } from "../components/Money";
 import { PIECES_KEY, useCached } from "../lib/cache";
 import { openShop } from "../lib/shop";
+import { formatWeightGrams, formatWeightTola } from "../lib/weight";
 
 /**
  * The catalogue, as far as a phone with no signal can carry it.
@@ -267,7 +268,7 @@ function Tile({ piece, onOpen }: { piece: Product; onOpen: () => void }) {
             {piece.name}
           </span>
           <span className="mt-1 block text-[10px] tracking-wide text-warmgrey">
-            {piece.karat} · {formatGrams(piece.pricedWeightG ?? piece.grossWeightG)}
+            {piece.karat} · {formatWeightGrams(piece.pricedWeightG ?? piece.grossWeightG)}
           </span>
           <span className="mt-auto block pt-2 text-sm font-semibold text-ink">
             {formatPKR(price)}
@@ -377,10 +378,22 @@ function Detail({
 
         <dl className="card-lift-sm mt-6 divide-y divide-gold/15 rounded-xl border border-gold/15 bg-white px-4 text-sm">
           <Row label="Karat" value={piece.karat} />
-          <Row label="Weight charged" value={formatGrams(weight)} />
-          {piece.pricedWeightG && piece.pricedWeightG !== piece.grossWeightG ? (
-            <Row label="Gross weight" value={formatGrams(piece.grossWeightG)} />
-          ) : null}
+          {/*
+            The weight the gold is charged on, to the hundredth of a gram and
+            again in tola. The gross weight is not shown: it is not what the
+            customer pays for, and the shop asked for it off this card.
+          */}
+          <Row
+            label="Weight charged"
+            value={
+              <>
+                <span className="block">{formatWeightGrams(weight)}</span>
+                <span className="mt-0.5 block text-xs text-warmgrey">
+                  {formatWeightTola(weight)}
+                </span>
+              </>
+            }
+          />
           {piece.stones ? <Row label="Stones" value={piece.stones} /> : null}
         </dl>
 
@@ -521,7 +534,7 @@ async function share(piece: Product) {
   window.open(shareOnWhatsApp(`${text}\n${url}`), "_blank");
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-6 py-3">
       <dt className="text-[11px] tracking-widest text-warmgrey uppercase">{label}</dt>
