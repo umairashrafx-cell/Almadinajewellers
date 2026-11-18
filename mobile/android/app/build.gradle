@@ -33,8 +33,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * On 16 November 2026 release 6 (2.1.1) went live in production, and
-         * nothing was uploaded after it, so this is 7.
+         * Release 6 (2.1.1) went live in production on 16 November 2026 and
+         * release 7 (2.2) was built on 18 November for the owner to upload, so
+         * this is 8.
          *
          * Read the live number off the Console before every release — what is
          * written here is a note of what was true once, not a source of truth.
@@ -42,14 +43,16 @@ android {
          * already gone out, and a bundle built against it would have been
          * rejected at upload.
          *
-         * versionName is what a customer sees. 2.2, because a customer meets
-         * new things: the International tab redrawn in the shop's colours with
-         * live ticking prices and a TradingView gold chart, the screen kept on
-         * while it is open, and a piece's weight in tola beside the grams.
-         * 2.1.1 added the one-time Play review prompt.
+         * versionName is what a customer sees. 2.3, because a customer meets
+         * new things: the US interest rate and the market's odds for the next
+         * Fed meeting, an economic calendar in Pakistan time with actual
+         * figures and a good/bad-for-gold label, and a choice in Settings of
+         * which screen the app opens on. 2.2 redrew the International tab
+         * with live prices and a TradingView gold chart and added tola
+         * weights; 2.1.1 added the one-time Play review prompt.
          */
-        versionCode 7
-        versionName "2.2"
+        versionCode 8
+        versionName "2.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
