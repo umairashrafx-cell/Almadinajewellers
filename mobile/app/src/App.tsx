@@ -11,6 +11,7 @@ import { ReviewPrompt } from "./components/ReviewPrompt";
 import { ShortcutHousekeeping } from "./components/ShortcutHousekeeping";
 import { SideDrawer } from "./components/SideDrawer";
 import { RATES_KEY, useCached } from "./lib/cache";
+import { getSettings, startView } from "./lib/settings";
 import { viewFromHistory, type View } from "./lib/views";
 import { AppointmentScreen } from "./screens/AppointmentScreen";
 import { CalculatorScreen } from "./screens/CalculatorScreen";
@@ -77,8 +78,15 @@ export function App() {
    * Not simply "home": the drawer's website entries are real navigations away,
    * and coming back from one rebuilds this page from scratch. Reading the entry
    * is what returns somebody to the tab they left instead of to the front door.
+   *
+   * The launch entry names no screen, and is the one chosen under Settings →
+   * Start screen: home, or the rate board. Read when it is needed rather than
+   * held, so going back to the launch entry after changing it lands on the new
+   * choice — and back from there still closes the app, as it always has.
    */
-  const [view, setView] = useState<View>(() => viewFromHistory(window.history.state));
+  const [view, setView] = useState<View>(() =>
+    viewFromHistory(window.history.state, startView(getSettings().start)),
+  );
 
   /*
    * The drawer is a history entry rather than a piece of state, so Android's
@@ -101,7 +109,7 @@ export function App() {
 
   useEffect(() => {
     const onPop = (event: PopStateEvent) => {
-      setView(viewFromHistory(event.state));
+      setView(viewFromHistory(event.state, startView(getSettings().start)));
       setDrawer(drawerFromHistory(event.state));
     };
     window.addEventListener("popstate", onPop);

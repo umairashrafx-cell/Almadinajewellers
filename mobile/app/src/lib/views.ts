@@ -48,11 +48,13 @@ function isView(value: unknown): value is View {
  * The screen a history entry is for.
  *
  * An entry with no screen named is the one the WebView started with — the
- * launch, which is home. So is an entry naming a screen this build does not
- * have: an installed app can be opened on history that an older version
- * wrote, and home is a better answer there than a blank page.
+ * launch, which is the screen the customer chose to open on (`launch`, home
+ * unless they chose otherwise in Settings). So is an entry naming a screen
+ * this build does not have: an installed app can be opened on history that an
+ * older version wrote, and the opening screen is a better answer there than a
+ * blank page.
  */
-export function viewFromHistory(state: unknown): View {
+export function viewFromHistory(state: unknown, launch: View = HOME): View {
   const named = (state as { view?: unknown } | null | undefined)?.view;
-  return isView(named) ? named : HOME;
+  return isView(named) ? named : launch;
 }

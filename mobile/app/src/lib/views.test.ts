@@ -63,3 +63,15 @@ describe("the screen a history entry is for", () => {
     ]);
   });
 });
+
+describe("the launch entry, with a start screen chosen", () => {
+  test("is the chosen screen", () => {
+    expect(viewFromHistory(null, "rate")).toBe("rate");
+    expect(viewFromHistory({ view: "nonsense" }, "rate")).toBe("rate");
+  });
+
+  test("never overrides a screen the entry names", () => {
+    expect(viewFromHistory({ view: "home" }, "rate")).toBe("home");
+    expect(viewFromHistory({ view: "saved" }, "rate")).toBe("saved");
+  });
+});
