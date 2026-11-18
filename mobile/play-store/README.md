@@ -117,6 +117,16 @@ Weighed Honestly, Made Beautifully.
 
 ## What's new (500 characters max)
 
+For version 2.3 (versionCode 8):
+
+```
+New on the International tab: the US interest rate with the market's odds for
+the next Fed meeting, and an economic calendar of the US releases that move
+gold, in Pakistan time, showing each actual figure and whether it is usually
+good or bad for gold. You can now choose in Settings whether the app opens on
+Home, the local gold rate or the international rates.
+```
+
 For version 2.2 (versionCode 7):
 
 ```
@@ -256,8 +266,8 @@ it is what Play's link verification reads.
    release depends on has to be there first.
 2. Read the live **versionCode** off the Play Console and raise the one in
    `mobile/android/app/build.gradle` above it. Release 6 (2.1.1) went live
-   on 16 November 2026 and nothing was uploaded after it, so the repository is
-   set to **7 (2.2)**. _App bundle explorer_ lists every code
+   on 16 November 2026 and release 7 (2.2) was built on 18 November, so the
+   repository is set to **8 (2.3)**. _App bundle explorer_ lists every code
    uploaded, test tracks included, and is the quickest place to check.
 3. `cd mobile && bun run release`, with `android/keystore.properties` pointing
    at the upload keystore (see [`../README.md`](../README.md)). That script
