@@ -15,7 +15,6 @@ import { GoldCalendar } from "../components/GoldCalendar";
 import { useApprox } from "../components/Money";
 import { MarketsBoard } from "../components/MarketsBoard";
 import { TradingViewTickers } from "../components/TradingViewTickers";
-import { RateDrivers } from "../components/RateDrivers";
 import { useKeepScreenOn } from "../lib/awake";
 import { MARKETS_KEY, useCached } from "../lib/cache";
 import type { Cached } from "../lib/cache";
@@ -180,12 +179,6 @@ function International() {
       <TradingViewTickers />
 
       <MarketsBoard markets={markets} />
-
-      {/*
-        Under the board rather than over it, because it is the reading of
-        those figures and a reading is no use before the figures.
-      */}
-      {markets.data ? <RateDrivers board={markets.data.board} /> : null}
 
       {/*
         The Fed, then the week's releases: the two scheduled things that move
