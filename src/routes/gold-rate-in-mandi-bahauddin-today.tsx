@@ -11,6 +11,7 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { InternationalGold } from "@/components/rate/InternationalGold";
+import { InternationalRates } from "@/components/rate/InternationalRates";
 import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
 import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
 
@@ -27,6 +28,7 @@ import {
   type RateSnapshot,
 } from "@/lib/rates";
 import { loadInternationalGold } from "@/lib/international-gold";
+import { fetchMarketSnapshot } from "@/lib/markets";
 import { SITE, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
 import { renderRateCard } from "@/lib/share-card";
@@ -41,23 +43,33 @@ export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
    * Loaded server-side: this page is the recurring-traffic magnet in this
    * market, so the rates have to be in the HTML, not fetched after paint.
    *
-   * The history and the international figure are here for the same reason the
-   * board is. This page competes with national rate aggregators that publish a
-   * derived number for every city; what it has that they do not is the shop's
-   * own counter rate and a dated record of it. Both of those were fetched in
-   * the browser, so the page that reached a crawler was the half of it that
-   * looks like everybody else's.
+   * The history, the international figure and the world markets board are here
+   * for the same reason the board is. This page competes with national rate
+   * aggregators that publish a derived number for every city; what it has that
+   * they do not is the shop's own counter rate, a dated record of it, and the
+   * international context beside it. Each of those was once fetched in the
+   * browser, so the page that reached a crawler was the half of it that looks
+   * like everybody else's.
    *
-   * Neither is allowed to fail the page. The board is the part that matters,
-   * and it is already in hand by the time these settle.
+   * None of them is allowed to fail the page. The shop's own board is the part
+   * that matters, and it is already in hand by the time these settle.
    */
   loader: async () => {
-    const [snapshot, history, international] = await Promise.all([
+    const [snapshot, history, international, markets] = await Promise.all([
       fetchRateSnapshot(),
       fetchRateHistory(10).catch(() => []),
       loadInternationalGold(),
+      /*
+       * The world markets board. Null rather than a throw: it is reference
+       * material beside the shop's own figures, and the section removes itself
+       * when there is nothing to show — see InternationalRates.
+       */
+      fetchMarketSnapshot().catch((e: unknown) => {
+        console.error("[gold-rate] market snapshot unavailable", e);
+        return null;
+      }),
     ]);
-    return { snapshot, history, international };
+    return { snapshot, history, international, markets };
   },
   head: ({ loaderData }) => {
     const snapshot = loaderData?.snapshot;
@@ -87,7 +99,7 @@ export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
 });
 
 function GoldRatePage() {
-  const { snapshot, history, international } = Route.useLoaderData();
+  const { snapshot, history, international, markets } = Route.useLoaderData();
   const gold = goldOnly(snapshot);
   const board = rateBoard(snapshot);
   // One message behind Copy and WhatsApp, so the two can never differ.
@@ -205,6 +217,13 @@ function GoldRatePage() {
         </section>
 
         <Calculator snapshot={snapshot} />
+        {/*
+          The world markets board, the week's releases and the Fed — the app's
+          International tab, on the page. Below the calculator on purpose: the
+          top of this page is the shop's own rate and the tools a customer came
+          for, and this is the context behind it.
+        */}
+        <InternationalRates initial={markets} />
         <RateHistory initial={history} />
         <RomanUrduAnswers answers={RATE_ANSWERS} />
       </main>
