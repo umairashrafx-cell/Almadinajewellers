@@ -31,10 +31,19 @@
 
 import {
   BLS_API,
+  actualSource,
+  beaActual,
+  beaRule,
+  beaUrl,
   blsActual,
   blsRequest,
+  censusActual,
+  censusUrl,
+  parseBea,
   parseBls,
+  parseCensus,
   pendingReleases,
+  referenceMonth,
   releaseKey,
 } from "./actuals.ts";
 
@@ -1204,6 +1213,80 @@ async function postJson(url: string, body: unknown): Promise<unknown> {
  * asking BLS for any that are out and missing. Never throws: a BLS that will
  * not answer leaves the releases as the feed sent them.
  */
+async function readActuals(pending: CalendarEvent[], now: Date): Promise<Record<string, string>> {
+  const found: Record<string, string> = {};
+  const record = (event: CalendarEvent, actual: string | null) => {
+    if (actual) found[releaseKey(event)] = actual;
+  };
+
+  const bls = pending.filter((event) => actualSource(event) === "bls");
+  const census = pending.filter((event) => actualSource(event) === "census");
+  const bea = pending.filter((event) => actualSource(event) === "bea");
+
+  // The two keyed agencies are skipped quietly when their key is not set.
+  const censusKey = Deno.env.get("CENSUS_API_KEY");
+  const beaKey = Deno.env.get("BEA_API_KEY");
+
+  const jobs: Array<Promise<void>> = [];
+
+  if (bls.length > 0) {
+    jobs.push(
+      postJson(BLS_API, blsRequest(bls, now)).then((body) => {
+        const data = parseBls(body);
+        if (!data) throw new Error("BLS did not answer with data");
+        for (const event of bls) record(event, blsActual(event, data));
+      }),
+    );
+  }
+
+  if (census.length > 0 && censusKey) {
+    const months = new Map<string, { year: number; month: number }>();
+    for (const event of census) {
+      const reference = referenceMonth(event.at);
+      if (reference) months.set(`${reference.year}-${reference.month}`, reference);
+    }
+    for (const { year, month } of months.values()) {
+      jobs.push(
+        get(censusUrl(year, month, censusKey)).then((body) => {
+          const data = parseCensus(body);
+          if (!data) throw new Error("Census did not answer with its table");
+          for (const event of census) record(event, censusActual(event, data));
+        }),
+      );
+    }
+  }
+
+  if (bea.length > 0 && beaKey) {
+    const tables = new Map<string, { table: string; frequency: "Q" | "M" }>();
+    for (const event of bea) {
+      const rule = beaRule(event);
+      if (rule) tables.set(rule.table, { table: rule.table, frequency: rule.frequency });
+    }
+    for (const { table, frequency } of tables.values()) {
+      jobs.push(
+        get(beaUrl(table, frequency, now, beaKey)).then((body) => {
+          const data = parseBea(body);
+          if (!data) throw new Error(`BEA did not answer with ${table}`);
+          for (const event of bea) {
+            if (beaRule(event)?.table === table) record(event, beaActual(event, data));
+          }
+        }),
+      );
+    }
+  }
+
+  // Each agency on its own: one that will not answer costs only its releases.
+  // The reason is logged without the URL, which carries a key.
+  for (const result of await Promise.allSettled(jobs)) {
+    if (result.status === "rejected") {
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      console.warn("market-rates: an actual could not be read:", reason.replace(/\?.*$/, ""));
+    }
+  }
+
+  return found;
+}
+
 async function withActuals(calendar: Calendar | undefined): Promise<Calendar | undefined> {
   if (!calendar) return calendar;
 
@@ -1214,16 +1297,8 @@ async function withActuals(calendar: Calendar | undefined): Promise<Calendar | u
   const pending = pendingReleases(calendar.events, actuals, now);
   if (pending.length > 0 && due(actualsTriedAt, ACTUALS_SECONDS, now.getTime())) {
     actualsTriedAt = now.toISOString();
-    try {
-      const data = parseBls(await postJson(BLS_API, blsRequest(pending, now)));
-      if (!data) throw new Error("BLS did not answer with data");
-      for (const event of pending) {
-        const actual = blsActual(event, data);
-        if (actual) actuals[releaseKey(event)] = actual;
-      }
-    } catch (error) {
-      console.warn("market-rates: no actuals from BLS this time:", error);
-    }
+    const found = await readActuals(pending, now);
+    actuals = { ...actuals, ...found };
   }
 
   // Only the week's releases are worth remembering.

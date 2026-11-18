@@ -84,9 +84,10 @@ export function GoldCalendar({ calendar }: { calendar: MarketCalendar | undefine
         forecast (more jobs, hotter inflation, faster growth or spending) usually weighs on gold,
         and <strong className="font-semibold">weaker</strong> usually lifts it — for unemployment
         and jobless claims, a higher figure is the weaker one. That is the market&rsquo;s usual
-        first reaction, not a forecast or advice. Actual figures for jobs, unemployment, CPI and PPI
-        come from the US Bureau of Labor Statistics shortly after release; a dash means we have no
-        actual for that release.
+        first reaction, not a forecast or advice. Actual figures come from the agencies that publish
+        them — jobs, CPI and PPI from the Bureau of Labor Statistics, retail sales from the Census
+        Bureau, GDP and PCE from the Bureau of Economic Analysis — shortly after release; a dash
+        means we have no actual for that release.
       </p>
     </section>
   );

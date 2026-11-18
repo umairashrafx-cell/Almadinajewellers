@@ -1,10 +1,17 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  actualSource,
+  beaActual,
+  beaUrl,
   blsActual,
   blsRequest,
   blsRule,
+  censusActual,
+  censusUrl,
+  parseBea,
   parseBls,
+  parseCensus,
   pendingReleases,
   referenceMonth,
   releaseKey,
@@ -164,12 +171,12 @@ describe("pendingReleases", () => {
   const now = new Date("2026-11-13T14:00:00Z");
   const events = [
     release("CPI m/m"),
-    release("Retail Sales m/m"),
+    release("Unemployment Claims"),
     release("PPI m/m", "2026-11-14T08:30:00-05:00"),
     release("Core CPI m/m", "2026-11-01T08:30:00-05:00"),
   ];
 
-  test("asks only for released BLS figures from the last few days that are still missing", () => {
+  test("asks only for released figures we read, from the last few days, still missing", () => {
     expect(pendingReleases(events, {}, now).map((e) => e.title)).toEqual(["CPI m/m"]);
     expect(pendingReleases(events, { [releaseKey(events[0]!)]: "0.4%" }, now)).toEqual([]);
   });
@@ -180,5 +187,121 @@ describe("pendingReleases", () => {
       startyear: "2025",
       endyear: "2026",
     });
+  });
+});
+
+describe("retail sales from Census", () => {
+  // Census's answer for October 2026, as it came back on 18 November.
+  const october = parseCensus([
+    ["cell_value", "category_code", "time_slot_id", "time", "data_type_code", "seasonally_adj"],
+    ["0.2", "44X72", "0", "2026-10", "MPCSM", "yes"],
+    ["0.6", "44Y72", "0", "2026-10", "MPCSM", "yes"],
+    ["0.5", "44W72", "0", "2026-10", "MPCSM", "yes"],
+  ])!;
+  const tuesday = "2026-11-17T08:30:00-05:00";
+
+  test("reads the headline and the ex-autos figure Census publishes", () => {
+    expect(censusActual(release("Retail Sales m/m", tuesday), october)).toBe("0.2%");
+    expect(censusActual(release("Core Retail Sales m/m", tuesday), october)).toBe("0.6%");
+  });
+
+  test("gives nothing for a month Census has not published", () => {
+    expect(
+      censusActual(release("Retail Sales m/m", "2026-12-15T08:30:00-05:00"), october),
+    ).toBeNull();
+  });
+
+  test("refuses anything that is not its table", () => {
+    expect(parseCensus(null)).toBeNull();
+    expect(parseCensus({ error: "invalid key" })).toBeNull();
+    expect(parseCensus([["something", "else"]])).toBeNull();
+  });
+
+  test("asks for one month, seasonally adjusted, as a per cent change", () => {
+    const url = new URL(censusUrl(2026, 10, "KEY"));
+    expect(url.searchParams.get("time")).toBe("2026-10");
+    expect(url.searchParams.get("data_type_code")).toBe("MPCSM");
+    expect(url.searchParams.get("seasonally_adj")).toBe("yes");
+  });
+});
+
+describe("GDP and PCE from BEA", () => {
+  function table(note: string, line: string, rows: Array<[string, string]>) {
+    return parseBea({
+      BEAAPI: {
+        Results: {
+          Notes: [{ NoteRef: "T10101", NoteText: note }],
+          Data: rows.map(([TimePeriod, DataValue]) => ({
+            LineNumber: line,
+            TimePeriod,
+            DataValue,
+          })),
+        },
+      },
+    });
+  }
+
+  const gdp = table(
+    "Table 1.1.1. Percent Change From Preceding Period in Real Gross Domestic Product [Percent] - LastRevised: October 29, 2026",
+    "1",
+    [
+      ["2026Q3", "3.4"],
+      ["2026Q1", "2.5"],
+      ["2026Q2", "2.2"],
+    ],
+  )!;
+
+  test("reads the day the table was last revised", () => {
+    expect(gdp.revised).toBe("2026-10-29");
+  });
+
+  test("takes the latest quarter on the day the table was revised", () => {
+    expect(beaActual(release("Advance GDP q/q", "2026-10-29T08:30:00-04:00"), gdp)).toBe("3.4%");
+  });
+
+  test("gives nothing until the table has been revised for this release", () => {
+    // The second estimate lands on 25 November; until BEA revises the table
+    // that day, its latest figure is the advance estimate and must not be
+    // shown as the second one.
+    expect(beaActual(release("Prelim GDP q/q", "2026-11-25T08:30:00-05:00"), gdp)).toBeNull();
+  });
+
+  test("reads core PCE from its own line", () => {
+    const pce = parseBea({
+      BEAAPI: {
+        Results: {
+          Notes: [{ NoteText: "Table 2.8.7. ... - LastRevised: November 25, 2026" }],
+          Data: [
+            { LineNumber: "1", TimePeriod: "2026M10", DataValue: "0.2" },
+            { LineNumber: "25", TimePeriod: "2026M09", DataValue: "0.3" },
+            { LineNumber: "25", TimePeriod: "2026M10", DataValue: "-0.0" },
+          ],
+        },
+      },
+    })!;
+    const day = "2026-11-25T08:30:00-05:00";
+    expect(beaActual(release("Core PCE Price Index m/m", day), pce)).toBe("0.0%");
+    expect(beaActual(release("PCE Price Index m/m", day), pce)).toBe("0.2%");
+  });
+
+  test("refuses a table with no revision date", () => {
+    expect(parseBea({ BEAAPI: { Results: { Data: [] } } })).toBeNull();
+    expect(parseBea({ BEAAPI: { Results: { Error: { APIErrorCode: "3" } } } })).toBeNull();
+  });
+
+  test("asks for this year and last", () => {
+    const url = new URL(beaUrl("T10101", "Q", new Date("2026-11-18T00:00:00Z"), "KEY"));
+    expect(url.searchParams.get("Year")).toBe("2025,2026");
+    expect(url.searchParams.get("TableName")).toBe("T10101");
+  });
+});
+
+describe("actualSource", () => {
+  test("names the agency for each release we read", () => {
+    expect(actualSource(release("CPI m/m"))).toBe("bls");
+    expect(actualSource(release("Retail Sales m/m"))).toBe("census");
+    expect(actualSource(release("Final GDP q/q"))).toBe("bea");
+    expect(actualSource(release("Unemployment Claims"))).toBeNull();
+    expect(actualSource(release("ISM Manufacturing PMI"))).toBeNull();
   });
 });
