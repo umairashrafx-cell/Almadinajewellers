@@ -7,6 +7,8 @@ import {
   dayMove,
   dollarIndexFrom,
   due,
+  effrFrom,
+  fedFundsContracts,
   swissquoteMid,
 } from "./index.ts";
 
@@ -220,5 +222,44 @@ describe("the dollar index from six rates", () => {
     expect(dollarIndexFrom(five)).toBeNull();
     expect(dollarIndexFrom({ ...rates, "USD/CHF": 0 })).toBeNull();
     expect(dollarIndexFrom({ ...rates, "EUR/USD": Number.NaN })).toBeNull();
+  });
+});
+
+describe("the Fed block", () => {
+  // The New York Fed's answer, as it came back on 18 November 2026.
+  const answer = {
+    refRates: [
+      {
+        effectiveDate: "2026-11-17",
+        type: "EFFR",
+        percentRate: 3.88,
+        targetRateFrom: 3.75,
+        targetRateTo: 4.0,
+        volumeInBillions: 95,
+      },
+    ],
+  };
+
+  test("reads the target range and effective rate from the New York Fed", () => {
+    expect(effrFrom(answer)).toEqual({ from: 3.75, to: 4.0, effr: 3.88, day: "2026-11-17" });
+  });
+
+  test("refuses an answer that is not the shape it publishes", () => {
+    expect(effrFrom(null)).toBeNull();
+    expect(effrFrom({ refRates: [] })).toBeNull();
+    expect(effrFrom({ refRates: [{ ...answer.refRates[0], targetRateTo: "4.00" }] })).toBeNull();
+    expect(effrFrom({ refRates: [{ ...answer.refRates[0], targetRateTo: 3.5 }] })).toBeNull();
+    expect(
+      effrFrom({ refRates: [{ ...answer.refRates[0], effectiveDate: "yesterday" }] }),
+    ).toBeNull();
+  });
+
+  test("names the next four Fed Funds contracts as Yahoo spells them", () => {
+    expect(fedFundsContracts(new Date("2026-11-18T12:00:00Z"))).toEqual([
+      { month: "2026-11", symbol: "ZQX26.CBT" },
+      { month: "2026-12", symbol: "ZQZ26.CBT" },
+      { month: "2027-01", symbol: "ZQF27.CBT" },
+      { month: "2027-02", symbol: "ZQG27.CBT" },
+    ]);
   });
 });

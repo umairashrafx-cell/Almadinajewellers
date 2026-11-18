@@ -10,6 +10,8 @@ import type { RateSnapshot } from "@/lib/rates";
 import { cn } from "@/lib/utils";
 
 import { Kept } from "../components/Kept";
+import { FedOutlook } from "../components/FedOutlook";
+import { GoldCalendar } from "../components/GoldCalendar";
 import { useApprox } from "../components/Money";
 import { MarketsBoard } from "../components/MarketsBoard";
 import { TradingViewTickers } from "../components/TradingViewTickers";
@@ -184,6 +186,15 @@ function International() {
         those figures and a reading is no use before the figures.
       */}
       {markets.data ? <RateDrivers board={markets.data.board} /> : null}
+
+      {/*
+        The Fed, then the week's releases: the two scheduled things that move
+        gold most. The meeting date needs no server, so the card is drawn
+        even before the first snapshot lands.
+      */}
+      <FedOutlook fed={markets.data?.fed} />
+
+      <GoldCalendar calendar={markets.data?.calendar} />
     </div>
   );
 }

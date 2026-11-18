@@ -101,19 +101,17 @@ describe("formatChange", () => {
 /**
  * The economic calendar.
  *
- * Everything below is anchored to a local time built with the Date
- * constructor rather than to a fixed instant, so the suite means the same thing
- * on a machine in Karachi as on one in a CI container running UTC. That is not
- * fussiness: the whole question eventsToday answers is which day a release
- * falls on where the phone is standing, and a test pinned to UTC would pass
- * while proving nothing about the only timezone the app runs in.
+ * Everything below is anchored to Pakistan wall-clock time, UTC+5 all year,
+ * which is the clock the International tab states every release in whatever
+ * the phone is set to. The instants are fixed, so the suite means the same
+ * thing on a machine in Karachi as on one in a CI container running UTC.
  */
-const NOON = new Date(2026, 10, 6, 12, 0, 0); // local midday, Friday 6 November
+const NOON = new Date(Date.UTC(2026, 10, 6, 12 - 5, 0, 0)); // midday in Pakistan, Friday 6 November
 
-/** A release at a local wall-clock time on the day NOON is on, unless a day is
- *  given. The ISO string is what the server would have sent. */
+/** A release at a Pakistan wall-clock time on the day NOON is on, unless a day
+ *  is given. The ISO string is what the server would have sent. */
 function at(hour: number, minute = 0, day = 6): string {
-  return new Date(2026, 10, day, hour, minute, 0).toISOString();
+  return new Date(Date.UTC(2026, 10, day, hour - 5, minute, 0)).toISOString();
 }
 
 function event(currency: string, when: string, extra: Partial<MarketEvent> = {}): MarketEvent {
@@ -177,16 +175,16 @@ describe("eventsToday", () => {
   test("orders them by when they are due, not by how they arrived", () => {
     const held = calendar([event("USD", at(20, 0)), event("USD", at(9, 15))]);
     expect(eventsToday("gold", held, NOON)?.map((e) => eventTime(e.at))).toEqual([
-      "09:15",
-      "20:00",
+      "9:15 AM",
+      "8:00 PM",
     ]);
   });
 
-  test("puts a release on the day the phone is having, to the minute", () => {
+  test("puts a release on the day Pakistan is having, to the minute", () => {
     // A release at 23:59 tonight is today's business; one at 00:00 tomorrow is
     // not. In Pakistan an American evening release and a Pakistani morning one
     // can share a UTC date and still belong to different days here, which is
-    // why the comparison is on local days rather than on the ISO string.
+    // why the comparison is on Pakistan days rather than on the ISO string.
     const held = calendar([
       event("USD", at(23, 59)),
       event("USD", at(0, 0, 7)),
@@ -230,9 +228,19 @@ describe("calendarCurrencies", () => {
 });
 
 describe("eventTime", () => {
-  test("states a release time on the phone's own clock, zero-padded", () => {
-    expect(eventTime(at(18, 30))).toBe("18:30");
-    expect(eventTime(at(9, 5))).toBe("09:05");
+  test("states a release time in Pakistan, on a twelve-hour clock", () => {
+    expect(eventTime(at(18, 30))).toBe("6:30 PM");
+    expect(eventTime(at(9, 5))).toBe("9:05 AM");
+    expect(eventTime(at(0, 0))).toBe("12:00 AM");
+    expect(eventTime(at(12, 15))).toBe("12:15 PM");
+  });
+
+  test("converts from the feed's own New York offset", () => {
+    // Half past eight in New York in November is half past six in the evening
+    // in Pakistan — the American jobs figure, as the bazaar knows it.
+    expect(eventTime("2026-11-06T08:30:00-05:00")).toBe("6:30 PM");
+    // And in summer, with New York on daylight time, half past five.
+    expect(eventTime("2026-07-02T08:30:00-04:00")).toBe("5:30 PM");
   });
 
   test("returns nothing it would have to invent", () => {
