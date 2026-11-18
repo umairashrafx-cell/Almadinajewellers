@@ -324,6 +324,38 @@
 }
 
 /*
+ * The moment a price on the international board moves.
+ *
+ * A wash of the move's own colour behind the figure, gone within a second, so
+ * that a price can tick without the row ever sitting tinted. It is drawn in
+ * currentColor -- the green of a rise or the red of a fall, which the element
+ * carries -- so the app's dark theme brings its own lifted green and red with
+ * it and nothing here needs saying twice. Without motion, the arrow beside the
+ * figure still says which way it went.
+ *
+ * Lives here rather than in the app's stylesheet because both boards flash
+ * now: the app's International tab and the website's rate page.
+ */
+@utility tick-flash {
+  animation: tick-flash 900ms ease-out;
+}
+
+@keyframes tick-flash {
+  from {
+    background-color: color-mix(in oklab, currentColor 22%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick-flash {
+    animation: none;
+  }
+}
+
+/*
  * Vertical rhythm. Two sizes, defined once.
  *
  * Section spacing had drifted across four different values as pages were added

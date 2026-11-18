@@ -5,8 +5,8 @@ import type { FedOdds, FedSnapshot, FomcMeeting } from "@/lib/fed";
 import { dayName, pktDay, pktTime, timeUntil } from "@/lib/pkt";
 import { cn } from "@/lib/utils";
 
-import { useNow } from "../lib/now";
-import { InfoNote } from "./InfoNote";
+import { useNow } from "@/lib/now";
+import { InfoNote } from "@/components/ui/InfoNote";
 
 /**
  * The American interest rate, and what the market expects the Fed to do with

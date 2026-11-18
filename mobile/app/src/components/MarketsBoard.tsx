@@ -4,17 +4,7 @@ import { Bitcoin, ChevronDown, DollarSign, Droplet, TrendingDown, TrendingUp } f
 
 import { MetalIcon } from "@/components/rate/MetalIcon";
 
-import {
-  MARKET_ROWS,
-  calendarCurrencies,
-  convertsToTola,
-  eventTime,
-  eventsToday,
-  formatQuote,
-  perTolaPKR,
-  rangePosition,
-  rangeWindowLabel,
-} from "@/lib/markets";
+import { eventTime, rangePosition } from "@/lib/markets";
 import type {
   MarketBoard as Board,
   MarketEvent,
@@ -22,15 +12,29 @@ import type {
   MarketRange,
   MarketSnapshot,
 } from "@/lib/markets";
-import { formatPKR } from "@/lib/site";
+import {
+  boardRows,
+  changeIn,
+  interbank,
+  movedLabel,
+  priceIn,
+  provenance,
+  rangeLabel,
+  scope,
+  tapHint,
+  taken,
+  unitLabel,
+  withLiveBitcoin,
+} from "@/lib/markets-board";
+import type { PriceFormatter, Unit } from "@/lib/markets-board";
+import { useTicks } from "@/lib/ticks";
+import type { Tick } from "@/lib/ticks";
+import { BOARD_TICKERS, minutesBehind, rowCaption } from "@/lib/tradingview";
 import { cn } from "@/lib/utils";
 
-import { InfoNote } from "./InfoNote";
+import { InfoNote } from "@/components/ui/InfoNote";
 import { useLiveBitcoin } from "../lib/btc-stream";
 import type { Cached } from "../lib/cache";
-import { useTicks } from "../lib/ticks";
-import { BOARD_TICKERS, minutesBehind, rowCaption } from "../lib/tradingview";
-import type { Tick } from "../lib/ticks";
 
 /**
  * The world's prices, under the shop's own.
@@ -52,65 +56,6 @@ import type { Tick } from "../lib/ticks";
  * the face of the board, because five rows of three figures each is a trading
  * terminal and this is a jeweller's rate screen.
  */
-/**
- * Which units the two metals are shown in.
- *
- * Only the metals move. A tola of the dollar index is not a thing, and nobody
- * weighs a barrel of crude or a bitcoin in one, so those three stay in their
- * own units whichever way this is set -- which is why the control says
- * "metals in" rather than pretending to convert the whole board.
- */
-type Unit = "usd" | "tola";
-
-/** What one dollar buys, when the board is carrying a usable figure for it. */
-function interbank(board: Board): number | null {
-  const quote = board.usdPkr?.usd;
-  return typeof quote === "number" && Number.isFinite(quote) && quote > 0 ? quote : null;
-}
-
-/**
- * A price formatter that knows which units the board is in.
- *
- * Built once and handed down, so the row and the range bar do not each have
- * to decide what to do about tolas -- they ask for a figure formatted and get
- * one. Anything it cannot honestly convert comes back in dollars rather than
- * coming back wrong: a row that is not a metal, a board with no dollar rate,
- * and a figure perTolaPKR refuses all take the same path out.
- */
-function priceIn(unit: Unit, usdPkr: number | null) {
-  return (key: keyof Board, value: number): string => {
-    if (unit === "usd" || usdPkr === null || !convertsToTola(key)) return formatQuote(key, value);
-    const converted = perTolaPKR(value, usdPkr);
-    if (converted === null) return formatQuote(key, value);
-    // To the rupee. The paisa on a figure this size is noise, and the shop's
-    // own board next door is quoted whole.
-    return formatPKR(Math.round(converted));
-  };
-}
-
-/**
- * The same, for a move: sign first, magnitude formatted like a price.
- *
- * Kept here rather than reusing formatChange because the sign has to sit
- * outside whichever currency the magnitude ends up in. In dollars it produces
- * exactly what formatChange always did.
- */
-function changeIn(price: (key: keyof Board, value: number) => string) {
-  return (key: keyof Board, value: number): string => {
-    const sign = value > 0 ? "+" : value < 0 ? "-" : "";
-    return `${sign}${price(key, Math.abs(value))}`;
-  };
-}
-
-/** What to call a metal's unit once it is being quoted by weight. */
-function unitLabel(key: keyof Board, unit: Unit, usdPkr: number | null, fallback: string): string {
-  if (unit === "usd" || usdPkr === null || !convertsToTola(key)) return fallback;
-  // 24K said out loud on the gold only. Spot gold is pure metal and the shop's
-  // own headline rate is 22K, so the two figures are not the same thing and
-  // the board must not let them be read as though they were.
-  return key === "gold" ? "per tola, 24K" : "per tola";
-}
-
 export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   const live = useLiveBitcoin();
 
@@ -133,50 +78,16 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   const [unit, setUnit] = useState<Unit>("usd");
 
   /*
-   * The streamed price wins over the fetched one whenever the socket is up.
-   * It is the same instrument quoted seconds ago rather than minutes, and if
-   * the socket never opens the server's figure is still there underneath.
-   *
-   * The range is carried across by hand rather than by spreading the fetched
-   * quote underneath: the stream sends a price and a move and nothing else, and
-   * spreading would quietly pair a live price with whatever else was in the old
-   * object. So the range comes over, named, and nothing else does. It stays
-   * CoinGecko's twenty-four hours while the price is the exchange's latest
-   * tick, which is why a bitcoin that has just made a new high shows its two
-   * numbers without a marker between them.
+   * The streamed bitcoin laid over the board the server fetched, and then the
+   * rows worked out from it. Both are shared with the website's own board --
+   * see lib/markets-board.ts, which carries the reasoning for each.
    */
-  const fetched = markets.data?.board ?? {};
-  const board: Board = live
-    ? {
-        ...fetched,
-        bitcoin: {
-          ...live,
-          // Spread rather than assigned, because the key has to be absent when
-          // there is no range to carry over, not present and undefined.
-          ...(fetched.bitcoin?.range ? { range: fetched.bitcoin.range } : {}),
-          at: new Date().toISOString(),
-        },
-      }
-    : fetched;
-
-  /*
-   * Each row with its own two answers worked out once: the range it traded in,
-   * and the releases due today that move it. `events` being null rather than
-   * empty is the honest case — see eventsToday — and it travels as null all the
-   * way to the panel, which then says nothing instead of saying "nothing".
-   */
-  /*
-   * Gold and silver's releases are not repeated here: they have a section of
-   * their own under the board (GoldCalendar), laid out to be read on a phone.
-   * The dollar index keeps its list, because its basket's releases are not
-   * the metals' and appear nowhere else.
-   */
-  const calendar = markets.data?.calendar;
-  const rows = MARKET_ROWS.flatMap((row) => {
-    const quote = board[row.key];
-    const events = row.key === "dollarIndex" ? eventsToday(row.key, calendar) : null;
-    return quote ? [{ ...row, quote, events }] : [];
-  });
+  const board: Board = withLiveBitcoin(
+    markets.data?.board ?? {},
+    live,
+    new Date().toISOString(),
+  );
+  const rows = boardRows(board, markets.data?.calendar);
 
   /*
    * No dollar rate, no choice to offer. An older deployment of the edge
@@ -272,16 +183,6 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
   );
 }
 
-/** What the footnote offers, said only about what the board actually has. An
- *  older deployment of the function sends ranges and no calendar, and this
- *  screen has to read correctly against it. */
-function tapHint(anyRange: boolean, anyEvents: boolean): string | null {
-  if (anyRange && anyEvents) return "Tap an instrument for its range and the day's releases.";
-  if (anyRange) return "Tap an instrument for its high and low.";
-  if (anyEvents) return "Tap an instrument for the day's releases.";
-  return null;
-}
-
 /**
  * Dollars an ounce, or rupees a tola.
  *
@@ -360,9 +261,9 @@ function Row({
   label: string;
   unit: string;
   /** Formats a figure in whichever units the board is currently showing. */
-  price: (key: keyof Board, value: number) => string;
+  price: PriceFormatter;
   /** The same, signed, for a move. */
-  change: (key: keyof Board, value: number) => string;
+  change: PriceFormatter;
   quote: MarketQuote;
   events: MarketEvent[] | null;
   /** Which way the printed figure last moved, and how many times it has. */
@@ -381,20 +282,8 @@ function Row({
    * practice, but a day when gold has releases and no range is a real day. */
   const expandable = Boolean(range) || events !== null;
 
-  /*
-   * The cash figure leads and the percentage follows it in brackets, because
-   * "down four hundred dollars" is the sentence somebody standing at a counter
-   * actually says. Where a source gives a percentage but no cash figure the
-   * percentage stands alone exactly as it did before, rather than sitting in
-   * brackets after nothing.
-   */
-  const percent = typeof move === "number" ? `${move > 0 ? "+" : ""}${move.toFixed(2)}%` : null;
-  const moved =
-    percent === null
-      ? null
-      : typeof quote.change === "number"
-        ? `${change(rowKey, quote.change)} (${percent})`
-        : percent;
+  /* The day's move, cash first and the percentage after it. See movedLabel. */
+  const moved = movedLabel(rowKey, quote, change);
 
   const face = (
     <>
@@ -578,8 +467,8 @@ function RangeBar({
   /** The live price in dollars, which is what places the marker. */
   usd: number;
   range: MarketRange;
-  price: (key: keyof Board, value: number) => string;
-  change: (key: keyof Board, value: number) => string;
+  price: PriceFormatter;
+  change: PriceFormatter;
 }) {
   /*
    * Placed on the dollar figures, always.
@@ -594,7 +483,7 @@ function RangeBar({
   return (
     <div className="border-l-2 border-rate-gold/50 pl-3">
       <p className="text-[10px] font-semibold tracking-[0.2em] text-rate-gold-deep uppercase">
-        {rangeWindowLabel(range.window)}
+        {rangeLabel(range.window)}
       </p>
 
       <div className="mt-2 flex items-center gap-3">
@@ -708,52 +597,4 @@ function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent
       </InfoNote>
     </div>
   );
-}
-
-/**
- * Whose releases these are, said plainly.
- *
- * Gold is watching one country's data and the dollar index is watching the six
- * currencies it is measured against, and a reader is entitled to know which of
- * those they are looking at before drawing a conclusion from a short list.
- */
-function scope(rowKey: keyof Board): string {
-  const currencies = calendarCurrencies(rowKey) ?? [];
-  if (currencies.length === 0) return "";
-  if (currencies.length === 1) {
-    return `High and medium impact ${currencies[0]} releases.`;
-  }
-
-  return `High and medium impact releases for the index basket — ${currencies.join(", ")}.`;
-}
-
-/**
- * Where the two figures came from, in one sentence.
- *
- * Always said, never implied. A range measured over a half-finished trading
- * session is not a day's range, and a futures range under a spot price is not
- * that price's range — both are worth showing and neither is worth leaving
- * unlabelled.
- */
-function provenance(range: MarketRange): string {
-  if (range.instrument) {
-    return `${range.instrument}. The price above is spot, which can sit outside this range.`;
-  }
-
-  return range.window === "24h"
-    ? "A rolling twenty-four hours."
-    : "The current trading session, not a full day.";
-}
-
-/** "11:47am", or the date too once it is no longer today. */
-function taken(iso: string): string {
-  const at = new Date(iso);
-  if (Number.isNaN(at.getTime())) return "recently";
-
-  const sameDay = at.toDateString() === new Date().toDateString();
-  return at.toLocaleString("en-GB", {
-    hour: "numeric",
-    minute: "2-digit",
-    ...(sameDay ? {} : { day: "numeric", month: "short" }),
-  });
 }

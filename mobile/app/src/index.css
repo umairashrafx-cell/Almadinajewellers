@@ -123,35 +123,6 @@ body,
 }
 
 /*
- * The moment a price on the international board moves.
- *
- * A wash of the move's own colour behind the figure, gone within a second, so
- * that bitcoin can tick every second without the row ever sitting tinted. It
- * is drawn in currentColor -- the green of a rise or the red of a fall, which
- * the element carries -- so the dark theme's lifted green and red come with
- * it and nothing here needs saying twice. Without motion, the arrow beside
- * the figure still says which way it went.
- */
-@utility tick-flash {
-  animation: tick-flash 900ms ease-out;
-}
-
-@keyframes tick-flash {
-  from {
-    background-color: color-mix(in oklab, currentColor 22%, transparent);
-  }
-  to {
-    background-color: transparent;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tick-flash {
-    animation: none;
-  }
-}
-
-/*
  * The thumb of a switch on the settings screen.
  *
  * Its own colour rather than bg-white, because in the dark theme below

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { TICKERS_SCRIPT, tickersConfig } from "../lib/tradingview";
+import { TICKERS_SCRIPT, tickersConfig } from "@/lib/tradingview";
 
 /**
  * The crown of the International tab: TradingView's live gold, set large.
