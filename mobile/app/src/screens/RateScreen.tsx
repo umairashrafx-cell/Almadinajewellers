@@ -181,13 +181,13 @@ function International() {
       <MarketsBoard markets={markets} />
 
       {/*
-        The Fed, then the week's releases: the two scheduled things that move
-        gold most. The meeting date needs no server, so the card is drawn
-        even before the first snapshot lands.
+        The week's releases, then the Fed: the two scheduled things that move
+        gold most, in the order the shop asked for. The meeting date needs no
+        server, so the Fed card is drawn even before the first snapshot lands.
       */}
-      <FedOutlook fed={markets.data?.fed} />
-
       <GoldCalendar calendar={markets.data?.calendar} />
+
+      <FedOutlook fed={markets.data?.fed} />
     </div>
   );
 }
