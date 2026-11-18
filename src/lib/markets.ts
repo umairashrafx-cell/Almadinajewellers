@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import type { FedSnapshot } from "@/lib/fed";
+import { pktDay, pktTime } from "@/lib/pkt";
 import { TOLA_IN_GRAMS } from "@/lib/rates";
 
 /**
@@ -116,9 +118,10 @@ export type MarketBoard = {
  *
  * `currency` is the feed's own code — "USD", "EUR" — and is what decides which
  * instrument a release belongs to. `at` carries the feed's offset, US Eastern,
- * so every reading of it here goes through a Date and comes out in the phone's
- * own time: a figure released at half past eight in New York is half past six
- * in the evening in Mandi Bahauddin, and that is the time worth printing.
+ * so every reading of it here goes through a Date and comes out in Pakistan
+ * time: a figure released at half past eight in New York is half past six in
+ * the evening in Mandi Bahauddin, and that is the time worth printing, whatever
+ * the phone reading it is set to.
  */
 export type MarketEvent = {
   title: string;
@@ -129,6 +132,11 @@ export type MarketEvent = {
   forecast?: string;
   /** What it was last time, where the feed gives it. */
   previous?: string;
+  /**
+   * What it came in at, once released — only where the source publishes it.
+   * Never filled in by hand: a release with no published actual has none.
+   */
+  actual?: string;
 };
 
 /**
@@ -171,6 +179,9 @@ export type MarketSnapshot = {
   calendar?: MarketCalendar;
   /** The day's currency crosses against the dollar, where the server has them. */
   fx?: MarketFx;
+  /** The Fed's rate and the futures behind the meeting odds, where the server
+   *  has them. Absent from a deployment that predates them. */
+  fed?: FedSnapshot;
 };
 
 /** How the five read on a board, in the order they belong in. */
@@ -311,15 +322,6 @@ export function calendarCurrencies(key: keyof MarketBoard): readonly string[] | 
   return (CALENDAR_CURRENCIES as Partial<Record<keyof MarketBoard, readonly string[]>>)[key];
 }
 
-/** A date as the phone's own calendar reads it, YYYY-MM-DD. Built by hand
- *  rather than through a locale, because this is compared against the feed's
- *  dates and must come out in that spelling every time. */
-function localDay(at: Date): string {
-  const month = String(at.getMonth() + 1).padStart(2, "0");
-  const day = String(at.getDate()).padStart(2, "0");
-  return `${at.getFullYear()}-${month}-${day}`;
-}
-
 /**
  * Today's releases for one instrument, in the order they are due.
  *
@@ -330,10 +332,10 @@ function localDay(at: Date): string {
  * genuinely covered and genuinely has nothing on it — a Saturday, most often —
  * which a screen can state as a fact.
  *
- * "Today" is the phone's own day, and each release is placed on the day it
- * happens where the phone is standing. An Asian figure published at a quarter
- * to nine at night in New York falls on the following morning in Pakistan, and
- * showing it under yesterday would be showing it on the wrong day.
+ * "Today" is the day in Pakistan, and each release is placed on the day it
+ * happens there. An Asian figure published at a quarter to nine at night in New
+ * York falls on the following morning in Pakistan, and showing it under
+ * yesterday would be showing it on the wrong day.
  */
 export function eventsToday(
   key: keyof MarketBoard,
@@ -344,24 +346,21 @@ export function eventsToday(
   if (!currencies) return null;
   if (!calendar?.from || !calendar.to) return null;
 
-  const today = localDay(now);
+  const today = pktDay(now);
   if (today < calendar.from || today > calendar.to) return null;
 
   return calendar.events
     .filter((event) => currencies.includes(event.currency))
     .filter((event) => {
       const at = new Date(event.at);
-      return !Number.isNaN(at.getTime()) && localDay(at) === today;
+      return !Number.isNaN(at.getTime()) && pktDay(at) === today;
     })
     .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
 }
 
-/** A release time in the phone's own clock — "18:30" — matching how the rest
- *  of the board states a time. */
+/** A release time in Pakistan, on a twelve-hour clock — "6:30 PM". */
 export function eventTime(at: string): string {
-  const when = new Date(at);
-  if (Number.isNaN(when.getTime())) return "";
-  return when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return pktTime(at);
 }
 
 export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
@@ -388,11 +387,15 @@ export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
       ? snapshot.fx
       : undefined;
 
+  // And the Fed block, which is two independent halves: either may be missing.
+  const fed = snapshot.fed && Array.isArray(snapshot.fed.futures) ? snapshot.fed : undefined;
+
   return {
     board: snapshot.board,
     fetchedAt: snapshot.fetchedAt ?? new Date().toISOString(),
     ...(calendar ? { calendar } : {}),
     ...(fx ? { fx } : {}),
+    ...(fed ? { fed } : {}),
   };
 }
 

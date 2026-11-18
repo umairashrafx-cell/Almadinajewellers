@@ -20,13 +20,23 @@
  * Alongside the prices it carries the week's high and medium impact releases
  * from the metals calendar, on its own much slower clock — see
  * CALENDAR_SECONDS. That half can fail without the prices noticing, and does
- * not get to make the board late.
+ * not get to make the board late. The Fed's rate and the futures behind the
+ * next meeting's odds ride along the same way, on FED_SECONDS.
  *
  * Deployment:
  *   supabase functions deploy market-rates
  * No secrets. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected by the
  * platform, and every upstream here is keyless.
  */
+
+import {
+  BLS_API,
+  blsActual,
+  blsRequest,
+  parseBls,
+  pendingReleases,
+  releaseKey,
+} from "./actuals.ts";
 
 /**
  * How long a fetched board stays good.
@@ -91,6 +101,30 @@ const CALENDAR_SECONDS = 900;
  * allowance here to spend carelessly.
  */
 const CALENDAR_FEED = "https://nfs.faireconomy.media/mm_calendar_thisweek.json";
+
+/**
+ * How often the Fed block is refreshed, and the backoff after a failure.
+ *
+ * Ten minutes. The target range changes eight times a year and the effective
+ * rate once a morning; the futures behind the meeting odds move through the
+ * day, but nobody is trading on this screen and odds ten minutes old read the
+ * same as fresh ones.
+ */
+const FED_SECONDS = 600;
+
+/**
+ * The New York Fed's own publication of the effective federal funds rate,
+ * which carries the FOMC's target range beside it. Public, keyless, and the
+ * primary source for both figures.
+ */
+const NYFED_EFFR = "https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json";
+
+/** CME's month codes, January to December. */
+const MONTH_CODES = "FGHJKMNQUVXZ";
+
+/** How many monthly Fed Funds contracts to read, from this month on. Enough to
+ *  cover the month before, of and after any meeting up to two months out. */
+const FED_MONTHS = 4;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -979,6 +1013,8 @@ type CalendarEvent = {
   impact: "High" | "Medium";
   forecast?: string;
   previous?: string;
+  /** What it came in at, carried only where the feed publishes it. */
+  actual?: string;
 };
 
 /**
@@ -1000,6 +1036,11 @@ type Calendar = {
   to?: string;
   fetchedAt?: string;
   triedAt: string;
+  /** Actual figures read from BLS, by releaseKey. Kept across fetches of the
+   *  feed, which never carries them itself. */
+  actuals?: Record<string, string>;
+  /** When BLS was last asked. */
+  actualsTriedAt?: string;
 };
 
 /**
@@ -1038,6 +1079,7 @@ type FeedRow = {
   impact?: unknown;
   forecast?: unknown;
   previous?: unknown;
+  actual?: unknown;
 };
 
 async function fetchCalendar(): Promise<Calendar> {
@@ -1071,6 +1113,9 @@ async function fetchCalendar(): Promise<Calendar> {
     // string on a screen is a gap where a figure should be. Absent instead.
     const forecast = typeof row.forecast === "string" ? row.forecast.trim() : "";
     const previous = typeof row.previous === "string" ? row.previous.trim() : "";
+    // The metals feed does not publish actual figures today. If it ever does,
+    // they are carried through as they are; nothing here makes one up.
+    const actual = typeof row.actual === "string" ? row.actual.trim() : "";
 
     events.push({
       title,
@@ -1079,6 +1124,7 @@ async function fetchCalendar(): Promise<Calendar> {
       impact: row.impact,
       ...(forecast ? { forecast } : {}),
       ...(previous ? { previous } : {}),
+      ...(actual ? { actual } : {}),
     });
   }
 
@@ -1101,7 +1147,13 @@ async function currentCalendar(previous: Calendar | undefined): Promise<Calendar
   if (previous && since < CALENDAR_SECONDS) return previous;
 
   try {
-    return await fetchCalendar();
+    // The feed knows nothing of actuals, so the ones already read are carried
+    // over and laid back on by withActuals.
+    return {
+      ...(await fetchCalendar()),
+      ...(previous?.actuals ? { actuals: previous.actuals } : {}),
+      ...(previous?.actualsTriedAt ? { actualsTriedAt: previous.actualsTriedAt } : {}),
+    };
   } catch (error) {
     console.warn("market-rates: no calendar this time:", error);
 
@@ -1117,6 +1169,76 @@ async function currentCalendar(previous: Calendar | undefined): Promise<Calendar
      */
     return { ...(previous ?? { events: [] }), triedAt: new Date().toISOString() };
   }
+}
+
+/**
+ * How often BLS may be asked while a release is waiting for its actual.
+ *
+ * Its keyless API allows a few dozen requests a day, and BLS publishes at
+ * the stroke of 8:30 in New York, so a quarter of an hour is both polite and
+ * quick enough. Nothing is asked at all unless a release BLS covers is out
+ * and still has no actual.
+ */
+const ACTUALS_SECONDS = 900;
+
+async function postJson(url: string, body: unknown): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`${url} answered ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * The calendar with every actual figure we have laid on its releases, after
+ * asking BLS for any that are out and missing. Never throws: a BLS that will
+ * not answer leaves the releases as the feed sent them.
+ */
+async function withActuals(calendar: Calendar | undefined): Promise<Calendar | undefined> {
+  if (!calendar) return calendar;
+
+  const now = new Date();
+  let actuals = { ...(calendar.actuals ?? {}) };
+  let actualsTriedAt = calendar.actualsTriedAt;
+
+  const pending = pendingReleases(calendar.events, actuals, now);
+  if (pending.length > 0 && due(actualsTriedAt, ACTUALS_SECONDS, now.getTime())) {
+    actualsTriedAt = now.toISOString();
+    try {
+      const data = parseBls(await postJson(BLS_API, blsRequest(pending, now)));
+      if (!data) throw new Error("BLS did not answer with data");
+      for (const event of pending) {
+        const actual = blsActual(event, data);
+        if (actual) actuals[releaseKey(event)] = actual;
+      }
+    } catch (error) {
+      console.warn("market-rates: no actuals from BLS this time:", error);
+    }
+  }
+
+  // Only the week's releases are worth remembering.
+  const keys = new Set(calendar.events.map(releaseKey));
+  actuals = Object.fromEntries(Object.entries(actuals).filter(([key]) => keys.has(key)));
+
+  return {
+    ...calendar,
+    events: calendar.events.map((event) => {
+      const actual = event.actual ?? actuals[releaseKey(event)];
+      return actual ? { ...event, actual } : event;
+    }),
+    actuals,
+    ...(actualsTriedAt ? { actualsTriedAt } : {}),
+  };
 }
 
 /**
@@ -1136,6 +1258,122 @@ function published(calendar: Calendar | undefined) {
   };
 }
 
+/* ----------------------------------------------------------------- the Fed */
+
+type FedTarget = { from: number; to: number; effr: number; day: string };
+type FedFuture = { month: string; price: number; at: string };
+
+/**
+ * The Fed's rate and the futures the app works the meeting odds out from.
+ *
+ * Two halves from two sources, each kept from the last good fetch when its
+ * source will not answer. `triedAt` is bookkeeping and is not published.
+ */
+type Fed = { target?: FedTarget; futures: FedFuture[]; fetchedAt?: string; triedAt: string };
+
+/** The target range and effective rate out of the New York Fed's answer, or
+ *  null when the answer is not the shape it publishes. */
+export function effrFrom(body: unknown): FedTarget | null {
+  const row = (body as { refRates?: Array<Record<string, unknown>> } | null)?.refRates?.[0];
+  if (!row) return null;
+
+  const from = row.targetRateFrom;
+  const to = row.targetRateTo;
+  const effr = row.percentRate;
+  const day = row.effectiveDate;
+  if (typeof from !== "number" || typeof to !== "number" || typeof effr !== "number") return null;
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from < 0 || to <= from) return null;
+  if (!Number.isFinite(effr)) return null;
+  if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+
+  return { from, to, effr, day };
+}
+
+/**
+ * The Yahoo symbols of the next few monthly 30-Day Fed Funds contracts, from
+ * the current month: "ZQZ26.CBT" is December 2026.
+ */
+export function fedFundsContracts(
+  now: Date,
+  count = FED_MONTHS,
+): Array<{ month: string; symbol: string }> {
+  const contracts: Array<{ month: string; symbol: string }> = [];
+  for (let i = 0; i < count; i++) {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1));
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    contracts.push({
+      month: `${year}-${String(month + 1).padStart(2, "0")}`,
+      symbol: `ZQ${MONTH_CODES[month]}${String(year % 100).padStart(2, "0")}.CBT`,
+    });
+  }
+  return contracts;
+}
+
+async function fetchFed(previous: Fed | undefined): Promise<Fed> {
+  const contracts = fedFundsContracts(new Date());
+
+  const [target, ...prices] = await Promise.allSettled([
+    get(NYFED_EFFR).then(effrFrom),
+    ...contracts.map((contract) => yahooMeta(contract.symbol)),
+  ]);
+
+  const futures: FedFuture[] = [];
+  contracts.forEach((contract, index) => {
+    const result = prices[index];
+    const meta = result?.status === "fulfilled" ? (result.value as YahooMeta) : undefined;
+    const price = meta?.regularMarketPrice;
+    const time = meta?.regularMarketTime;
+
+    if (typeof price === "number" && Number.isFinite(price) && typeof time === "number") {
+      futures.push({ month: contract.month, price, at: new Date(time * 1000).toISOString() });
+      return;
+    }
+
+    // A month that would not load keeps its last price. The app ignores a
+    // price once it is days old, so a kept one cannot pass for today's market.
+    const kept = previous?.futures.find((future) => future.month === contract.month);
+    if (kept) futures.push(kept);
+  });
+
+  const fresh = target.status === "fulfilled" ? (target.value as FedTarget | null) : null;
+  const stamp = new Date().toISOString();
+  const kept = fresh ?? previous?.target;
+  const fetchedAt = fresh || futures.length > 0 ? stamp : previous?.fetchedAt;
+
+  return {
+    ...(kept ? { target: kept } : {}),
+    futures,
+    ...(fetchedAt ? { fetchedAt } : {}),
+    triedAt: stamp,
+  };
+}
+
+/** The Fed block to answer with, which, like the calendar, is never a reason
+ *  to fail. */
+async function currentFed(previous: Fed | undefined): Promise<Fed | undefined> {
+  if (previous && !due(previous.triedAt, FED_SECONDS, Date.now())) return previous;
+
+  try {
+    return await fetchFed(previous);
+  } catch (error) {
+    console.warn("market-rates: no Fed figures this time:", error);
+    return { ...(previous ?? { futures: [] }), triedAt: new Date().toISOString() };
+  }
+}
+
+/** The Fed block as a phone sees it. */
+function publishedFed(fed: Fed | undefined) {
+  if (!fed) return {};
+  return {
+    fed: {
+      ...(fed.target ? { target: fed.target } : {}),
+      futures: fed.futures,
+      ...(fed.fetchedAt ? { fetchedAt: fed.fetchedAt } : {}),
+    },
+  };
+}
+
 /**
  * What the cache row holds.
  *
@@ -1149,7 +1387,13 @@ function published(calendar: Calendar | undefined) {
  * `bitcoinAt` is when CoinGecko was last asked, which is this function's own
  * bookkeeping and is never sent to a phone. A row without one simply asks.
  */
-type Stored = { board: Board; calendar?: Calendar; fx?: FxCrosses; bitcoinAt?: string };
+type Stored = {
+  board: Board;
+  calendar?: Calendar;
+  fx?: FxCrosses;
+  fed?: Fed;
+  bitcoinAt?: string;
+};
 
 function stored(payload: unknown): Stored {
   if (payload && typeof payload === "object" && "board" in payload) {
@@ -1157,12 +1401,14 @@ function stored(payload: unknown): Stored {
       board?: unknown;
       calendar?: unknown;
       fx?: unknown;
+      fed?: unknown;
       bitcoinAt?: unknown;
     };
     return {
       board: (held.board ?? {}) as Board,
       ...(held.calendar ? { calendar: held.calendar as Calendar } : {}),
       ...(held.fx ? { fx: held.fx as FxCrosses } : {}),
+      ...(held.fed ? { fed: held.fed as Fed } : {}),
       ...(typeof held.bitcoinAt === "string" ? { bitcoinAt: held.bitcoinAt } : {}),
     };
   }
@@ -1234,6 +1480,7 @@ export default {
         board: held.board,
         ...published(held.calendar),
         ...(held.fx ? { fx: held.fx } : {}),
+        ...publishedFed(held.fed),
         fetchedAt: cached.fetched_at,
         cached: true,
       });
@@ -1252,10 +1499,11 @@ export default {
     const askBitcoin = due(held.bitcoinAt, BITCOIN_SECONDS, Date.now());
     const bitcoinAt = askBitcoin ? new Date().toISOString() : held.bitcoinAt;
 
-    const [board, calendar, fx] = await Promise.all([
+    const [board, calendar, fx, fed] = await Promise.all([
       fetchBoard(held.board, askBitcoin),
-      currentCalendar(held.calendar),
+      currentCalendar(held.calendar).then(withActuals),
       currentCrosses(held.fx),
+      currentFed(held.fed),
     ]);
 
     // Nothing answered and nothing was kept: say so rather than returning an
@@ -1268,12 +1516,14 @@ export default {
       board,
       ...(calendar ? { calendar } : {}),
       ...(fx ? { fx } : {}),
+      ...(fed ? { fed } : {}),
       ...(bitcoinAt ? { bitcoinAt } : {}),
     });
     return json({
       board,
       ...published(calendar),
       ...(fx ? { fx } : {}),
+      ...publishedFed(fed),
       fetchedAt: new Date().toISOString(),
       cached: false,
     });

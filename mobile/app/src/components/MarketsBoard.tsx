@@ -164,10 +164,17 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
    * empty is the honest case — see eventsToday — and it travels as null all the
    * way to the panel, which then says nothing instead of saying "nothing".
    */
+  /*
+   * Gold and silver's releases are not repeated here: they have a section of
+   * their own under the board (GoldCalendar), laid out to be read on a phone.
+   * The dollar index keeps its list, because its basket's releases are not
+   * the metals' and appear nowhere else.
+   */
   const calendar = markets.data?.calendar;
   const rows = MARKET_ROWS.flatMap((row) => {
     const quote = board[row.key];
-    return quote ? [{ ...row, quote, events: eventsToday(row.key, calendar) }] : [];
+    const events = row.key === "dollarIndex" ? eventsToday(row.key, calendar) : null;
+    return quote ? [{ ...row, quote, events }] : [];
   });
 
   /*
@@ -657,7 +664,7 @@ function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent
         <ul className="mt-2 space-y-2.5">
           {events.map((event) => (
             <li key={`${event.at}-${event.currency}-${event.title}`} className="flex gap-2.5">
-              <span className="w-9 shrink-0 text-[11px] text-warmgrey tabular-nums">
+              <span className="w-[54px] shrink-0 text-[11px] font-semibold text-rate-emerald tabular-nums">
                 {eventTime(event.at)}
               </span>
 
@@ -681,6 +688,9 @@ function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent
                   >
                     {event.impact === "High" ? "High impact" : "Medium"}
                   </span>
+                  {event.actual ? (
+                    <span className="font-semibold text-ink">Actual {event.actual}</span>
+                  ) : null}
                   {event.forecast ? <span>Expected {event.forecast}</span> : null}
                   {event.previous ? <span>Last {event.previous}</span> : null}
                 </span>
@@ -691,7 +701,7 @@ function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent
       )}
 
       <p className="mt-2 text-[10px] leading-relaxed text-warmgrey">
-        {scope(rowKey)} From the metals calendar at metalsmine.com, in this phone&rsquo;s own time.
+        {scope(rowKey)} From the metals calendar at metalsmine.com, in Pakistan time (PKT).
       </p>
     </div>
   );
