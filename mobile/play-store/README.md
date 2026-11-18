@@ -117,6 +117,15 @@ Weighed Honestly, Made Beautifully.
 
 ## What's new (500 characters max)
 
+For version 2.2 (versionCode 7):
+
+```
+The International tab is redrawn in the shop's emerald and gold. Gold, silver
+and the dollar index now tick up and down live as prices move, with a large
+TradingView gold chart, and the screen stays on while you watch it. Every piece
+now shows the weight charged in tola as well as grams.
+```
+
 For version 2.1.1 (versionCode 6):
 
 ```
@@ -246,9 +255,9 @@ it is what Play's link verification reads.
 1. Website PR merged and live. The app reads the live site, so anything the
    release depends on has to be there first.
 2. Read the live **versionCode** off the Play Console and raise the one in
-   `mobile/android/app/build.gradle` above it. On 16 November 2026 production
-   was on **5 (2.1)** and 5 was the highest code ever uploaded, so the
-   repository is set to **6 (2.1.1)**. _App bundle explorer_ lists every code
+   `mobile/android/app/build.gradle` above it. Release 6 (2.1.1) went live
+   on 16 November 2026 and nothing was uploaded after it, so the repository is
+   set to **7 (2.2)**. _App bundle explorer_ lists every code
    uploaded, test tracks included, and is the quickest place to check.
 3. `cd mobile && bun run release`, with `android/keystore.properties` pointing
    at the upload keystore (see [`../README.md`](../README.md)). That script
