@@ -10,7 +10,6 @@ import { ActionLink } from "@/components/ui/ActionButton";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { InternationalGold } from "@/components/rate/InternationalGold";
 import { InternationalRates } from "@/components/rate/InternationalRates";
 import { GoldRateBoard } from "@/components/rate/GoldRateBoard";
 import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
@@ -27,7 +26,6 @@ import {
   rateFor,
   type RateSnapshot,
 } from "@/lib/rates";
-import { loadInternationalGold } from "@/lib/international-gold";
 import { fetchMarketSnapshot } from "@/lib/markets";
 import { SITE, whatsappLink } from "@/lib/site";
 import { rateShareMessage, shareOnWhatsApp } from "@/lib/share";
@@ -43,22 +41,20 @@ export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
    * Loaded server-side: this page is the recurring-traffic magnet in this
    * market, so the rates have to be in the HTML, not fetched after paint.
    *
-   * The history, the international figure and the world markets board are here
-   * for the same reason the board is. This page competes with national rate
-   * aggregators that publish a derived number for every city; what it has that
-   * they do not is the shop's own counter rate, a dated record of it, and the
-   * international context beside it. Each of those was once fetched in the
-   * browser, so the page that reached a crawler was the half of it that looks
-   * like everybody else's.
+   * The history and the world markets board are here for the same reason the
+   * board is. This page competes with national rate aggregators that publish a
+   * derived number for every city; what it has that they do not is the shop's
+   * own counter rate, a dated record of it, and the international context
+   * beside it. Each of those was once fetched in the browser, so the page that
+   * reached a crawler was the half of it that looks like everybody else's.
    *
-   * None of them is allowed to fail the page. The shop's own board is the part
-   * that matters, and it is already in hand by the time these settle.
+   * Neither is allowed to fail the page. The shop's own board is the part that
+   * matters, and it is already in hand by the time these settle.
    */
   loader: async () => {
-    const [snapshot, history, international, markets] = await Promise.all([
+    const [snapshot, history, markets] = await Promise.all([
       fetchRateSnapshot(),
       fetchRateHistory(10).catch(() => []),
-      loadInternationalGold(),
       /*
        * The world markets board. Null rather than a throw: it is reference
        * material beside the shop's own figures, and the section removes itself
@@ -69,7 +65,7 @@ export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
         return null;
       }),
     ]);
-    return { snapshot, history, international, markets };
+    return { snapshot, history, markets };
   },
   head: ({ loaderData }) => {
     const snapshot = loaderData?.snapshot;
@@ -99,7 +95,7 @@ export const Route = createFileRoute("/gold-rate-in-mandi-bahauddin-today")({
 });
 
 function GoldRatePage() {
-  const { snapshot, history, international, markets } = Route.useLoaderData();
+  const { snapshot, history, markets } = Route.useLoaderData();
   const gold = goldOnly(snapshot);
   const board = rateBoard(snapshot);
   // One message behind Copy and WhatsApp, so the two can never differ.
@@ -142,13 +138,6 @@ function GoldRatePage() {
             </p>
           </div>
         </section>
-
-        {/*
-          The world price, directly under the shop's own. Placed here rather
-          than lower down because the comparison is the argument: the board
-          above is not a number the shop invented.
-        */}
-        <InternationalGold initial={international} />
 
         {/* Rate table */}
         <section className="section-y mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
