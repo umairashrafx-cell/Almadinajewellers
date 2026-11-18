@@ -9,6 +9,8 @@ import {
 } from "@/lib/markets";
 import { cn } from "@/lib/utils";
 
+import { InfoNote } from "./InfoNote";
+
 /**
  * What is behind today's rate.
  *
@@ -50,10 +52,10 @@ export function RateDrivers({ board }: { board: MarketBoard }) {
       <Split drivers={drivers} />
       <Sentence drivers={drivers} />
 
-      <p className="mt-3 border-t border-rate-gold/20 pt-3 text-[11px] leading-relaxed text-warmgrey">
+      <InfoNote className="mt-3 border-t border-rate-gold/20 pt-2">
         This is what the market has done, not what it will do. We do not forecast the rate and this
         is not advice to buy or sell.
-      </p>
+      </InfoNote>
     </section>
   );
 }

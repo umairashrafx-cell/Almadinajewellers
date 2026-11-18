@@ -25,6 +25,7 @@ import type {
 import { formatPKR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
+import { InfoNote } from "./InfoNote";
 import { useLiveBitcoin } from "../lib/btc-stream";
 import type { Cached } from "../lib/cache";
 import { useTicks } from "../lib/ticks";
@@ -247,7 +248,7 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
         className="mx-auto mt-7 block h-px w-full max-w-xs bg-gradient-to-r from-transparent via-rate-gold/60 to-transparent"
         aria-hidden
       />
-      <p className="mt-4 px-2 text-center text-[11px] leading-relaxed text-rate-ink/70">
+      <InfoNote align="center" className="mt-3 px-2">
         {markets.data ? (
           <>
             Reference prices from public sources, taken {taken(markets.data.fetchedAt)} and
@@ -266,7 +267,7 @@ export function MarketsBoard({ markets }: { markets: Cached<MarketSnapshot> }) {
             interbank rate — pure metal, before duty, premium or making.
           </>
         ) : null}
-      </p>
+      </InfoNote>
     </section>
   );
 }
@@ -632,7 +633,9 @@ function RangeBar({
         </p>
       ) : null}
 
-      <p className="mt-2 text-[10px] leading-relaxed text-warmgrey">{provenance(range)}</p>
+      <InfoNote label="Source" className="mt-1.5">
+        {provenance(range)}
+      </InfoNote>
     </div>
   );
 }
@@ -700,9 +703,9 @@ function Releases({ rowKey, events }: { rowKey: keyof Board; events: MarketEvent
         </ul>
       )}
 
-      <p className="mt-2 text-[10px] leading-relaxed text-warmgrey">
+      <InfoNote label="Source" className="mt-1.5">
         {scope(rowKey)} From the metals calendar at metalsmine.com, in Pakistan time (PKT).
-      </p>
+      </InfoNote>
     </div>
   );
 }

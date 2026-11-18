@@ -6,6 +6,7 @@ import { dayName, pktDay, pktTime, timeUntil } from "@/lib/pkt";
 import { cn } from "@/lib/utils";
 
 import { useNow } from "../lib/now";
+import { InfoNote } from "./InfoNote";
 
 /**
  * The American interest rate, and what the market expects the Fed to do with
@@ -70,7 +71,7 @@ export function FedOutlook({ fed }: { fed: FedSnapshot | undefined }) {
 
       {odds && target ? <Odds odds={odds} /> : null}
 
-      <p className="mt-3 border-t border-rate-gold/20 pt-3 text-[10.5px] leading-relaxed text-warmgrey">
+      <InfoNote className="mt-3 border-t border-rate-gold/20 pt-2">
         {target ? "Rate from the Federal Reserve Bank of New York. " : null}
         Meeting dates from the Fed&rsquo;s published calendar.
         {odds ? (
@@ -81,7 +82,7 @@ export function FedOutlook({ fed }: { fed: FedSnapshot | undefined }) {
             This is the market&rsquo;s pricing, not our forecast or advice.
           </>
         ) : null}
-      </p>
+      </InfoNote>
     </section>
   );
 }

@@ -9,6 +9,7 @@ import { dayName, pktTime, timeUntil } from "@/lib/pkt";
 import { cn } from "@/lib/utils";
 
 import { useNow } from "../lib/now";
+import { InfoNote } from "./InfoNote";
 
 /**
  * The week's American releases that move gold and silver, laid out for a
@@ -78,7 +79,7 @@ export function GoldCalendar({ calendar }: { calendar: MarketCalendar | undefine
         ))}
       </div>
 
-      <p className="mt-5 px-2 text-[10.5px] leading-relaxed text-warmgrey">
+      <InfoNote className="mt-4 px-1">
         From the metals calendar at metalsmine.com. Once a release is out and its actual figure is
         published, it is labelled: US data <strong className="font-semibold">stronger</strong> than
         forecast (more jobs, hotter inflation, faster growth or spending) usually weighs on gold,
@@ -88,7 +89,7 @@ export function GoldCalendar({ calendar }: { calendar: MarketCalendar | undefine
         them — jobs, CPI and PPI from the Bureau of Labor Statistics, retail sales from the Census
         Bureau, GDP and PCE from the Bureau of Economic Analysis — shortly after release; a dash
         means we have no actual for that release.
-      </p>
+      </InfoNote>
     </section>
   );
 }
