@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 
 import {
   actualSource,
+  actualsWaitSeconds,
+  blsEndpoint,
   beaActual,
   beaUrl,
   blsActual,
@@ -303,5 +305,26 @@ describe("actualSource", () => {
     expect(actualSource(release("Final GDP q/q"))).toBe("bea");
     expect(actualSource(release("Unemployment Claims"))).toBeNull();
     expect(actualSource(release("ISM Manufacturing PMI"))).toBeNull();
+  });
+});
+
+describe("how often the agencies are asked", () => {
+  const cpi = release("CPI m/m", "2026-12-10T08:30:00-05:00");
+  const at = (minutes: number) => new Date(Date.parse(cpi.at) + minutes * 60_000);
+
+  test("every minute for the first twenty minutes after a release", () => {
+    expect(actualsWaitSeconds([cpi], at(0))).toBe(60);
+    expect(actualsWaitSeconds([cpi], at(3))).toBe(60);
+    expect(actualsWaitSeconds([cpi], at(20))).toBe(60);
+  });
+
+  test("every quarter of an hour after that", () => {
+    expect(actualsWaitSeconds([cpi], at(21))).toBe(900);
+    expect(actualsWaitSeconds([cpi], at(600))).toBe(900);
+  });
+
+  test("uses BLS's registered API only when a key is set", () => {
+    expect(blsEndpoint(undefined)).toContain("/v1/");
+    expect(blsEndpoint("KEY")).toContain("/v2/");
   });
 });

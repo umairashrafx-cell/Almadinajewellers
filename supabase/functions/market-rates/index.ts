@@ -30,7 +30,8 @@
  */
 
 import {
-  BLS_API,
+  actualsWaitSeconds,
+  blsEndpoint,
   actualSource,
   beaActual,
   beaRule,
@@ -1180,15 +1181,7 @@ async function currentCalendar(previous: Calendar | undefined): Promise<Calendar
   }
 }
 
-/**
- * How often BLS may be asked while a release is waiting for its actual.
- *
- * Its keyless API allows a few dozen requests a day, and BLS publishes at
- * the stroke of 8:30 in New York, so a quarter of an hour is both polite and
- * quick enough. Nothing is asked at all unless a release BLS covers is out
- * and still has no actual.
- */
-const ACTUALS_SECONDS = 900;
+/* How often the agencies are asked: see actualsWaitSeconds in actuals.ts. */
 
 async function postJson(url: string, body: unknown): Promise<unknown> {
   const controller = new AbortController();
@@ -1226,12 +1219,16 @@ async function readActuals(pending: CalendarEvent[], now: Date): Promise<Record<
   // The two keyed agencies are skipped quietly when their key is not set.
   const censusKey = Deno.env.get("CENSUS_API_KEY");
   const beaKey = Deno.env.get("BEA_API_KEY");
+  const blsKey = Deno.env.get("BLS_API_KEY");
 
   const jobs: Array<Promise<void>> = [];
 
   if (bls.length > 0) {
     jobs.push(
-      postJson(BLS_API, blsRequest(bls, now)).then((body) => {
+      postJson(blsEndpoint(blsKey), {
+        ...blsRequest(bls, now),
+        ...(blsKey ? { registrationkey: blsKey } : {}),
+      }).then((body) => {
         const data = parseBls(body);
         if (!data) throw new Error("BLS did not answer with data");
         for (const event of bls) record(event, blsActual(event, data));
@@ -1295,7 +1292,7 @@ async function withActuals(calendar: Calendar | undefined): Promise<Calendar | u
   let actualsTriedAt = calendar.actualsTriedAt;
 
   const pending = pendingReleases(calendar.events, actuals, now);
-  if (pending.length > 0 && due(actualsTriedAt, ACTUALS_SECONDS, now.getTime())) {
+  if (pending.length > 0 && due(actualsTriedAt, actualsWaitSeconds(pending, now), now.getTime())) {
     actualsTriedAt = now.toISOString();
     const found = await readActuals(pending, now);
     actuals = { ...actuals, ...found };
