@@ -29,6 +29,15 @@
  * platform, and every upstream here is keyless.
  */
 
+import {
+  BLS_API,
+  blsActual,
+  blsRequest,
+  parseBls,
+  pendingReleases,
+  releaseKey,
+} from "./actuals.ts";
+
 /**
  * How long a fetched board stays good.
  *
@@ -1027,6 +1036,11 @@ type Calendar = {
   to?: string;
   fetchedAt?: string;
   triedAt: string;
+  /** Actual figures read from BLS, by releaseKey. Kept across fetches of the
+   *  feed, which never carries them itself. */
+  actuals?: Record<string, string>;
+  /** When BLS was last asked. */
+  actualsTriedAt?: string;
 };
 
 /**
@@ -1133,7 +1147,13 @@ async function currentCalendar(previous: Calendar | undefined): Promise<Calendar
   if (previous && since < CALENDAR_SECONDS) return previous;
 
   try {
-    return await fetchCalendar();
+    // The feed knows nothing of actuals, so the ones already read are carried
+    // over and laid back on by withActuals.
+    return {
+      ...(await fetchCalendar()),
+      ...(previous?.actuals ? { actuals: previous.actuals } : {}),
+      ...(previous?.actualsTriedAt ? { actualsTriedAt: previous.actualsTriedAt } : {}),
+    };
   } catch (error) {
     console.warn("market-rates: no calendar this time:", error);
 
@@ -1149,6 +1169,76 @@ async function currentCalendar(previous: Calendar | undefined): Promise<Calendar
      */
     return { ...(previous ?? { events: [] }), triedAt: new Date().toISOString() };
   }
+}
+
+/**
+ * How often BLS may be asked while a release is waiting for its actual.
+ *
+ * Its keyless API allows a few dozen requests a day, and BLS publishes at
+ * the stroke of 8:30 in New York, so a quarter of an hour is both polite and
+ * quick enough. Nothing is asked at all unless a release BLS covers is out
+ * and still has no actual.
+ */
+const ACTUALS_SECONDS = 900;
+
+async function postJson(url: string, body: unknown): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`${url} answered ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * The calendar with every actual figure we have laid on its releases, after
+ * asking BLS for any that are out and missing. Never throws: a BLS that will
+ * not answer leaves the releases as the feed sent them.
+ */
+async function withActuals(calendar: Calendar | undefined): Promise<Calendar | undefined> {
+  if (!calendar) return calendar;
+
+  const now = new Date();
+  let actuals = { ...(calendar.actuals ?? {}) };
+  let actualsTriedAt = calendar.actualsTriedAt;
+
+  const pending = pendingReleases(calendar.events, actuals, now);
+  if (pending.length > 0 && due(actualsTriedAt, ACTUALS_SECONDS, now.getTime())) {
+    actualsTriedAt = now.toISOString();
+    try {
+      const data = parseBls(await postJson(BLS_API, blsRequest(pending, now)));
+      if (!data) throw new Error("BLS did not answer with data");
+      for (const event of pending) {
+        const actual = blsActual(event, data);
+        if (actual) actuals[releaseKey(event)] = actual;
+      }
+    } catch (error) {
+      console.warn("market-rates: no actuals from BLS this time:", error);
+    }
+  }
+
+  // Only the week's releases are worth remembering.
+  const keys = new Set(calendar.events.map(releaseKey));
+  actuals = Object.fromEntries(Object.entries(actuals).filter(([key]) => keys.has(key)));
+
+  return {
+    ...calendar,
+    events: calendar.events.map((event) => {
+      const actual = event.actual ?? actuals[releaseKey(event)];
+      return actual ? { ...event, actual } : event;
+    }),
+    actuals,
+    ...(actualsTriedAt ? { actualsTriedAt } : {}),
+  };
 }
 
 /**
@@ -1411,7 +1501,7 @@ export default {
 
     const [board, calendar, fx, fed] = await Promise.all([
       fetchBoard(held.board, askBitcoin),
-      currentCalendar(held.calendar),
+      currentCalendar(held.calendar).then(withActuals),
       currentCrosses(held.fx),
       currentFed(held.fed),
     ]);
