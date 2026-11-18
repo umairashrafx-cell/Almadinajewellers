@@ -39,7 +39,6 @@ import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminRatesRouteImport } from './routes/admin/rates'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
-import { Route as ApiInternationalGoldRouteImport } from './routes/api/international-gold'
 import { Route as CollectionsIndexRouteImport } from './routes/collections/index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections/$slug'
 import { Route as OurStoryFounderRouteImport } from './routes/our-story_.founder'
@@ -197,11 +196,6 @@ const AdminReviewsRoute = AdminReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiInternationalGoldRoute = ApiInternationalGoldRouteImport.update({
-  id: '/api/international-gold',
-  path: '/api/international-gold',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
@@ -258,7 +252,6 @@ export interface FileRoutesByFullPath {
   '/admin/rates': typeof AdminRatesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/reviews': typeof AdminReviewsRoute
-  '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
   '/pay/$token': typeof PayTokenRoute
@@ -295,7 +288,6 @@ export interface FileRoutesByTo {
   '/admin/rates': typeof AdminRatesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/reviews': typeof AdminReviewsRoute
-  '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story/founder': typeof OurStoryFounderRoute
   '/pay/$token': typeof PayTokenRoute
@@ -334,7 +326,6 @@ export interface FileRoutesById {
   '/admin/rates': typeof AdminRatesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/reviews': typeof AdminReviewsRoute
-  '/api/international-gold': typeof ApiInternationalGoldRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/our-story_/founder': typeof OurStoryFounderRoute
   '/pay/$token': typeof PayTokenRoute
@@ -374,7 +365,6 @@ export interface FileRouteTypes {
     | '/admin/rates'
     | '/admin/reports'
     | '/admin/reviews'
-    | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
     | '/pay/$token'
@@ -411,7 +401,6 @@ export interface FileRouteTypes {
     | '/admin/rates'
     | '/admin/reports'
     | '/admin/reviews'
-    | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story/founder'
     | '/pay/$token'
@@ -449,7 +438,6 @@ export interface FileRouteTypes {
     | '/admin/rates'
     | '/admin/reports'
     | '/admin/reviews'
-    | '/api/international-gold'
     | '/collections/$slug'
     | '/our-story_/founder'
     | '/pay/$token'
@@ -479,7 +467,6 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
-  ApiInternationalGoldRoute: typeof ApiInternationalGoldRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   OurStoryFounderRoute: typeof OurStoryFounderRoute
   PayTokenRoute: typeof PayTokenRoute
@@ -699,13 +686,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReviewsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/api/international-gold': {
-      id: '/api/international-gold'
-      path: '/api/international-gold'
-      fullPath: '/api/international-gold'
-      preLoaderRoute: typeof ApiInternationalGoldRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/collections/': {
       id: '/collections/'
       path: '/collections'
@@ -793,7 +773,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
-  ApiInternationalGoldRoute: ApiInternationalGoldRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   OurStoryFounderRoute: OurStoryFounderRoute,
   PayTokenRoute: PayTokenRoute,

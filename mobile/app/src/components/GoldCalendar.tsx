@@ -8,8 +8,8 @@ import type { MarketCalendar, MarketEvent } from "@/lib/markets";
 import { dayName, pktTime, timeUntil } from "@/lib/pkt";
 import { cn } from "@/lib/utils";
 
-import { useNow } from "../lib/now";
-import { InfoNote } from "./InfoNote";
+import { useNow } from "@/lib/now";
+import { InfoNote } from "@/components/ui/InfoNote";
 
 /**
  * The week's American releases that move gold and silver, laid out for a
