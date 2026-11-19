@@ -7,6 +7,7 @@ import {
   nextRelease,
   parseFigure,
   releaseDirection,
+  releaseWatch,
 } from "@/lib/econ-calendar";
 import type { MarketEvent } from "@/lib/markets";
 import { dayName, pktDay, pktDayLabel, pktTime, timeUntil } from "@/lib/pkt";
@@ -224,5 +225,105 @@ describe("metalsWeek", () => {
     const [retail, minutes] = calendar.events as [MarketEvent, MarketEvent];
     expect(isReleased(retail, now)).toBe(true);
     expect(isReleased(minutes, now)).toBe(false);
+  });
+});
+
+describe("releaseWatch", () => {
+  /*
+   * The releases that print no figure.
+   *
+   * These are the biggest events on the calendar — the Fed's minutes, its
+   * speakers — and until now they were the only rows carrying no read at all,
+   * because there is no number in them to compare against a forecast.
+   *
+   * What a note must never do is settle that by guessing. Nobody knows whether
+   * the minutes are dovish or hawkish before somebody has read them, so the
+   * note gives the key rather than the answer, and it always gives both sides
+   * of it. The tests below are mostly about where it declines to speak.
+   */
+  test("reads the Fed's minutes as a thing with two possible tones", () => {
+    const watch = releaseWatch(release({ title: "FOMC Meeting Minutes", impact: "Medium" }));
+    expect(watch).not.toBeNull();
+    expect(watch?.what).toMatch(/record of the Fed's last meeting/i);
+    expect(watch?.dovish).toMatch(/cutting sooner/i);
+    expect(watch?.hawkish).toMatch(/no hurry to cut/i);
+  });
+
+  test("covers the Fed's speakers, however the feed names them", () => {
+    // The feed writes the chair's own name into the title, so nothing here can
+    // be keyed to a person: "Fed Chairman Warsh Speaks" today was "Fed
+    // Chairman Powell Speaks" a year ago and will be somebody else again.
+    for (const title of [
+      "Fed Chairman Warsh Speaks",
+      "Fed Chair Powell Speaks",
+      "FOMC Member Williams Speaks",
+      "Fed Vice Chair Jefferson Speaks",
+    ]) {
+      expect(releaseWatch(release({ title })), title).not.toBeNull();
+    }
+  });
+
+  test("covers the statement, the Beige Book and testimony", () => {
+    for (const title of [
+      "FOMC Statement",
+      "FOMC Press Conference",
+      "Beige Book",
+      "Fed Chair Testimony",
+    ]) {
+      expect(releaseWatch(release({ title })), title).not.toBeNull();
+    }
+  });
+
+  test("always offers both directions, never one", () => {
+    // A note that mentioned only the dovish case would be a prediction wearing
+    // an explainer's clothes.
+    for (const title of ["FOMC Meeting Minutes", "Beige Book", "Fed Chairman Warsh Speaks"]) {
+      const watch = releaseWatch(release({ title }));
+      expect(watch?.dovish, title).toBeTruthy();
+      expect(watch?.hawkish, title).toBeTruthy();
+    }
+  });
+
+  test("stands down the moment a release has a figure to be judged by", () => {
+    // This is what keeps a row from ever carrying a verdict and a note at
+    // once: goldVerdict needs both figures, this needs neither.
+    expect(releaseWatch(release({ title: "FOMC Meeting Minutes", forecast: "0.3%" }))).toBeNull();
+    expect(releaseWatch(release({ title: "FOMC Meeting Minutes", actual: "0.3%" }))).toBeNull();
+
+    const numbered = release({ title: "Core CPI m/m", actual: "0.4%", forecast: "0.3%" });
+    expect(releaseWatch(numbered)).toBeNull();
+    expect(goldVerdict(numbered)).toBe("bad");
+  });
+
+  test("a figure that cannot be read is still no figure", () => {
+    // The feed writes the minutes' columns as a dash or leaves them empty;
+    // neither is a number, and neither should silence the note.
+    expect(
+      releaseWatch(release({ title: "Beige Book", forecast: "—", actual: "" })),
+    ).not.toBeNull();
+  });
+
+  test("claims nothing for a release it has no rule for", () => {
+    // The same allow-list discipline as DIRECTIONS: a bond auction or an oil
+    // inventory has no settled first reaction, so it gets no note.
+    expect(releaseWatch(release({ title: "10-y Bond Auction" }))).toBeNull();
+    expect(releaseWatch(release({ title: "Natural Gas Storage" }))).toBeNull();
+    expect(releaseWatch(release({ title: "Treasury Currency Report" }))).toBeNull();
+  });
+
+  test("claims nothing outside American data", () => {
+    // The metals calendar is American; an ECB speaker moves the euro, and this
+    // screen does not pretend to read him.
+    expect(
+      releaseWatch(release({ title: "ECB President Lagarde Speaks", currency: "EUR" })),
+    ).toBeNull();
+  });
+
+  test("leaves every numbered release exactly as it was", () => {
+    // The rule the calendar already states must not have moved under it.
+    expect(goldVerdict(release({ actual: "150K", forecast: "120K" }))).toBe("bad");
+    expect(goldVerdict(release({ actual: "90K", forecast: "120K" }))).toBe("good");
+    expect(goldVerdict(release({ actual: "120K", forecast: "120K" }))).toBe("inline");
+    expect(releaseDirection(release({ title: "Unemployment Rate" }))).toBe("weaker");
   });
 });
