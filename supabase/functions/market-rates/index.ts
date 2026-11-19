@@ -43,7 +43,10 @@ import {
   parseBea,
   parseBls,
   parseCensus,
+  parsePhilly,
   pendingReleases,
+  phillyActual,
+  PHILLY_FED_CSV,
   referenceMonth,
   releaseKey,
 } from "./actuals.ts";
@@ -258,6 +261,23 @@ async function get(url: string): Promise<unknown> {
     });
     if (!response.ok) throw new Error(`${url} answered ${response.status}`);
     return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** The same, for a source that publishes a plain file rather than JSON. */
+async function getText(url: string): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "AlMadinaJewellers/1 (+https://www.almadinajeweller.com)" },
+    });
+    if (!response.ok) throw new Error(`${url} answered ${response.status}`);
+    return await response.text();
   } finally {
     clearTimeout(timer);
   }
@@ -1215,6 +1235,7 @@ async function readActuals(pending: CalendarEvent[], now: Date): Promise<Record<
   const bls = pending.filter((event) => actualSource(event) === "bls");
   const census = pending.filter((event) => actualSource(event) === "census");
   const bea = pending.filter((event) => actualSource(event) === "bea");
+  const philly = pending.filter((event) => actualSource(event) === "philly");
 
   // The two keyed agencies are skipped quietly when their key is not set.
   const censusKey = Deno.env.get("CENSUS_API_KEY");
@@ -1270,6 +1291,16 @@ async function readActuals(pending: CalendarEvent[], now: Date): Promise<Record<
         }),
       );
     }
+  }
+
+  if (philly.length > 0) {
+    jobs.push(
+      getText(PHILLY_FED_CSV).then((text) => {
+        const data = parsePhilly(text);
+        if (!data) throw new Error("the Philadelphia Fed did not answer with its CSV");
+        for (const event of philly) record(event, phillyActual(event, data));
+      }),
+    );
   }
 
   // Each agency on its own: one that will not answer costs only its releases.

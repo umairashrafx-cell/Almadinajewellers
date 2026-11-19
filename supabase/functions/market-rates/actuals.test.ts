@@ -14,6 +14,8 @@ import {
   parseBea,
   parseBls,
   parseCensus,
+  parsePhilly,
+  phillyActual,
   pendingReleases,
   referenceMonth,
   releaseKey,
@@ -326,5 +328,50 @@ describe("how often the agencies are asked", () => {
   test("uses BLS's registered API only when a key is set", () => {
     expect(blsEndpoint(undefined)).toContain("/v1/");
     expect(blsEndpoint("KEY")).toContain("/v2/");
+  });
+});
+
+describe("the Philly Fed index from the Philadelphia Fed", () => {
+  // The head and tail of bos_dif.csv as the bank published it on 19 November 2026.
+  const csv = [
+    "DATE,GAC,NOC,SHC,UOC",
+    "May-68,32.2,30.6,32.5,6.0",
+    "Sep-26,37.8,29.2,27.7,20.4",
+    "Oct-26,20.9,4.3,15.3,2.4",
+    "Nov-26,6.3,-0.4,25.7,-4.4",
+  ].join("\r\n");
+  const data = parsePhilly(csv)!;
+  const thursday = "2026-11-19T08:30:00-05:00";
+
+  test("reads the headline for the month the survey is released in", () => {
+    expect(phillyActual(release("Philly Fed Manufacturing Index", thursday), data)).toBe("6.3");
+  });
+
+  test("matches the calendar's own previous reading for the month before", () => {
+    expect(
+      phillyActual(release("Philly Fed Manufacturing Index", "2026-10-15T08:30:00-04:00"), data),
+    ).toBe("20.9");
+  });
+
+  test("gives nothing until the bank has published the month", () => {
+    expect(
+      phillyActual(release("Philly Fed Manufacturing Index", "2026-12-17T08:30:00-05:00"), data),
+    ).toBeNull();
+  });
+
+  test("reads two-digit years across the centuries", () => {
+    expect(data.get("1968-05")?.GAC).toBe("32.2");
+    expect(data.get("2026-11")?.GAC).toBe("6.3");
+  });
+
+  test("refuses anything that is not the bank's file", () => {
+    expect(parsePhilly(null)).toBeNull();
+    expect(parsePhilly("<html>Not found</html>")).toBeNull();
+    expect(parsePhilly("DATE,XYZ\nNov-26,1")).toBeNull();
+  });
+
+  test("is the source for the Philly Fed index and nothing else", () => {
+    expect(actualSource(release("Philly Fed Manufacturing Index"))).toBe("philly");
+    expect(actualSource(release("Empire State Manufacturing Index"))).toBeNull();
   });
 });
