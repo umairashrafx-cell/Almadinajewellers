@@ -2,8 +2,14 @@ import { CalendarClock, TrendingDown, TrendingUp } from "lucide-react";
 
 import { InfoNote } from "@/components/ui/InfoNote";
 
-import { goldVerdict, isReleased, metalsWeek, nextRelease } from "@/lib/econ-calendar";
-import type { CalendarDay, GoldVerdict } from "@/lib/econ-calendar";
+import {
+  goldVerdict,
+  isReleased,
+  metalsWeek,
+  nextRelease,
+  releaseWatch,
+} from "@/lib/econ-calendar";
+import type { CalendarDay, GoldVerdict, ReleaseWatch } from "@/lib/econ-calendar";
 import type { MarketCalendar, MarketEvent } from "@/lib/markets";
 import { useMountedNow } from "@/lib/now";
 import { dayName, pktTime, timeUntil } from "@/lib/pkt";
@@ -78,7 +84,11 @@ export function InternationalCalendar({ calendar }: { calendar: MarketCalendar |
         first reaction, not a forecast or advice. Actual figures come from the agencies that publish
         them — jobs, CPI and PPI from the Bureau of Labor Statistics, retail sales from the Census
         Bureau, GDP and PCE from the Bureau of Economic Analysis — shortly after release; a dash
-        means we have no actual for that release.
+        means we have no actual for that release. Some entries are words rather than figures — the
+        FOMC minutes, the Fed&rsquo;s statement, a policymaker&rsquo;s speech. There is nothing to
+        compare, so no label is claimed for them; instead the card says what the release is and what
+        a dovish or a hawkish tone would look like, and you take the tone from what was actually
+        said.
       </InfoNote>
     </div>
   );
@@ -160,6 +170,7 @@ function Release({
    */
   const released = now ? isReleased(event, now) : false;
   const verdict = goldVerdict(event);
+  const watch = releaseWatch(event);
   const hasFigures = Boolean(event.forecast || event.previous || event.actual);
 
   return (
@@ -215,6 +226,7 @@ function Release({
       ) : null}
 
       {released && verdict ? <Verdict verdict={verdict} /> : null}
+      {watch ? <Watch watch={watch} /> : null}
     </li>
   );
 }
@@ -268,5 +280,65 @@ function Verdict({ verdict }: { verdict: GoldVerdict }) {
         <span className="mt-0.5 block text-[11px] leading-tight opacity-85">US data {why}</span>
       </span>
     </p>
+  );
+}
+
+const TONES = {
+  dovish: {
+    label: "Dovish",
+    effect: "usually good for gold",
+    className: "text-success",
+    Icon: TrendingUp,
+  },
+  hawkish: {
+    label: "Hawkish",
+    effect: "usually bad for gold",
+    className: "text-red-700",
+    Icon: TrendingDown,
+  },
+} as const;
+
+/**
+ * What to watch for in a release that has no figure.
+ *
+ * The minutes, the statement and a policymaker's speech are words, not
+ * numbers. Nobody can know before they are out whether the tone will be
+ * dovish or hawkish, so there is no "good for gold" or "bad for gold" to be
+ * had here, and printing one would be inventing it. What is well established
+ * is the other half: which way each tone usually pushes the price. So the card
+ * gives the key rather than a verdict — what the release is, and what each
+ * tone looks like — and the reader supplies the tone from what was said.
+ *
+ * This is a key, not a judgement, so unlike Verdict it shows before the
+ * release as well as after. Before is when it is most use.
+ */
+function Watch({ watch }: { watch: ReleaseWatch }) {
+  return (
+    <div className="mt-3 border-t border-rate-gold/20 pt-3">
+      <p className="text-[9.5px] font-semibold tracking-[0.14em] text-rate-ink/55 uppercase">
+        No figure &mdash; what to watch
+      </p>
+      <p className="mt-1 text-xs leading-snug text-rate-ink/75">{watch.what}</p>
+      <dl className="mt-2.5 grid gap-2">
+        <Tone tone="dovish" text={watch.dovish} />
+        <Tone tone="hawkish" text={watch.hawkish} />
+      </dl>
+    </div>
+  );
+}
+
+function Tone({ tone, text }: { tone: keyof typeof TONES; text: string }) {
+  const { label, effect, className, Icon } = TONES[tone];
+
+  return (
+    <div className="flex gap-2">
+      <Icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", className)} aria-hidden />
+      <div className="min-w-0">
+        <dt className={cn("text-[11px] leading-tight font-bold", className)}>
+          {label} &mdash; {effect}
+        </dt>
+        <dd className="mt-0.5 text-[11px] leading-snug text-rate-ink/70">{text}</dd>
+      </div>
+    </div>
   );
 }

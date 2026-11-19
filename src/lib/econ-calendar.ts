@@ -132,6 +132,101 @@ export function goldVerdict(event: MarketEvent): GoldVerdict | null {
   return stronger ? "bad" : "good";
 }
 
+/* ------------------------------------------------- the releases with no figure */
+
+/**
+ * What to listen for in a release that prints no figure.
+ *
+ * The Fed's minutes, its statement, its Beige Book and its speakers are text,
+ * not numbers. There is nothing to compare against a forecast, so goldVerdict
+ * has nothing to say about them and says nothing — which left the biggest
+ * events of the month as the only rows on the calendar with no read at all.
+ *
+ * This is the read they can honestly carry. Not a verdict: nobody knows
+ * whether the minutes are dovish or hawkish until somebody has read them, and
+ * printing "usually good for gold" against them beforehand would be inventing
+ * a direction rather than reporting one. What it gives instead is the key —
+ * what the thing is, what would read dovish in it, what would read hawkish —
+ * so a reader watching the news that evening knows which way each outcome
+ * cuts.
+ *
+ * Both sides are always stated. A note that mentioned only the dovish case
+ * would be a prediction wearing an explainer's clothes.
+ */
+export type ReleaseWatch = {
+  /** What the release is, in one clause. */
+  what: string;
+  /** What would read dovish in it — the side that usually lifts gold. */
+  dovish: string;
+  /** What would read hawkish in it — the side that usually weighs on gold. */
+  hawkish: string;
+};
+
+/**
+ * An allow-list, like DIRECTIONS above and for the same reason: a note is
+ * claimed only where the rule behind it is well established. Order matters —
+ * the first pattern that matches decides, so the specific events come before
+ * the general "somebody from the Fed is speaking".
+ */
+const WATCHES: ReadonlyArray<{ pattern: RegExp; watch: ReleaseWatch }> = [
+  {
+    pattern: /fomc meeting minutes|fomc minutes/i,
+    watch: {
+      what: "The written record of the Fed's last meeting, published three weeks after it.",
+      dovish: "members worried about jobs, or open to cutting sooner than expected",
+      hawkish: "members still set on inflation, or in no hurry to cut",
+    },
+  },
+  {
+    pattern: /fomc statement|fomc press conference|press conference/i,
+    watch: {
+      what: "The Fed's own words on the decision it has just announced.",
+      dovish: "a softer line on inflation, or a hint that the next move is down",
+      hawkish: "a warning that rates stay high for as long as inflation is above target",
+    },
+  },
+  {
+    pattern: /beige book/i,
+    watch: {
+      what: "The Fed's survey of business conditions across its twelve districts.",
+      dovish: "hiring, spending and wage growth cooling across the districts",
+      hawkish: "activity and wages still running hot",
+    },
+  },
+  {
+    pattern: /monetary policy report|testimony|testifies/i,
+    watch: {
+      what: "The Fed chair answering Congress, where the questions are not scripted.",
+      dovish: "concern about the jobs market, or openness to cutting",
+      hawkish: "insistence that inflation is not beaten",
+    },
+  },
+  {
+    pattern: /\bfed\b.*speaks|fomc member.*speaks|\bfed\b.*chair|federal reserve.*speaks/i,
+    watch: {
+      what: "A Fed policymaker speaking in public; the market listens for the next move.",
+      dovish: "talk of cuts, or concern about a softening jobs market",
+      hawkish: "talk of inflation staying hot, or of holding rates where they are",
+    },
+  },
+];
+
+/**
+ * The note for a release that has no figure to judge, or null.
+ *
+ * The test for "no figure" is the data, not the title: a release is given a
+ * note only when neither an actual nor a forecast can be read from it. That is
+ * what keeps this and goldVerdict from ever both applying to the same row —
+ * goldVerdict needs both figures, this one needs neither — and it means a
+ * numbered release is judged by its number even if its title mentions the Fed.
+ */
+export function releaseWatch(event: MarketEvent): ReleaseWatch | null {
+  if (event.currency !== "USD") return null;
+  if (parseFigure(event.actual) !== null || parseFigure(event.forecast) !== null) return null;
+
+  return WATCHES.find((rule) => rule.pattern.test(event.title))?.watch ?? null;
+}
+
 /* ----------------------------------------------------------- the week view */
 
 /** The currencies whose releases move gold and silver. */
