@@ -19,9 +19,12 @@
  * (CENSUS_API_KEY, BEA_API_KEY) and never in this public repository; without
  * one, those releases simply go without an actual.
  *
- * Jobless claims and the private surveys (ISM, the regional Feds, Michigan)
- * have no free official API and are left without an actual rather than filled
- * from somewhere less direct.
+ * The Philadelphia Fed's manufacturing survey comes from the Philadelphia Fed
+ * itself, which publishes its seasonally adjusted indexes as a keyless CSV.
+ *
+ * Jobless claims and the other surveys (ISM, the New York Fed, Michigan) have
+ * no free official API wired in here and are left without an actual rather
+ * than filled from somewhere less direct.
  *
  * A figure is only ever matched to the month the release is about: the month
  * before the one it is published in. Until BLS has that month, there is no
@@ -213,12 +216,95 @@ export function beaRule(event: Release) {
   return usd(event) ? (BEA_RULES.find((r) => r.title.test(event.title.trim())) ?? null) : null;
 }
 
+/**
+ * The Philadelphia Fed's Manufacturing Business Outlook Survey, as the bank
+ * publishes it: its seasonally adjusted diffusion indexes, one row a month.
+ * GAC is current general activity — the headline the calendar calls the
+ * "Philly Fed Manufacturing Index".
+ */
+export const PHILLY_FED_CSV =
+  "https://www.philadelphiafed.org/-/media/FRBP/Assets/Surveys-And-Data/MBOS/Historical-Data/Diffusion-Indexes/bos_dif.csv";
+
+export const PHILLY_RULES: ReadonlyArray<{ title: RegExp; column: string }> = [
+  { title: /^Philly Fed Manufacturing Index$/i, column: "GAC" },
+];
+
+export function phillyRule(event: Release) {
+  return usd(event) ? (PHILLY_RULES.find((r) => r.title.test(event.title.trim())) ?? null) : null;
+}
+
 /** Which agency publishes a release's actual, if any we read. */
-export function actualSource(event: Release): "bls" | "census" | "bea" | null {
+export function actualSource(event: Release): "bls" | "census" | "bea" | "philly" | null {
   if (blsRule(event)) return "bls";
   if (censusRule(event)) return "census";
   if (beaRule(event)) return "bea";
+  if (phillyRule(event)) return "philly";
   return null;
+}
+
+const MONTH_ABBREVIATIONS = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
+/**
+ * The Philadelphia Fed's CSV as month → column → value. Its dates are written
+ * "Nov-26"; the series begins in 1968, so a two-digit year above 60 is the
+ * 1900s. Null if it is not the file it publishes.
+ */
+export function parsePhilly(text: unknown): Map<string, Record<string, string>> | null {
+  if (typeof text !== "string") return null;
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines[0]?.split(",").map((cell) => cell.trim());
+  if (!header || header[0] !== "DATE" || !header.includes("GAC")) return null;
+
+  const rows = new Map<string, Record<string, string>>();
+  for (const line of lines.slice(1)) {
+    const cells = line.split(",").map((cell) => cell.trim());
+    const date = /^([A-Za-z]{3})-(\d{2})$/.exec(cells[0] ?? "");
+    if (!date) continue;
+    const month = MONTH_ABBREVIATIONS.indexOf(date[1]!.toLowerCase()) + 1;
+    if (month === 0) continue;
+    const short = Number(date[2]);
+    const year = short > 60 ? 1900 + short : 2000 + short;
+
+    const row: Record<string, string> = {};
+    header.forEach((name, index) => {
+      if (index > 0 && cells[index] !== undefined) row[name] = cells[index]!;
+    });
+    rows.set(monthLabel(year, month), row);
+  }
+  return rows;
+}
+
+/**
+ * The Philly Fed index's actual, or null until the bank has published the
+ * month. Unlike the government's data, the survey reports on the month it is
+ * released in: November's figure comes out on the third Thursday of November.
+ */
+export function phillyActual(
+  event: Release,
+  data: Map<string, Record<string, string>>,
+): string | null {
+  const rule = phillyRule(event);
+  const match = /^(\d{4})-(\d{2})/.exec(event.at);
+  if (!rule || !match) return null;
+
+  const raw = data.get(`${match[1]}-${match[2]}`)?.[rule.column];
+  const value = typeof raw === "string" && raw !== "" ? Number(raw) : Number.NaN;
+  if (!Number.isFinite(value)) return null;
+  const rounded = Math.round(value * 10) / 10;
+  return rounded === 0 ? "0.0" : rounded.toFixed(1);
 }
 
 /** "0.2" → "0.2%", "-0.0" → "0.0%"; null if it is not a number. */
