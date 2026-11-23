@@ -7,7 +7,16 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
+        /*
+         * AGP 9, not the 8.13 Capacitor 8's template ships with: Play's
+         * "Improve your app's memory and performance with R8 optimization"
+         * card asks for exactly this ("Upgrade your Android Gradle plugin to
+         * version 9.0 or higher"). AGP 9 needs Gradle 9 (see the wrapper), and
+         * it refuses the old proguard-android.txt, which
+         * @capacitor-community/in-app-review 8.0.0 still names. mobile/patches/
+         * fixes that one line, and `bun install` applies the patch.
+         */
+        classpath 'com.android.tools.build:gradle:9.5.1'
         classpath 'com.google.gms:google-services:4.4.4'
 
         // NOTE: Do not place your application dependencies here; they belong
