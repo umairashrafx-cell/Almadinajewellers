@@ -233,12 +233,32 @@ export function phillyRule(event: Release) {
   return usd(event) ? (PHILLY_RULES.find((r) => r.title.test(event.title.trim())) ?? null) : null;
 }
 
+/**
+ * The New York Fed's Empire State Manufacturing Survey, as the bank publishes
+ * it: its seasonally adjusted diffusion indexes, one row a month. GACDISA is
+ * current general business conditions — the headline the calendar calls the
+ * "Empire State Manufacturing Index".
+ */
+export const EMPIRE_STATE_CSV =
+  "https://www.newyorkfed.org/medialibrary/media/survey/empire/data/ESMS_SeasonallyAdjusted_Diffusion.csv";
+
+export const EMPIRE_RULES: ReadonlyArray<{ title: RegExp; column: string }> = [
+  { title: /^Empire State Manufacturing Index$/i, column: "GACDISA" },
+];
+
+export function empireRule(event: Release) {
+  return usd(event) ? (EMPIRE_RULES.find((r) => r.title.test(event.title.trim())) ?? null) : null;
+}
+
 /** Which agency publishes a release's actual, if any we read. */
-export function actualSource(event: Release): "bls" | "census" | "bea" | "philly" | null {
+export function actualSource(
+  event: Release,
+): "bls" | "census" | "bea" | "philly" | "empire" | null {
   if (blsRule(event)) return "bls";
   if (censusRule(event)) return "census";
   if (beaRule(event)) return "bea";
   if (phillyRule(event)) return "philly";
+  if (empireRule(event)) return "empire";
   return null;
 }
 
@@ -296,11 +316,57 @@ export function phillyActual(
   event: Release,
   data: Map<string, Record<string, string>>,
 ): string | null {
-  const rule = phillyRule(event);
+  return surveyActual(phillyRule(event), event, data);
+}
+
+/**
+ * The New York Fed's CSV as month → column → value. Its dates are the month's
+ * last day, "2026-11-30". Null if it is not the file it publishes.
+ */
+export function parseEmpire(text: unknown): Map<string, Record<string, string>> | null {
+  if (typeof text !== "string") return null;
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines[0]?.split(",").map((cell) => cell.trim());
+  if (!header || header[0] !== "surveyDate" || !header.includes("GACDISA")) return null;
+
+  const rows = new Map<string, Record<string, string>>();
+  for (const line of lines.slice(1)) {
+    const cells = line.split(",").map((cell) => cell.trim());
+    const date = /^(\d{4})-(\d{2})-\d{2}$/.exec(cells[0] ?? "");
+    if (!date) continue;
+
+    const row: Record<string, string> = {};
+    header.forEach((name, index) => {
+      if (index > 0 && cells[index] !== undefined) row[name] = cells[index]!;
+    });
+    rows.set(`${date[1]}-${date[2]}`, row);
+  }
+  return rows;
+}
+
+/**
+ * The Empire State index's actual, or null until the bank has published the
+ * month. Like the Philly Fed's, the survey reports on the month it is released
+ * in: November's figure comes out in the middle of November.
+ */
+export function empireActual(
+  event: Release,
+  data: Map<string, Record<string, string>>,
+): string | null {
+  return surveyActual(empireRule(event), event, data);
+}
+
+/** A regional Fed survey's headline for the release's own month, to one decimal. */
+function surveyActual(
+  rule: { column: string } | null,
+  event: Release,
+  data: Map<string, Record<string, string>>,
+): string | null {
   const match = /^(\d{4})-(\d{2})/.exec(event.at);
   if (!rule || !match) return null;
 
   const raw = data.get(`${match[1]}-${match[2]}`)?.[rule.column];
+  // The bank writes "ND" where it has no figure; Number("ND") is NaN.
   const value = typeof raw === "string" && raw !== "" ? Number(raw) : Number.NaN;
   if (!Number.isFinite(value)) return null;
   const rounded = Math.round(value * 10) / 10;

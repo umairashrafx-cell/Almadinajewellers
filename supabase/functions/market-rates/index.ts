@@ -33,6 +33,8 @@ import {
   actualsWaitSeconds,
   blsEndpoint,
   actualSource,
+  EMPIRE_STATE_CSV,
+  empireActual,
   beaActual,
   beaRule,
   beaUrl,
@@ -43,6 +45,7 @@ import {
   parseBea,
   parseBls,
   parseCensus,
+  parseEmpire,
   parsePhilly,
   pendingReleases,
   phillyActual,
@@ -1236,6 +1239,7 @@ async function readActuals(pending: CalendarEvent[], now: Date): Promise<Record<
   const census = pending.filter((event) => actualSource(event) === "census");
   const bea = pending.filter((event) => actualSource(event) === "bea");
   const philly = pending.filter((event) => actualSource(event) === "philly");
+  const empire = pending.filter((event) => actualSource(event) === "empire");
 
   // The two keyed agencies are skipped quietly when their key is not set.
   const censusKey = Deno.env.get("CENSUS_API_KEY");
@@ -1299,6 +1303,16 @@ async function readActuals(pending: CalendarEvent[], now: Date): Promise<Record<
         const data = parsePhilly(text);
         if (!data) throw new Error("the Philadelphia Fed did not answer with its CSV");
         for (const event of philly) record(event, phillyActual(event, data));
+      }),
+    );
+  }
+
+  if (empire.length > 0) {
+    jobs.push(
+      getText(EMPIRE_STATE_CSV).then((text) => {
+        const data = parseEmpire(text);
+        if (!data) throw new Error("the New York Fed did not answer with its CSV");
+        for (const event of empire) record(event, empireActual(event, data));
       }),
     );
   }

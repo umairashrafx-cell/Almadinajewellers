@@ -11,9 +11,11 @@ import {
   blsRule,
   censusActual,
   censusUrl,
+  empireActual,
   parseBea,
   parseBls,
   parseCensus,
+  parseEmpire,
   parsePhilly,
   phillyActual,
   pendingReleases,
@@ -372,6 +374,46 @@ describe("the Philly Fed index from the Philadelphia Fed", () => {
 
   test("is the source for the Philly Fed index and nothing else", () => {
     expect(actualSource(release("Philly Fed Manufacturing Index"))).toBe("philly");
-    expect(actualSource(release("Empire State Manufacturing Index"))).toBeNull();
+    expect(actualSource(release("Empire State Manufacturing Index"))).toBe("empire");
+  });
+});
+
+describe("the Empire State index from the New York Fed", () => {
+  // The head and tail of ESMS_SeasonallyAdjusted_Diffusion.csv as the bank
+  // published it on 23 November 2026, trimmed to its first columns.
+  const csv = [
+    "surveyDate,GACDISA,NOCDISA,SHCDISA,ASCDISA",
+    "2001-07-31,-13.3,7.0,-9.1,ND",
+    "2026-09-30,7.6,2.0,-3.2,-11.9",
+    "2026-10-31,25.5,23.2,13.1,-15.1",
+    "2026-11-30,7.8,3.0,8.8,-9.2",
+  ].join("\r\n");
+  const data = parseEmpire(csv)!;
+  const empire = (at: string) => release("Empire State Manufacturing Index", at);
+
+  test("reads the headline for the month the survey is released in", () => {
+    expect(empireActual(empire("2026-11-16T08:30:00-05:00"), data)).toBe("7.8");
+    expect(empireActual(empire("2026-10-15T08:30:00-04:00"), data)).toBe("25.5");
+  });
+
+  test("gives nothing until the bank has published the month", () => {
+    expect(empireActual(empire("2026-12-15T08:30:00-05:00"), data)).toBeNull();
+  });
+
+  test("reads the month from the bank's month-end dates", () => {
+    expect(data.get("2001-07")?.GACDISA).toBe("-13.3");
+    expect(data.get("2026-11")?.NOCDISA).toBe("3.0");
+  });
+
+  test("refuses anything that is not the bank's file", () => {
+    expect(parseEmpire(null)).toBeNull();
+    expect(parseEmpire("<html>Not found</html>")).toBeNull();
+    expect(parseEmpire("surveyDate,XYZ\n2026-11-30,1")).toBeNull();
+  });
+
+  test("is the source for the Empire State index and nothing else", () => {
+    expect(actualSource(empire("2026-11-16T08:30:00-05:00"))).toBe("empire");
+    expect(actualSource(release("Philly Fed Manufacturing Index"))).toBe("philly");
+    expect(actualSource(release("Richmond Manufacturing Index"))).toBeNull();
   });
 });
