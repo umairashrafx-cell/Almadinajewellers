@@ -33,7 +33,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * Release 8 (2.3) was uploaded on 19 November 2026, so this is 9.
+         * Release 9 (2.4) was uploaded on 23 November 2026, so this is 10.
          *
          * Read the live number off the Console before every release — what is
          * written here is a note of what was true once, not a source of truth.
@@ -41,16 +41,18 @@ android {
          * already gone out, and a bundle built against it would have been
          * rejected at upload.
          *
-         * versionName is what a customer sees. 2.4, because the app has a new
-         * icon and splash: the AM seal. 2.3 brought the US interest rate and
-         * the market's odds for the next Fed meeting, an economic calendar in Pakistan time with actual
-         * figures and a good/bad-for-gold label, and a choice in Settings of
-         * which screen the app opens on. 2.2 redrew the International tab
+         * versionName is what a customer sees. 2.4.1, because nothing on
+         * screen changes: the app is built with Android Gradle plugin 9, which
+         * Play's R8 recommendation asked for. 2.4 brought the new icon and
+         * splash, the AM seal. 2.3 brought the US interest rate and the
+         * market's odds for the next Fed meeting, an economic calendar in
+         * Pakistan time with actual figures and a good/bad-for-gold label,
+         * and a choice in Settings of which screen the app opens on. 2.2 redrew the International tab
          * with live prices and a TradingView gold chart and added tola
          * weights; 2.1.1 added the one-time Play review prompt.
          */
-        versionCode 9
-        versionName "2.4"
+        versionCode 10
+        versionName "2.4.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
