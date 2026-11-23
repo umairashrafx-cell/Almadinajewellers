@@ -31,7 +31,8 @@ mobile/
   app/src/screens/      rate board, calculator, saved pieces
   app/src/lib/cache.ts  what is kept on the phone, and the wishlist mirror
   www/                  app/ built. Generated — not in the repository
-  scripts/              the launcher icon and splash, generated from public/
+  brand/                the app's logo, the AM seal, as SVG: the source of every icon
+  scripts/              the launcher icon and splash, generated from brand/
   android/              the Android project itself, committed
   play-store/           everything the Play Console asks for
 ```
@@ -183,13 +184,24 @@ The three agreed names, which have to match on both sides: the channel `rates`,
 the path `/gold-rate-in-mandi-bahauddin-today`, and the notification icon
 `ic_stat_rate`.
 
-## When the website's icons change
+## When the logo changes
 
 ```sh
 bun run icons
 ```
 
-Regenerates the launcher icon, the adaptive icon, the splash and the white
-notification silhouette from `public/icon-512.png` and
-`public/icon-maskable-512.png`, so the app, the installed website and the Play
-listing cannot drift apart. The generated files are committed with the project.
+The app's logo is the AM seal in `brand/`, and it is the app's own: the website
+keeps its diamond in `public/`. The SVGs there are already outlined (the letters
+are Cormorant Garamond, the brand face, turned into paths), so nothing needs a
+font installed to draw them.
+
+- `icon-foreground.svg`: the seal, on the 108dp adaptive canvas, inside its 66dp safe circle
+- `icon-background.svg`: the emerald ground
+- `monogram.svg`: the AM alone, for the status bar
+- `lockup.svg`: the seal over the wordmark, for the splash
+
+`bun run icons` regenerates from them the adaptive foreground, background and
+monochrome (Android 13 themed icon) layers, the legacy square and round icons,
+every splash, the white notification silhouette, `app/public/icon-192.png` and
+`play-store/play-icon-512.png`. The generated files are committed with the
+project.

@@ -24,5 +24,10 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!--
+          Android 12 and up draw their own launch screen instead: the launcher
+          icon on this colour. Left unset, the seal would sit on plain white.
+        -->
+        <item name="windowSplashScreenBackground">@color/colorPrimary</item>
     </style>
 </resources>
