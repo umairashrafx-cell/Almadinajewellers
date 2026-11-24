@@ -1189,7 +1189,100 @@ export type ZakatCardInput = {
   workings: string;
   /** The small print: which nisab, and that it is an estimate. */
   note: string;
+  /**
+   * An ayah to close on, in Arabic with a translation under it. It takes the
+   * place of the tagline and the shop's three promises: a card about zakat
+   * should end on the reason for it rather than on a sales line.
+   */
+  ayah?: {
+    arabic: string;
+    urdu: string;
+    reference: string;
+    referenceUrdu: string;
+  };
 };
+
+/*
+ * No Arabic font is loaded for the card. The phone's own is used, which on
+ * Android is Noto Naskh: it carries Urdu as well, and Naskh stays legible at
+ * the size a forwarded picture is read at, where Nastaliq would not.
+ */
+const ARABIC = '"Noto Naskh Arabic", "Noto Sans Arabic", "Segoe UI", serif';
+
+/**
+ * The ayah under the zakat panel, shrunk until it fits above the footer.
+ *
+ * Right-to-left text is broken into lines in reading order and each line is
+ * drawn centred with the context's direction flipped, so the words come out
+ * the right way round whatever the line holds.
+ */
+function drawAyahClosing(
+  ctx: CanvasRenderingContext2D,
+  y: number,
+  note: string,
+  ayah: NonNullable<ZakatCardInput["ayah"]>,
+): void {
+  const { L, R, mid } = COLUMN;
+  const bottom = CARD_H - 128;
+  const max = R - L - 24;
+
+  const sep = ctx.createLinearGradient(L + 60, 0, R - 60, 0);
+  sep.addColorStop(0, "rgba(201,162,75,0)");
+  sep.addColorStop(0.5, "rgba(201,162,75,0.7)");
+  sep.addColorStop(1, "rgba(201,162,75,0)");
+  ctx.fillStyle = sep;
+  ctx.fillRect(L + 60, y, R - L - 120, 1.5);
+  ornament(ctx, mid, y, 11, LIGHT.gold);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `400 20px ${SANS}`;
+  ctx.fillText(note, mid, y + 40);
+
+  let arSize = 32;
+  let urSize = 23;
+  let arLines: string[] = [];
+  let urLines: string[] = [];
+  let arStep = 0;
+  let urStep = 0;
+  const top = y + 66;
+
+  for (;;) {
+    ctx.font = `400 ${arSize}px ${ARABIC}`;
+    arLines = wrap(ctx, ayah.arabic, max);
+    ctx.font = `400 ${urSize}px ${ARABIC}`;
+    urLines = wrap(ctx, ayah.urdu, max);
+    arStep = Math.round(arSize * 1.45);
+    urStep = Math.round(urSize * 1.5);
+    const height = arLines.length * arStep + 14 + urLines.length * urStep + 30;
+    if (top + height <= bottom || urSize <= 16) break;
+    arSize -= 2;
+    urSize -= 1;
+  }
+
+  ctx.direction = "rtl";
+  let line = top + arSize;
+  ctx.fillStyle = LIGHT.green;
+  ctx.font = `400 ${arSize}px ${ARABIC}`;
+  for (const text of arLines) {
+    ctx.fillText(text, mid, line);
+    line += arStep;
+  }
+
+  line += 14 - arStep + urStep;
+  ctx.fillStyle = LIGHT.greenSoft;
+  ctx.font = `400 ${urSize}px ${ARABIC}`;
+  for (const text of urLines) {
+    ctx.fillText(text, mid, line);
+    line += urStep;
+  }
+  ctx.direction = "ltr";
+
+  ctx.fillStyle = LIGHT.bronze;
+  ctx.font = `600 16px ${SANS}`;
+  tracked(ctx, ayah.reference.toUpperCase(), mid, line - urStep + 32, 3, "center");
+  ctx.textAlign = "left";
+}
 
 /**
  * A zakat sum, as a picture.
@@ -1218,6 +1311,9 @@ export async function renderZakatCard(input: ZakatCardInput): Promise<Blob> {
   const pillY = bandY + bandH + 14;
   drawPill(ctx, pillY, `Gold rate of ${formatRateDate(input.rateDate)}`);
 
+  /* Room for the ayah comes out of the gaps above it, a few pixels each. */
+  const tight = input.ayah !== undefined;
+
   let y = pillY + 74;
   estimateRow(
     ctx,
@@ -1226,7 +1322,7 @@ export async function renderZakatCard(input: ZakatCardInput): Promise<Blob> {
     ["Gold & silver", "Metal"],
     [formatPKR(input.metalValue), input.metalText],
   );
-  y += 112;
+  y += tight ? 104 : 112;
 
   estimateRow(
     ctx,
@@ -1235,9 +1331,9 @@ export async function renderZakatCard(input: ZakatCardInput): Promise<Blob> {
     ["Cash & savings", "Money"],
     [formatPKR(input.moneyValue), input.moneyNote],
   );
-  y += 124;
+  y += tight ? 114 : 124;
 
-  const panelH = 224;
+  const panelH = tight ? 212 : 224;
 
   ctx.save();
   ctx.shadowColor = "rgba(11,61,46,0.3)";
@@ -1277,10 +1373,14 @@ export async function renderZakatCard(input: ZakatCardInput): Promise<Blob> {
   ctx.fillText(input.workings, mid, y + 190);
   ctx.textAlign = "left";
 
-  y += panelH + 34;
+  y += panelH + (tight ? 28 : 34);
 
-  drawClosing(ctx, y, input.note);
-  drawMarks(ctx, y + 158);
+  if (input.ayah) {
+    drawAyahClosing(ctx, y, input.note, input.ayah);
+  } else {
+    drawClosing(ctx, y, input.note);
+    drawMarks(ctx, y + 158);
+  }
   drawFooterBand(ctx);
 
   return toJpeg(canvas);
