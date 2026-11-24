@@ -381,7 +381,7 @@ const START_CHOICES: ReadonlyArray<Choice<Start>> = [
   },
   {
     id: "rate-international",
-    label: "Gold rate · International",
+    label: "Gold rate · Live International",
     detail: "World gold and silver, the economic calendar and the US interest rate.",
   },
 ];
