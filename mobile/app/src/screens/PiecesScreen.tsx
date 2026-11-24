@@ -13,6 +13,7 @@ import { AppButton, AppLink } from "../components/AppButton";
 import { Kept } from "../components/Kept";
 import { Approx } from "../components/Money";
 import { PIECES_KEY, useCached } from "../lib/cache";
+import { shareText } from "../lib/share";
 import { openShop } from "../lib/shop";
 import { formatWeightGrams, formatWeightTola } from "../lib/weight";
 
@@ -512,26 +513,21 @@ function Gallery({ piece }: { piece: Product }) {
 /**
  * Hand the piece to whatever the phone shares with.
  *
- * Android's WebView offers the Web Share API, which opens the system sheet and
- * lets somebody send the piece wherever they already talk to the person they
- * are sending it to. Where the API is missing, WhatsApp is the fallback,
- * because that is where this shop's conversations happen anyway.
+ * The system share sheet, through lib/share.ts. This used to ask for the Web
+ * Share API, which Android's WebView does not have, so inside the app every
+ * tap went straight to WhatsApp and the sheet never opened. WhatsApp is still
+ * where it goes if the sheet itself fails, because that is where this shop's
+ * conversations happen anyway; closing the sheet is not a failure.
  */
 async function share(piece: Product) {
   const url = productUrl(piece.slug);
-  const text = `${piece.name} — Al-Madina Jewellers`;
+  const text = `${piece.name} — Al-Madina Jewellers\n${url}`;
 
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: piece.name, text, url });
-    } catch {
-      // Dismissing the sheet throws exactly as a failure does, and somebody
-      // who closed it has not asked to be sent to WhatsApp instead.
-    }
-    return;
+  try {
+    await shareText({ title: piece.name, text });
+  } catch {
+    window.open(shareOnWhatsApp(text), "_blank");
   }
-
-  window.open(shareOnWhatsApp(`${text}\n${url}`), "_blank");
 }
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
