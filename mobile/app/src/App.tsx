@@ -21,7 +21,6 @@ import { HomeScreen } from "./screens/HomeScreen";
 import { PiecesScreen } from "./screens/PiecesScreen";
 import { RateScreen } from "./screens/RateScreen";
 import { SavedScreen } from "./screens/SavedScreen";
-import { SellGoldScreen } from "./screens/SellGoldScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { StoreScreen } from "./screens/StoreScreen";
 import { StoryScreen } from "./screens/StoryScreen";
@@ -373,7 +372,6 @@ export function App() {
           {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
           {view === "store" && <StoreScreen />}
           {view === "custom" && <CustomOrderScreen />}
-          {view === "sell" && <SellGoldScreen rates={rates} />}
           {view === "appointment" && <AppointmentScreen />}
           {/*
           Both of these offer a way to the shop's address rather than
