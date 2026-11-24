@@ -8,6 +8,7 @@ import { formatRateStamp, rateFor, type RateSnapshot } from "@/lib/rates";
 import { SITE, formatPKR } from "@/lib/site";
 
 import { AppButton } from "../components/AppButton";
+import { DailyAyat } from "../components/DailyAyat";
 import { Approx } from "../components/Money";
 import { PIECES_KEY, useCached, type Cached } from "../lib/cache";
 
@@ -17,7 +18,8 @@ import { PIECES_KEY, useCached, type Cached } from "../lib/cache";
  * Until now the app opened on the rate board, which is right for the customer
  * who taps the icon on the way to the bazaar and wrong for the one who has
  * just installed it. This screen answers both in the order somebody actually
- * wants them: the shop, then today's figure, then what is in the cases.
+ * wants them: the shop, today's ayat, then today's figure, then what is in
+ * the cases.
  *
  * Nothing here fetches anything of its own. The rate snapshot is the shell's,
  * shared with the board and the calculator so the three can never disagree,
@@ -26,7 +28,9 @@ import { PIECES_KEY, useCached, type Cached } from "../lib/cache";
  * screen out of what the phone remembers.
  *
  * Every figure and every photograph on it comes from the shop's own data. The
- * one thing written by hand is the headline.
+ * one thing written by hand is the headline — and the ayat, which was not
+ * written by anybody here at all: lib/ayat.ts says where its text comes from
+ * and how it is checked.
  */
 type Props = {
   rates: Cached<RateSnapshot>;
@@ -48,6 +52,7 @@ export function HomeScreen({ rates, showRates, showPieces, showCollection }: Pro
   return (
     <div className="px-4 pt-5 pb-10">
       <Hero onExplore={showPieces} />
+      <DailyAyat />
       <TodaysRate rates={rates} onOpen={showRates} />
       <Collections pieces={pieces} onOpen={showCollection} onAll={showPieces} />
       <Trust />

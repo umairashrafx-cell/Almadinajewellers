@@ -137,6 +137,33 @@ body,
 }
 
 /*
+ * The two scripts the daily ayat is set in.
+ *
+ * Neither is a decoration. Uthmani Arabic carries marks the shop's Latin faces
+ * have never heard of, and Urdu set in an Arabic naskh face is legible but
+ * wrong — it is the difference between Urdu and Urdu-shaped. So each gets a
+ * face chosen for it, and in both cases the last name in the stack is the one
+ * that actually matters.
+ *
+ * Amiri Quran and Noto Nastaliq Urdu arrive from Google Fonts with the shop's
+ * other faces, through the same link in index.html, with the same consequence
+ * when there is no signal: they do not arrive. What makes that safe here, and
+ * why this is not the usual "it falls back to something" shrug, is that the
+ * fallbacks are the correct faces too. Android has shipped Noto Naskh Arabic
+ * and Noto Nastaliq Urdu in the system font set since Android 7, and the app's
+ * minSdk is 24, which IS Android 7 — so every phone that can install this app
+ * already has a proper nastaliq face on it. Offline, the verse is set in the
+ * phone's own Noto rather than in Amiri; it is never set in Inter.
+ */
+@utility font-quran {
+  font-family: "Amiri Quran", "Noto Naskh Arabic", "Traditional Arabic", serif;
+}
+
+@utility font-urdu {
+  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", serif;
+}
+
+/*
  * The app after dark.
  *
  * One class on the root element, set from the settings screen — see
