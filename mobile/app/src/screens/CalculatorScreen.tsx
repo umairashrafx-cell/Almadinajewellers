@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { ChevronRight, Clock, HandCoins } from "lucide-react";
 
 import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
 import { formatRateStamp, goldOnly, rateAgeNote, type RateSnapshot } from "@/lib/rates";
@@ -19,7 +19,13 @@ import type { Cached } from "../lib/cache";
  * app opens on. The selling side lives on the website's own sell page, where
  * the buying rate is shown beside it.
  */
-export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
+export function CalculatorScreen({
+  rates,
+  showZakat,
+}: {
+  rates: Cached<RateSnapshot>;
+  showZakat: () => void;
+}) {
   const approx = useApprox();
 
   if (!rates.data) {
@@ -93,6 +99,25 @@ export function CalculatorScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         purity buttons — nearly a sixth of a phone screen spent on nothing.
       */}
       <GoldValueCalculator snapshot={rates.data} side="buy" approx={approx} />
+
+      {/*
+        The question that most often follows "what is my gold worth" in this
+        market, once a year: how much zakat is on it.
+      */}
+      <button
+        type="button"
+        onClick={showZakat}
+        className="card-lift-sm mt-6 flex w-full items-center gap-3.5 rounded-xl border border-gold/20 bg-white px-4 py-4 text-left transition-colors active:bg-champagne/40"
+      >
+        <HandCoins className="h-5 w-5 shrink-0 text-gold-deep" aria-hidden />
+        <span className="flex-1">
+          <span className="block text-sm font-semibold text-ink">Work out your zakat</span>
+          <span className="mt-0.5 block text-xs text-warmgrey">
+            Gold, silver and savings, against today&rsquo;s nisab
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-warmgrey" aria-hidden />
+      </button>
     </div>
   );
 }
