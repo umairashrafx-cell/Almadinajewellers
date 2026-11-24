@@ -25,6 +25,7 @@ import { SellGoldScreen } from "./screens/SellGoldScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { StoreScreen } from "./screens/StoreScreen";
 import { StoryScreen } from "./screens/StoryScreen";
+import { ZakatScreen } from "./screens/ZakatScreen";
 
 /**
  * The app's own screens, and a door to the rest of the shop.
@@ -365,7 +366,10 @@ export function App() {
           what it was: a scroll back to the top.
         */}
           {view === "pieces" && <PiecesScreen key={collection ?? "all"} collection={collection} />}
-          {view === "calculator" && <CalculatorScreen rates={rates} />}
+          {view === "calculator" && (
+            <CalculatorScreen rates={rates} showZakat={() => go("zakat")} />
+          )}
+          {view === "zakat" && <ZakatScreen rates={rates} />}
           {view === "saved" && <SavedScreen showPieces={showAllPieces} />}
           {view === "store" && <StoreScreen />}
           {view === "custom" && <CustomOrderScreen />}

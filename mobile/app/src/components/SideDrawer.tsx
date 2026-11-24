@@ -3,6 +3,7 @@ import {
   Calculator,
   CalendarCheck,
   ChevronRight,
+  HandCoins,
   Coins,
   Globe,
   Phone,
@@ -64,6 +65,7 @@ type Entry =
 const ENTRIES: readonly Entry[] = [
   { kind: "view", id: "appointment", label: "Book an appointment", icon: CalendarCheck },
   { kind: "view", id: "calculator", label: "Gold calculator", icon: Calculator },
+  { kind: "view", id: "zakat", label: "Zakat calculator", icon: HandCoins },
   { kind: "view", id: "sell", label: "Sell your gold", icon: Coins },
   { kind: "view", id: "store", label: "Our store", icon: Store },
   { kind: "view", id: "story", label: "Our story", icon: BookOpen },

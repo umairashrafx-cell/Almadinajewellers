@@ -1172,6 +1172,120 @@ export async function renderEstimateCard(input: EstimateCardInput): Promise<Blob
   return toJpeg(canvas);
 }
 
+/** A worked-out zakat sum from the app's zakat calculator, ready to draw. */
+export type ZakatCardInput = {
+  /** ISO date of the board the metal was valued at. */
+  rateDate: string;
+  /** "7.5 tola gold · 10 tola silver", or "None" when no metal was entered. */
+  metalText: string;
+  metalValue: number;
+  moneyValue: number;
+  /** "Less debts Rs. 75,000" or "No debts". */
+  moneyNote: string;
+  zakat: number;
+  /** "Zakat due" or "No zakat due". */
+  label: string;
+  /** "2.5% of Rs. 1,455,000", or the nisab it fell short of. */
+  workings: string;
+  /** The small print: which nisab, and that it is an estimate. */
+  note: string;
+};
+
+/**
+ * A zakat sum, as a picture.
+ *
+ * The estimate card's layout with zakat's figures in it: what the metal comes
+ * to, what the money comes to, and the zakat on a green panel with the sum
+ * under it. Nothing on it says whose wealth it is — a customer forwarding it
+ * to a parent or an imam chooses what to say alongside.
+ */
+export async function renderZakatCard(input: ZakatCardInput): Promise<Blob> {
+  const [, icons, lockup] = await Promise.all([
+    ensureFonts(),
+    loadMetalIcons(),
+    loadImage(brandLockup).catch(() => null),
+  ]);
+  const { canvas, ctx } = newCanvas();
+  const { L, R, mid } = COLUMN;
+
+  await drawLightGround(ctx);
+  drawLockup(ctx, lockup);
+
+  const bandY = 318;
+  const bandH = 128;
+  drawTitleBand(ctx, bandY, bandH, ["", "Zakat", " Calculation"], "MANDI BAHAUDDIN");
+
+  const pillY = bandY + bandH + 14;
+  drawPill(ctx, pillY, `Gold rate of ${formatRateDate(input.rateDate)}`);
+
+  let y = pillY + 74;
+  estimateRow(
+    ctx,
+    y,
+    icons["22K"],
+    ["Gold & silver", "Metal"],
+    [formatPKR(input.metalValue), input.metalText],
+  );
+  y += 112;
+
+  estimateRow(
+    ctx,
+    y,
+    undefined,
+    ["Cash & savings", "Money"],
+    [formatPKR(input.moneyValue), input.moneyNote],
+  );
+  y += 124;
+
+  const panelH = 224;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(11,61,46,0.3)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = LIGHT.green;
+  roundedRect(ctx, L, y, R - L, panelH, 18);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = goldLeaf(ctx, L, y, R, y + panelH);
+  ctx.lineWidth = 3;
+  roundedRect(ctx, L, y, R - L, panelH, 18);
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(242,231,212,0.9)";
+  ctx.font = `600 20px ${SANS}`;
+  tracked(ctx, input.label.toUpperCase(), mid, y + 54, 6, "center");
+
+  ornament(ctx, mid - 222, y + 47, 8, LIGHT.gold);
+  ornament(ctx, mid + 222, y + 47, 8, LIGHT.gold);
+
+  const figure = formatPKR(input.zakat);
+  let size = 80;
+  ctx.font = `700 ${size}px ${SANS}`;
+  while (ctx.measureText(figure).width > R - L - 80 && size > 44) {
+    size -= 4;
+    ctx.font = `700 ${size}px ${SANS}`;
+  }
+  const figureW = ctx.measureText(figure).width;
+  ctx.textAlign = "center";
+  ctx.fillStyle = goldLeaf(ctx, mid - figureW / 2, y + 80, mid + figureW / 2, y + 150);
+  ctx.fillText(figure, mid, y + 142);
+
+  ctx.fillStyle = "rgba(242,231,212,0.85)";
+  ctx.font = `400 24px ${SANS}`;
+  ctx.fillText(input.workings, mid, y + 190);
+  ctx.textAlign = "left";
+
+  y += panelH + 34;
+
+  drawClosing(ctx, y, input.note);
+  drawMarks(ctx, y + 158);
+  drawFooterBand(ctx);
+
+  return toJpeg(canvas);
+}
+
 /**
  * One piece, as a picture.
  *
