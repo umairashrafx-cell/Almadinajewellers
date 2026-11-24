@@ -33,7 +33,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * Release 9 (2.4) was uploaded on 23 November 2026, so this is 10.
+         * Release 10 (2.4.1) was built on 23 November 2026, so this is 11.
          *
          * Read the live number off the Console before every release — what is
          * written here is a note of what was true once, not a source of truth.
@@ -41,18 +41,20 @@ android {
          * already gone out, and a bundle built against it would have been
          * rejected at upload.
          *
-         * versionName is what a customer sees. 2.4.1, because nothing on
-         * screen changes: the app is built with Android Gradle plugin 9, which
-         * Play's R8 recommendation asked for. 2.4 brought the new icon and
-         * splash, the AM seal. 2.3 brought the US interest rate and the
-         * market's odds for the next Fed meeting, an economic calendar in
-         * Pakistan time with actual figures and a good/bad-for-gold label,
-         * and a choice in Settings of which screen the app opens on. 2.2 redrew the International tab
-         * with live prices and a TradingView gold chart and added tola
+         * versionName is what a customer sees. 2.4.2 fixes 2.4 and 2.4.1,
+         * which were built without the database address (see
+         * mobile/app/vite.config.ts) and could not load any rate. 2.4.1 was
+         * the move to Android Gradle plugin 9 that Play's R8 recommendation
+         * asked for; 2.4 brought the new icon and splash, the AM seal. 2.3
+         * brought the US interest rate and the market's odds for the next Fed
+         * meeting, an economic calendar in Pakistan time with actual figures
+         * and a good/bad-for-gold label, and a choice in Settings of which
+         * screen the app opens on. 2.2 redrew the International tab with live
+         * prices and a TradingView gold chart and added tola
          * weights; 2.1.1 added the one-time Play review prompt.
          */
-        versionCode 10
-        versionName "2.4.1"
+        versionCode 11
+        versionName "2.4.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
