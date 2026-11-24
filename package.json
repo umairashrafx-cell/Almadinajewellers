@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:mobile": "tsc --noEmit -p tsconfig.mobile.json",
     "format": "prettier --write .",
+    "check:ayat": "bun scripts/check-ayat.mjs",
     "check:migrations": "bun scripts/check-migrations.mjs",
     "check:play-metadata": "node scripts/check-play-metadata.mjs",
     "check:play-ranks": "node scripts/check-play-ranks.mjs",
