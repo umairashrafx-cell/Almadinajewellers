@@ -71,9 +71,12 @@ type Board = "local" | "international";
  * control that swaps the panel under it, which a screen reader should say out
  * loud rather than leave somebody to discover.
  */
-const BOARDS: ReadonlyArray<{ id: Board; label: string }> = [
+const BOARDS: ReadonlyArray<{ id: Board; label: string; live?: boolean }> = [
   { id: "local", label: "Local" },
-  { id: "international", label: "International" },
+  // Named for what sets it apart from the shop's own board, at the owner's
+  // asking: these figures move while you watch, and the dot says so before
+  // the word does, as the dot under "Live from TradingView" does inside.
+  { id: "international", label: "Live International", live: true },
 ];
 
 function Toggle({ board, onChange }: { board: Board; onChange: (next: Board) => void }) {
@@ -83,7 +86,7 @@ function Toggle({ board, onChange }: { board: Board; onChange: (next: Board) => 
       aria-label="Which rates"
       className="card-lift-sm grid grid-cols-2 gap-1 rounded-full border border-gold/20 bg-white p-1"
     >
-      {BOARDS.map(({ id, label }) => (
+      {BOARDS.map(({ id, label, live }) => (
         <button
           key={id}
           type="button"
@@ -93,10 +96,16 @@ function Toggle({ board, onChange }: { board: Board; onChange: (next: Board) => 
           aria-controls={`rates-panel-${id}`}
           onClick={() => onChange(id)}
           className={cn(
-            "rounded-full py-2.5 text-[11px] font-semibold tracking-widest uppercase transition-colors",
+            "flex items-center justify-center gap-1.5 rounded-full py-2.5 text-[11px] font-semibold tracking-wide whitespace-nowrap uppercase transition-colors",
             board === id ? "bg-primary text-ivory" : "text-warmgrey",
           )}
         >
+          {live ? (
+            <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+          ) : null}
           {label}
         </button>
       ))}
