@@ -117,6 +117,22 @@ Weighed Honestly, Made Beautifully.
 
 ## What's new (500 characters max)
 
+For version 2.5 (versionCode 12), English:
+
+```
+New: a Zakat calculator. Enter your gold and silver in tola or grams, with cash,
+savings and business stock, and it works out your zakat at today's rates, checks the
+nisab and tells you which one it used. Share the result as a picture or as text.
+Sharing a piece from the Shop now opens your phone's own share menu, and the
+International tab is now called Live International.
+```
+
+Urdu (ur):
+
+```
+نیا: زکوٰۃ کیلکولیٹر۔ اپنا سونا اور چاندی تولہ یا گرام میں، نقد رقم، بچت اور کاروباری مال کے ساتھ لکھیں، اور آج کے ریٹ پر آپ کی زکوٰۃ کا حساب نصاب کی جانچ کے ساتھ سامنے آ جائے گا، یہ بھی کہ کون سا نصاب لگا۔ نتیجہ تصویر یا ٹیکسٹ کی صورت میں شیئر کریں۔ شاپ سے کوئی پیس شیئر کرنے پر اب فون کا اپنا شیئر مینو کھلتا ہے، اور انٹرنیشنل ٹیب کا نام اب Live International ہے۔
+```
+
 For version 2.3 (versionCode 8):
 
 ```
