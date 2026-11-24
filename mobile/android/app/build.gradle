@@ -33,7 +33,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * Release 10 (2.4.1) was built on 23 November 2026, so this is 11.
+         * Release 11 (2.4.2) was built on 24 November 2026, so this is 12.
          *
          * Read the live number off the Console before every release — what is
          * written here is a note of what was true once, not a source of truth.
@@ -41,7 +41,11 @@ android {
          * already gone out, and a bundle built against it would have been
          * rejected at upload.
          *
-         * versionName is what a customer sees. 2.4.2 fixes 2.4 and 2.4.1,
+         * versionName is what a customer sees. 2.5 adds the Zakat calculator,
+         * sharing through Android's own share sheet (a zakat sum as a picture
+         * or text, and a piece from the Shop), renames the world board's tab
+         * to Live International, and takes Sell your gold out of the app.
+         * 2.4.2 fixes 2.4 and 2.4.1,
          * which were built without the database address (see
          * mobile/app/vite.config.ts) and could not load any rate. 2.4.1 was
          * the move to Android Gradle plugin 9 that Play's R8 recommendation
@@ -53,8 +57,8 @@ android {
          * prices and a TradingView gold chart and added tola
          * weights; 2.1.1 added the one-time Play review prompt.
          */
-        versionCode 11
-        versionName "2.4.2"
+        versionCode 12
+        versionName "2.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
