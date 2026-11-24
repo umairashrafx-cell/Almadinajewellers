@@ -10,6 +10,7 @@ import { AppButton } from "../components/AppButton";
 import { Kept } from "../components/Kept";
 import type { Cached } from "../lib/cache";
 import { shareImage, shareText } from "../lib/share";
+import { ZAKAT_AYAH } from "../lib/zakat-ayah";
 import {
   GOLD_NISAB_GRAMS,
   GOLD_NISAB_TOLA,
@@ -101,6 +102,8 @@ export function ZakatScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         Gold and silver at today&rsquo;s rates from the board, with your cash, savings and business.
         A guide to the sum &mdash; a scholar has the last word on your own case.
       </p>
+
+      <Ayah />
 
       <Card title="Gold">
         <ul className="space-y-4">
@@ -241,6 +244,38 @@ export function ZakatScreen({ rates }: { rates: Cached<RateSnapshot> }) {
   );
 }
 
+/**
+ * The ayah, in Arabic with its Urdu under it.
+ *
+ * Each text carries its own `lang` and right-to-left direction, which is what
+ * makes Android reach for its own Arabic and Nastaliq fonts; the app ships
+ * neither. Nastaliq climbs well above and below its line, so the Urdu gets far
+ * more line height than English would.
+ */
+function Ayah() {
+  return (
+    <figure className="card-lift mt-6 rounded-xl border border-gold/30 bg-ivory px-5 py-6 text-center">
+      <blockquote>
+        <p lang="ar" dir="rtl" className="text-[22px] leading-[2] text-primary">
+          {ZAKAT_AYAH.arabic}
+        </p>
+        <div className="hairline mx-auto my-4 max-w-24" />
+        <p lang="ur" dir="rtl" className="text-[16px] leading-[2.3] text-ink/85">
+          {ZAKAT_AYAH.urdu}
+        </p>
+      </blockquote>
+      <figcaption className="mt-4">
+        <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-gold-deep">
+          {ZAKAT_AYAH.reference}
+        </span>
+        <span lang="ur" dir="rtl" className="mt-1 block text-[12px] leading-loose text-ink/60">
+          {ZAKAT_AYAH.referenceUrdu} · ترجمہ: {ZAKAT_AYAH.translator}
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
 /** The answer, on green, with the sum under it and the ways to send it. */
 function Result({
   result,
@@ -335,6 +370,11 @@ function shareMessage(result: ZakatResult, snapshot: RateSnapshot, metalText: st
       : "*No zakat due* — below the nisab",
     "",
     `At the gold rate of ${formatRateDate(snapshot.date)}. An estimate; a scholar has the last word.`,
+    "",
+    ZAKAT_AYAH.arabic,
+    ZAKAT_AYAH.urdu,
+    `(${ZAKAT_AYAH.referenceUrdu} · ${ZAKAT_AYAH.reference})`,
+    "",
     `Worked out in the ${SITE.name} app: ${SITE.playStore}`,
   ]
     .filter((line) => line !== null)
@@ -376,6 +416,7 @@ function ShareActions({
             ? `2.5% of ${formatPKR(result.net)}`
             : `Below the nisab of ${formatPKR(result.nisab.value)}`,
           note: `${result.nisab.metal === "silver" ? "Silver" : "Gold"} nisab · An estimate, a scholar has the last word`,
+          ayah: ZAKAT_AYAH,
         });
         await shareImage({
           blob,
