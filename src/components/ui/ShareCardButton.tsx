@@ -28,6 +28,20 @@ type Props = {
   children?: React.ReactNode;
   /** Draw as a square tile, for a row of ways to share. */
   tile?: boolean;
+  /**
+   * The Android app's own share, and never passed by the website. The same
+   * arrangement as the calculator's `approx`.
+   *
+   * It is not a preference. Android's WebView has no Web Share API at all, so
+   * inside the app the canShare test below is always false and the download
+   * that follows it reaches a WebView with no download listener — a button
+   * that looks like it worked and does nothing. The app passes its own
+   * shareImage, which writes the picture to the cache and opens the real
+   * system sheet.
+   */
+  share?:
+    | ((card: { blob: Blob; filename: string; title: string; text: string }) => Promise<unknown>)
+    | undefined;
 };
 
 export function ShareCardButton({
@@ -38,6 +52,7 @@ export function ShareCardButton({
   className,
   children = "Share as picture",
   tile = false,
+  share,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -50,6 +65,13 @@ export function ShareCardButton({
 
     try {
       const blob = await render();
+
+      // The app's sheet where there is one; everything below is the browser.
+      if (share) {
+        await share({ blob, filename, title, text });
+        return;
+      }
+
       const file = new File([blob], filename, { type: "image/jpeg" });
 
       if (navigator.canShare?.({ files: [file] })) {

@@ -1,11 +1,78 @@
-import { ChevronRight, Clock, HandCoins } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Clock, HandCoins, ImageDown, Loader2 } from "lucide-react";
 
 import { GoldValueCalculator } from "@/components/sell/GoldValueCalculator";
 import { formatRateStamp, goldOnly, rateAgeNote, type RateSnapshot } from "@/lib/rates";
+import { renderRateCard } from "@/lib/share-card";
+import { SITE } from "@/lib/site";
 
 import { Kept } from "../components/Kept";
 import { useApprox } from "../components/Money";
 import type { Cached } from "../lib/cache";
+import { shareImage } from "../lib/share";
+
+/**
+ * The board above, as a picture, through the phone's own share sheet.
+ *
+ * The shop sends the day's rates to customers and to a broadcast list every
+ * morning, and a screenshot of a phone screen is what that looked like before
+ * this. renderRateCard is the picture the website and the admin screen already
+ * share — 1080×1350, JPEG, the shop's own card — so the app sends the same
+ * image rather than inventing a second one that would drift from it.
+ *
+ * It carries the whole board, gold and silver, where the line above it shows
+ * only the gold the calculator prices. That is deliberate: what is being sent
+ * is the shop's rates, and a recipient asking about silver should not need a
+ * second message.
+ *
+ * shareImage, not the Web Share API: see lib/share.ts. A failure is said on
+ * the screen rather than swallowed, because a button that did nothing is
+ * indistinguishable from one that is broken.
+ */
+function ShareChart({ snapshot }: { snapshot: RateSnapshot }) {
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setFailure(null);
+    try {
+      await shareImage({
+        blob: await renderRateCard(snapshot),
+        filename: `al-madina-gold-rate-${snapshot.date}.jpg`,
+        title: "Today's Gold Rate",
+        text: `${SITE.name} · ${SITE.origin}/gold-rate-in-mandi-bahauddin-today`,
+      });
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : "The picture could not be made.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span className="flex shrink-0 flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={() => void run()}
+        disabled={busy}
+        className="-mr-1 inline-flex min-h-8 items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] font-semibold tracking-wider text-gold-deep uppercase transition-colors active:bg-champagne/50 disabled:opacity-60"
+      >
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+        ) : (
+          <ImageDown className="h-3.5 w-3.5" aria-hidden />
+        )}
+        {busy ? "Making…" : "Share"}
+      </button>
+      {failure ? (
+        <span role="status" className="text-[11px] text-destructive">
+          {failure}
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 /**
  * What a weight is worth, at the rates on the board.
@@ -72,7 +139,16 @@ export function CalculatorScreen({
             </dd>
           </div>
         ))}
-        <p className="w-full text-[11px] text-warmgrey">Per tola · {formatRateStamp(rates.data)}</p>
+        {/*
+          The stamp and the way to send it, on one line. The button sits with
+          the date rather than above the figures because it is about them
+          rather than part of them, and because a row of numbers with a button
+          over it reads as a thing to press before the numbers are read.
+        */}
+        <div className="flex w-full items-center justify-between gap-1.5">
+          <p className="text-[11px] text-warmgrey">Per tola · {formatRateStamp(rates.data)}</p>
+          <ShareChart snapshot={rates.data} />
+        </div>
       </dl>
 
       {/*
@@ -98,7 +174,13 @@ export function CalculatorScreen({
         mt-8 on top of that put 80px of ivory between the rate line and the
         purity buttons — nearly a sixth of a phone screen spent on nothing.
       */}
-      <GoldValueCalculator snapshot={rates.data} side="buy" approx={approx} />
+      <GoldValueCalculator
+        snapshot={rates.data}
+        side="buy"
+        approx={approx}
+        compact
+        shareCard={shareImage}
+      />
 
       {/*
         The question that most often follows "what is my gold worth" in this
