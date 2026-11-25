@@ -3,14 +3,18 @@ import { useMemo } from "react";
 import { TEXT_SOURCE, URDU_TRANSLATOR, ayatToday, reference } from "../lib/ayat";
 
 /**
- * Today's ayat, on the home screen, above the rate.
+ * Today's ayat, the first thing on the home screen.
  *
- * Above rather than below, because of what it is. The verse is not a feature
- * competing with the gold rate for a customer's attention — it is the thing
- * the shop opens the day with, and burying it under a price would say the
- * opposite of what showing it at all is meant to say. The hero photograph
- * still comes first: that is the shopfront, and this reads as what is written
- * inside the door.
+ * First, above even the shopfront photograph, because the shop asked for it
+ * there: "sab sy upr ayat ho". It began under the hero and above the rate,
+ * which was already saying that the verse outranks the price; putting it at
+ * the very top finishes the thought. The photograph and its "Explore the
+ * collection" button now close the screen instead of opening it, so the app
+ * opens on the verse and ends on an invitation.
+ *
+ * It carries no top margin of its own — the container's padding is the gap —
+ * because it is the first element. If it is ever moved back down the screen,
+ * give it one.
  *
  * Quiet by construction. The same white card, the same gold hairline and the
  * same card-lift shadow as every other section on the screen, so it belongs
@@ -53,7 +57,7 @@ export function DailyAyat() {
   if (!ayat) return null;
 
   return (
-    <section className="card-lift mt-5 rounded-xl border border-gold/15 bg-white px-5 pt-4 pb-3.5">
+    <section className="card-lift rounded-xl border border-gold/15 bg-white px-5 pt-4 pb-3.5">
       <p className="text-[10px] font-semibold tracking-[0.2em] text-warmgrey uppercase">
         Aaj ki ayat
       </p>

@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, ChevronRight, Gem, RefreshCcw, Truck } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 
 import heroImage from "@/assets/hero-bridal.webp";
@@ -17,9 +17,24 @@ import { PIECES_KEY, useCached, type Cached } from "../lib/cache";
  *
  * Until now the app opened on the rate board, which is right for the customer
  * who taps the icon on the way to the bazaar and wrong for the one who has
- * just installed it. This screen answers both in the order somebody actually
- * wants them: the shop, today's ayat, then today's figure, then what is in
- * the cases.
+ * just installed it. This screen answers both, in the order the shop asked
+ * for: today's ayat, today's figure, what is in the cases, and the shopfront
+ * last, carrying the one button that leads further in.
+ *
+ * The photograph used to open the screen and now closes it. That is the shop's
+ * call and it reads better than it sounds: the verse is what he wants a
+ * customer to meet first, the rate is what they came for, and a grand
+ * photograph above both was pushing the figure off a small screen. Ending on
+ * it turns it from a banner into an invitation — the last thing on the screen
+ * is a way further in rather than a claim.
+ *
+ * There is no trust strip any more. Four promises — hallmarked gold, certified
+ * silver, lifetime buy-back, insured delivery — used to sit at the foot as a
+ * grid of cards; they were shrunk to chips and then dropped, on the shop's
+ * instruction, because the screen had become a stack of blocks with the rate
+ * buried in it. Nothing was lost: all four are still on the website in
+ * src/components/home/TrustStrip.tsx, which the Shop button opens in the same
+ * WebView. Ask the shop before putting them back here.
  *
  * Nothing here fetches anything of its own. The rate snapshot is the shell's,
  * shared with the board and the calculator so the three can never disagree,
@@ -39,23 +54,15 @@ type Props = {
   showCollection: (category: string) => void;
 };
 
-const TRUST = [
-  { Icon: BadgeCheck, label: "Hallmarked 22K Gold" },
-  { Icon: Gem, label: "925 Certified Silver" },
-  { Icon: RefreshCcw, label: "Lifetime Buy-Back" },
-  { Icon: Truck, label: "Free Insured Delivery" },
-] as const;
-
 export function HomeScreen({ rates, showRates, showPieces, showCollection }: Props) {
   const pieces = useCached<Product[]>(PIECES_KEY, fetchAllProducts);
 
   return (
     <div className="px-4 pt-5 pb-10">
-      <Hero onExplore={showPieces} />
       <DailyAyat />
       <TodaysRate rates={rates} onOpen={showRates} />
       <Collections pieces={pieces} onOpen={showCollection} onAll={showPieces} />
-      <Trust />
+      <Hero onExplore={showPieces} />
     </div>
   );
 }
@@ -71,7 +78,7 @@ export function HomeScreen({ rates, showRates, showPieces, showCollection }: Pro
  */
 function Hero({ onExplore }: { onExplore: () => void }) {
   return (
-    <section className="card-lift relative overflow-hidden rounded-2xl bg-primary">
+    <section className="card-lift relative mt-8 overflow-hidden rounded-2xl bg-primary">
       <img
         src={heroImage}
         alt=""
@@ -248,41 +255,5 @@ function Collections({
         ))}
       </ul>
     </section>
-  );
-}
-
-/**
- * The four promises the website makes, in the website's own words.
- *
- * Chips rather than cards. These were four tall white cards in a two-column
- * grid, which is right on a page somebody scrolled to deliberately and wrong
- * at the foot of a home screen that now also carries the day's ayat: four
- * cards is a second grid under the collections rail, and the whole screen
- * had become a stack of boxes with the gold rate buried in the middle of it.
- * As chips they say exactly the same four things in about a third of the
- * height, and they stop competing with the rate for the eye.
- *
- * The words are untouched, deliberately. Shortening "Free Insured Delivery"
- * to "Insured Delivery" would save a few pixels by quietly dropping a promise
- * the shop makes, and these four are the website's own claims — they get
- * smaller, not weaker.
- *
- * Wrapped rather than scrolled. A rail like the collections one would be
- * shorter still, but a promise the customer has to swipe to find is a promise
- * they will not read; all four stay on screen.
- */
-function Trust() {
-  return (
-    <ul className="mt-7 flex flex-wrap gap-2">
-      {TRUST.map(({ Icon, label }) => (
-        <li
-          key={label}
-          className="flex items-center gap-1.5 rounded-full border border-gold/20 bg-white px-2.5 py-1.5"
-        >
-          <Icon className="h-3.5 w-3.5 shrink-0 text-gold-deep" aria-hidden />
-          <span className="text-[10.5px] leading-none font-medium text-ink">{label}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
