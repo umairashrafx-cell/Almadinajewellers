@@ -112,10 +112,10 @@ one, and nobody on this project is a lawyer.
 **Two Urdu translations are unambiguously out of copyright** if the shop would
 rather not carry the question at all:
 
-| Translation              | Translator died  | Public domain in Pakistan since | Note                                       |
-| ------------------------ | ---------------- | ------------------------------- | ------------------------------------------ |
-| Kanz-ul-Iman             | 28 October 1921  | 1972                            | Archaic register; read as a Barelvi text   |
-| Fateh Muhammad Jalandhri | 1982 (unsourced) | 2033, if that date is right     | **Currently shipping.** No maslak attached |
+| Translation              | Translator died  | Public domain in Pakistan since | Note                                                 |
+| ------------------------ | ---------------- | ------------------------------- | ---------------------------------------------------- |
+| Kanz-ul-Iman             | 28 October 1921  | 1972                            | Archaic register; read as a Barelvi text             |
+| Fateh Muhammad Jalandhri | 1982 (unsourced) | 2033, if that date is right     | **Shipping, chosen 25 Nov 2026.** No maslak attached |
 
 Jalandhri was chosen over the public-domain alternative deliberately, and for a
 reason that is about the shop rather than about law. Urdu Wikipedia's own
@@ -126,9 +126,17 @@ that reads as everybody's than one that reads as one group's. Swapping it would
 trade an unsettled licence question for a settled sectarian signal on the
 shop's own home screen, which is the worse of the two for this business.
 
-**If the shop wants it swapped anyway, say so and it is a small job** — the
-translation is one column of one file, and `bun run check:ayat` verifies the
-replacement the same way.
+**Decided on 25 November 2026: keep Jalandhri.** The position above was put to
+the shop in full — the missing licence grant, the unsourced death date, the
+copyright term that would run to the end of 2032 if that date is right, and the
+public-domain alternative — and he chose to keep Jalandhri with that understood.
+This paragraph exists so that nobody has to reconstruct later whether the
+question was ever asked. It was, and this was the answer.
+
+**If it is ever to be swapped, it is a small job** — the translation is one
+column of one file, and `bun run check:ayat` verifies the replacement the same
+way. The thing not to do is edit a word of the existing text to settle an
+argument; take the replacement from a published edition in full.
 
 ## What was deliberately left out
 
