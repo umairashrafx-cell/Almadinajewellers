@@ -251,17 +251,36 @@ function Collections({
   );
 }
 
-/** The four promises the website makes, in the website's own words. */
+/**
+ * The four promises the website makes, in the website's own words.
+ *
+ * Chips rather than cards. These were four tall white cards in a two-column
+ * grid, which is right on a page somebody scrolled to deliberately and wrong
+ * at the foot of a home screen that now also carries the day's ayat: four
+ * cards is a second grid under the collections rail, and the whole screen
+ * had become a stack of boxes with the gold rate buried in the middle of it.
+ * As chips they say exactly the same four things in about a third of the
+ * height, and they stop competing with the rate for the eye.
+ *
+ * The words are untouched, deliberately. Shortening "Free Insured Delivery"
+ * to "Insured Delivery" would save a few pixels by quietly dropping a promise
+ * the shop makes, and these four are the website's own claims — they get
+ * smaller, not weaker.
+ *
+ * Wrapped rather than scrolled. A rail like the collections one would be
+ * shorter still, but a promise the customer has to swipe to find is a promise
+ * they will not read; all four stay on screen.
+ */
 function Trust() {
   return (
-    <ul className="mt-8 grid grid-cols-2 gap-3">
+    <ul className="mt-7 flex flex-wrap gap-2">
       {TRUST.map(({ Icon, label }) => (
         <li
           key={label}
-          className="card-lift-sm flex items-start gap-2.5 rounded-xl border border-gold/15 bg-white px-3.5 py-3.5"
+          className="flex items-center gap-1.5 rounded-full border border-gold/20 bg-white px-2.5 py-1.5"
         >
-          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gold-deep" aria-hidden />
-          <span className="text-[11px] leading-snug font-medium text-ink">{label}</span>
+          <Icon className="h-3.5 w-3.5 shrink-0 text-gold-deep" aria-hidden />
+          <span className="text-[10.5px] leading-none font-medium text-ink">{label}</span>
         </li>
       ))}
     </ul>
