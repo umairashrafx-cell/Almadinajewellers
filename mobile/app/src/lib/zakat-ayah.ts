@@ -7,8 +7,10 @@
  * work out.
  *
  * Both texts are copied exactly, never retyped or trimmed. The Arabic is the
- * Tanzil "simple" text, which the phone's own Arabic font draws cleanly
- * (the Uthmani script's small marks need a font the app does not ship). The
+ * Tanzil "simple" text rather than the Uthmani the Home ayat uses: the share
+ * picture draws it with the phone's own Noto Naskh, offline included, and the
+ * simple text needs none of the Quranic marks that face may not carry.
+ * `bun run check:ayat` compares it with the simple editions for that reason. The
  * Urdu is Fateh Muhammad Jalandhry's translation, the one most Pakistani
  * households read, with his wording kept, "خدا" included. Both came from
  * api.alquran.cloud on 24 November 2026; if either is ever changed, take it

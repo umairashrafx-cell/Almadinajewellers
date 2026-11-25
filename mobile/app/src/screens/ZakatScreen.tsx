@@ -247,20 +247,22 @@ export function ZakatScreen({ rates }: { rates: Cached<RateSnapshot> }) {
 /**
  * The ayah, in Arabic with its Urdu under it.
  *
- * Each text carries its own `lang` and right-to-left direction, which is what
- * makes Android reach for its own Arabic and Nastaliq fonts; the app ships
- * neither. Nastaliq climbs well above and below its line, so the Urdu gets far
- * more line height than English would.
+ * The same faces as the daily ayat on Home: `font-quran` (Amiri Quran) and
+ * `font-urdu` (Noto Nastaliq Urdu), from index.css. Both come from Google
+ * Fonts, so offline they fall back to the phone's own Noto Naskh and Nastaliq;
+ * the `lang` and right-to-left direction on each text are what make Android
+ * pick those. Nastaliq climbs well above and below its line, so the Urdu gets
+ * far more line height than English would.
  */
 function Ayah() {
   return (
     <figure className="card-lift mt-6 rounded-xl border border-gold/30 bg-ivory px-5 py-6 text-center">
       <blockquote>
-        <p lang="ar" dir="rtl" className="text-[22px] leading-[2] text-primary">
+        <p lang="ar" dir="rtl" className="font-quran text-[22px] leading-[2] text-primary">
           {ZAKAT_AYAH.arabic}
         </p>
         <div className="hairline mx-auto my-4 max-w-24" />
-        <p lang="ur" dir="rtl" className="text-[16px] leading-[2.3] text-ink/85">
+        <p lang="ur" dir="rtl" className="font-urdu text-[16px] leading-[2.3] text-ink/85">
           {ZAKAT_AYAH.urdu}
         </p>
       </blockquote>
@@ -268,7 +270,11 @@ function Ayah() {
         <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-gold-deep">
           {ZAKAT_AYAH.reference}
         </span>
-        <span lang="ur" dir="rtl" className="mt-1 block text-[12px] leading-loose text-ink/60">
+        <span
+          lang="ur"
+          dir="rtl"
+          className="font-urdu mt-1 block text-[12px] leading-loose text-ink/60"
+        >
           {ZAKAT_AYAH.referenceUrdu} · ترجمہ: {ZAKAT_AYAH.translator}
         </span>
       </figcaption>

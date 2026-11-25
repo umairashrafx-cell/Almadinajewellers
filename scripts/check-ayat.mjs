@@ -11,10 +11,13 @@
  * a thousand phones. So the claim the file makes about itself is checkable,
  * and this is the check.
  *
- * What it does, for each of the 26 entries:
+ * What it does, for each of the 26 entries, and for the one ayah on the Zakat
+ * screen (mobile/app/src/lib/zakat-ayah.ts):
  *
  *   - fetches the Arabic from Tanzil Project (tanzil.net), api.alquran.cloud
- *     and api.quran.com, and the Urdu from Tanzil and api.quran.com;
+ *     and api.quran.com, and the Urdu from Tanzil and api.quran.com. The daily
+ *     ayat are the Uthmani text; the Zakat ayah is the simple text, so it is
+ *     compared with each source's simple edition instead;
  *   - compares all of them to what is in the file, ignoring only differences
  *     that are known to be encoding rather than text (see `skeleton` below);
  *   - fails loudly, naming the verse and the sources that disagree.
@@ -28,6 +31,8 @@
 const SOURCES = {
   tanzilArabic:
     "https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true",
+  tanzilArabicSimple:
+    "https://tanzil.net/pub/download/index.php?quranType=simple&outType=txt-2&agree=true",
   tanzilUrdu: "https://tanzil.net/trans/ur.jalandhry",
 };
 
@@ -36,6 +41,23 @@ const UA = "al-madina-jewellers-ayat-check/1.0";
 /** The one place the expected shape of the data file is written down. */
 const ENTRY =
   /\{\s*surah:\s*(\d+),\s*ayah:\s*(\d+),\s*surahName:\s*"([^"]*)",\s*surahArabic:\s*"([^"]*)",\s*arabic:\s*"([^"]*)",\s*urdu:\s*"([^"]*)",\s*\}/g;
+
+/*
+ * And of zakat-ayah.ts: one object, its fields matched one at a time because
+ * prettier is free to wrap them. `reference` reads "Al-Baqarah 2:110".
+ */
+const zakatField = (file, name) => file.match(new RegExp(`\\b${name}:\\s*"([^"]*)"`))?.[1];
+const REFERENCE = /^(.+) (\d+):(\d+)$/;
+
+/*
+ * Where each script lives at each source. The daily ayat are Uthmani; the
+ * Zakat ayah is the simple text (zakat-ayah.ts says why). api.quran.com calls
+ * its simple text "imlaei".
+ */
+const EDITIONS = {
+  uthmani: { tanzil: "tanzilArabic", cloud: "quran-uthmani", com: "text_uthmani" },
+  simple: { tanzil: "tanzilArabicSimple", cloud: "quran-simple", com: "text_imlaei" },
+};
 
 async function text(url) {
   const response = await fetch(url, { headers: { "User-Agent": UA } });
@@ -127,6 +149,7 @@ async function main() {
     surahName: m[3],
     arabic: m[5],
     urdu: m[6],
+    script: "uthmani",
   }));
 
   if (entries.length === 0) {
@@ -139,35 +162,64 @@ async function main() {
     process.exit(1);
   }
 
+  const zakatFile = await Bun.file(
+    new URL("../mobile/app/src/lib/zakat-ayah.ts", import.meta.url),
+  ).text();
+  const zakatReference = REFERENCE.exec(zakatField(zakatFile, "reference") ?? "");
+  const zakatArabic = zakatField(zakatFile, "arabic");
+  const zakatUrdu = zakatField(zakatFile, "urdu");
+
+  if (!zakatReference || !zakatArabic || !zakatUrdu) {
+    console.error(
+      "Could not read the ayah out of mobile/app/src/lib/zakat-ayah.ts.\n" +
+        "Its arabic, urdu or reference field has moved or been renamed; update\n" +
+        "zakatField and REFERENCE here rather than letting the check skip it.",
+    );
+    process.exit(1);
+  }
+
+  entries.push({
+    key: `${Number(zakatReference[2])}:${Number(zakatReference[3])}`,
+    surah: Number(zakatReference[2]),
+    ayah: Number(zakatReference[3]),
+    surahName: `${zakatReference[1]} (Zakat screen)`,
+    arabic: zakatArabic,
+    urdu: zakatUrdu,
+    script: "simple",
+  });
+
   console.log(`Checking ${entries.length} ayat against three sources.\n`);
 
   console.log("Fetching the Tanzil text files...");
-  const [tanzilArabic, tanzilUrdu] = await Promise.all([
+  const [tanzilArabic, tanzilArabicSimple, tanzilUrdu] = await Promise.all([
     text(SOURCES.tanzilArabic).then(parsePipeFile),
+    text(SOURCES.tanzilArabicSimple).then(parsePipeFile),
     text(SOURCES.tanzilUrdu).then(parsePipeFile),
   ]);
+  const tanzil = { tanzilArabic, tanzilArabicSimple };
 
   const failures = [];
 
   for (const entry of entries) {
     const { key } = entry;
+    const edition = EDITIONS[entry.script];
     const cloud = await json(
-      `https://api.alquran.cloud/v1/ayah/${key}/editions/quran-uthmani,ur.jalandhry`,
+      `https://api.alquran.cloud/v1/ayah/${key}/editions/${edition.cloud},ur.jalandhry`,
     );
     const comApi = await json(
-      `https://api.quran.com/api/v4/verses/by_key/${key}?fields=text_uthmani&translations=234`,
+      `https://api.quran.com/api/v4/verses/by_key/${key}?fields=${edition.com}&translations=234`,
     );
 
-    const cloudArabic = cloud.data.find((e) => e.edition.identifier === "quran-uthmani").text;
+    const cloudArabic = cloud.data.find((e) => e.edition.identifier === edition.cloud).text;
     const cloudUrdu = cloud.data.find((e) => e.edition.identifier === "ur.jalandhry").text;
-    const comArabic = comApi.verse.text_uthmani;
+    const comArabic = comApi.verse[edition.com];
     const comUrdu = stripMarkup(comApi.verse.translations[0].text);
 
     const mine = skeleton(entry.arabic);
     const mineUrdu = urduSkeleton(entry.urdu);
 
     const checks = [
-      ["arabic / tanzil.net", mine === skeleton(tanzilArabic.get(key) ?? "")],
+      ["arabic / tanzil.net", mine === skeleton(tanzil[edition.tanzil].get(key) ?? "")],
       ["arabic / api.alquran.cloud", mine === skeleton(cloudArabic)],
       ["arabic / api.quran.com", mine === skeleton(comArabic)],
       ["urdu / tanzil.net", mineUrdu === urduSkeleton(tanzilUrdu.get(key) ?? "")],
@@ -198,7 +250,7 @@ async function main() {
 
   console.log(
     `All ${entries.length} ayat match Tanzil Project, api.alquran.cloud and api.quran.com.\n` +
-      "Arabic: Tanzil Quran Text (Uthmani), CC BY 3.0, tanzil.net\n" +
+      "Arabic: Tanzil Quran Text (Uthmani; Simple for the Zakat ayah), CC BY 3.0, tanzil.net\n" +
       "Urdu:   Fateh Muhammad Jalandhri, via tanzil.net — see docs/daily-ayat.md\n" +
       "        for the licence position, which is not settled.",
   );
