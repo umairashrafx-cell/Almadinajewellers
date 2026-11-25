@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, ChevronRight, Gem, RefreshCcw, Truck } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 
 import heroImage from "@/assets/hero-bridal.webp";
@@ -31,6 +31,20 @@ import { PIECES_KEY, useCached, type Cached } from "../lib/cache";
  * one thing written by hand is the headline — and the ayat, which was not
  * written by anybody here at all: lib/ayat.ts says where its text comes from
  * and how it is checked.
+ *
+ * There is no trust strip at the foot of this screen, and that is a decision
+ * rather than an omission. Four promises — hallmarked gold, certified silver,
+ * lifetime buy-back, insured delivery — used to sit here as a two-column grid
+ * of cards. Once the day's ayat joined the screen it was a stack of five
+ * blocks with the gold rate, the thing people open the app for, buried in the
+ * middle of it; the shop looked at it and asked for the strip to go. Shrinking
+ * it to chips was tried first and he still preferred it gone.
+ *
+ * Nothing was lost by removing it. All four promises are still on the website,
+ * in src/components/home/TrustStrip.tsx, which is a page somebody scrolls to
+ * deliberately and the right room for them — and the app's Shop button opens
+ * that site in the same WebView. Before putting them back here, ask the shop,
+ * because this is the second time the foot of this screen has been trimmed.
  */
 type Props = {
   rates: Cached<RateSnapshot>;
@@ -38,13 +52,6 @@ type Props = {
   showPieces: () => void;
   showCollection: (category: string) => void;
 };
-
-const TRUST = [
-  { Icon: BadgeCheck, label: "Hallmarked 22K Gold" },
-  { Icon: Gem, label: "925 Certified Silver" },
-  { Icon: RefreshCcw, label: "Lifetime Buy-Back" },
-  { Icon: Truck, label: "Free Insured Delivery" },
-] as const;
 
 export function HomeScreen({ rates, showRates, showPieces, showCollection }: Props) {
   const pieces = useCached<Product[]>(PIECES_KEY, fetchAllProducts);
@@ -55,7 +62,6 @@ export function HomeScreen({ rates, showRates, showPieces, showCollection }: Pro
       <DailyAyat />
       <TodaysRate rates={rates} onOpen={showRates} />
       <Collections pieces={pieces} onOpen={showCollection} onAll={showPieces} />
-      <Trust />
     </div>
   );
 }
@@ -248,41 +254,5 @@ function Collections({
         ))}
       </ul>
     </section>
-  );
-}
-
-/**
- * The four promises the website makes, in the website's own words.
- *
- * Chips rather than cards. These were four tall white cards in a two-column
- * grid, which is right on a page somebody scrolled to deliberately and wrong
- * at the foot of a home screen that now also carries the day's ayat: four
- * cards is a second grid under the collections rail, and the whole screen
- * had become a stack of boxes with the gold rate buried in the middle of it.
- * As chips they say exactly the same four things in about a third of the
- * height, and they stop competing with the rate for the eye.
- *
- * The words are untouched, deliberately. Shortening "Free Insured Delivery"
- * to "Insured Delivery" would save a few pixels by quietly dropping a promise
- * the shop makes, and these four are the website's own claims — they get
- * smaller, not weaker.
- *
- * Wrapped rather than scrolled. A rail like the collections one would be
- * shorter still, but a promise the customer has to swipe to find is a promise
- * they will not read; all four stay on screen.
- */
-function Trust() {
-  return (
-    <ul className="mt-7 flex flex-wrap gap-2">
-      {TRUST.map(({ Icon, label }) => (
-        <li
-          key={label}
-          className="flex items-center gap-1.5 rounded-full border border-gold/20 bg-white px-2.5 py-1.5"
-        >
-          <Icon className="h-3.5 w-3.5 shrink-0 text-gold-deep" aria-hidden />
-          <span className="text-[10.5px] leading-none font-medium text-ink">{label}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
