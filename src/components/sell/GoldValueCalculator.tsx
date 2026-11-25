@@ -106,10 +106,32 @@ export function GoldValueCalculator({
    * nothing. The same arrangement as RateCard.
    */
   approx,
+  /**
+   * The Android app's too. Short lines instead of the paragraphs that explain
+   * how the figures are reached.
+   *
+   * The shop's standing instruction for the app is figures, not reasons: a
+   * customer who has installed a jeweller's app is not reading three sentences
+   * about where 21K comes from, and on a phone those sentences cost more of
+   * the screen than the answer does. The website keeps them, because there
+   * they are doing a different job — a stranger arriving from a search has
+   * every reason to want the working shown.
+   *
+   * What survives in compact form is the caution, not the explanation. That
+   * the estimate is metal only is the one line a customer is worse off for
+   * not having read.
+   */
+  compact = false,
+  /** The app's share sheet; see ShareCardButton's own `share`. */
+  shareCard,
 }: {
   snapshot: RateSnapshot;
   side?: CalculatorSide;
   approx?: ((pkr: number) => string | null) | undefined;
+  compact?: boolean;
+  shareCard?:
+    | ((card: { blob: Blob; filename: string; title: string; text: string }) => Promise<unknown>)
+    | undefined;
 }) {
   const selling = side === "sell";
   const [amount, setAmount] = useState("10");
@@ -160,6 +182,19 @@ export function GoldValueCalculator({
   const purityName = purity ?? selectedPurity;
   const customPurityInvalid =
     usingCustomPurity && customPurity.trim().length > 0 && !selectedCustomKarat;
+  /*
+   * What is said under the Custom box, or nothing.
+   *
+   * The correction is never dropped, in either mode: a number the calculator
+   * has refused has to say so. What compact drops is the invitation, which
+   * describes a button sitting an inch above it next to a box already
+   * labelled "Karat, e.g. 19.5".
+   */
+  const customPurityHelp = customPurityInvalid
+    ? "Enter a purity from 0.1K to 24K."
+    : compact
+      ? null
+      : "Need a different hallmark? Choose Custom and enter any purity from 0.1K to 24K. Its estimate is worked from today’s Pathor rate.";
   const rate = purity
     ? selling
       ? buyingRateFor(snapshot, purity)
@@ -275,7 +310,7 @@ export function GoldValueCalculator({
                   setSelectedPurity(CUSTOM_PURITY);
                 }}
                 aria-invalid={customPurityInvalid || undefined}
-                aria-describedby={`${id}-custom-purity-help`}
+                aria-describedby={customPurityHelp ? `${id}-custom-purity-help` : undefined}
                 placeholder="Karat, e.g. 19.5"
                 className={cn(
                   "nums h-11 w-full rounded-md border bg-white px-4 pr-12 text-sm text-ink transition-colors placeholder:text-ink/45 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
@@ -289,21 +324,25 @@ export function GoldValueCalculator({
             </div>
           </div>
           <p className="mt-3 text-[13px] leading-relaxed text-ink/75">
-            {selling
-              ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
-              : "24K, 23.65K and 22K are today's rates from the board above. 21K, 20K and 18K are worked from the pathor rate in proportion to their gold content. This is the metal value only — making charges and any stones are additional."}
+            {compact
+              ? selling
+                ? "Jewellery sold as 22K is bought at the 20K rate."
+                : "Metal value only — making charges and stones are extra."
+              : selling
+                ? "Each purity is valued at its own rate — 24K at the 24K rate. Jewellery sold as 22K is bought at the 20K rate, so choose 20K for it. Not sure of the purity? Testing at the counter establishes it."
+                : "24K, 23.65K and 22K are today's rates from the board above. 21K, 20K and 18K are worked from the pathor rate in proportion to their gold content. This is the metal value only — making charges and any stones are additional."}
           </p>
-          <p
-            id={`${id}-custom-purity-help`}
-            className={cn(
-              "mt-2 text-[13px] leading-relaxed",
-              customPurityInvalid ? "text-destructive" : "text-ink/60",
-            )}
-          >
-            {customPurityInvalid
-              ? "Enter a purity from 0.1K to 24K."
-              : "Need a different hallmark? Choose Custom and enter any purity from 0.1K to 24K. Its estimate is worked from today’s Pathor rate."}
-          </p>
+          {customPurityHelp ? (
+            <p
+              id={`${id}-custom-purity-help`}
+              className={cn(
+                "mt-2 text-[13px] leading-relaxed",
+                customPurityInvalid ? "text-destructive" : "text-ink/60",
+              )}
+            >
+              {customPurityHelp}
+            </p>
+          ) : null}
         </fieldset>
 
         <div className="mt-8 grid gap-6 sm:grid-cols-[1fr_auto]">
@@ -465,6 +504,7 @@ export function GoldValueCalculator({
                       rateDate: snapshot.date,
                     })
                   }
+                  share={shareCard}
                   title="Gold value estimate"
                   text={`${SITE.name} · gold value estimate\n${shareUrl}`}
                   filename={`al-madina-gold-estimate-${purityName}-${snapshot.date}.jpg`}
