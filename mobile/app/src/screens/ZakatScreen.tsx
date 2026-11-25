@@ -12,9 +12,7 @@ import type { Cached } from "../lib/cache";
 import { shareImage, shareText } from "../lib/share";
 import { ZAKAT_AYAH } from "../lib/zakat-ayah";
 import {
-  GOLD_NISAB_GRAMS,
   GOLD_NISAB_TOLA,
-  SILVER_NISAB_GRAMS,
   SILVER_NISAB_TOLA,
   readAmount,
   zakatFor,
@@ -98,10 +96,6 @@ export function ZakatScreen({ rates }: { rates: Cached<RateSnapshot> }) {
         Zakat calculator
       </h1>
       <div className="hairline mt-5 max-w-24" />
-      <p className="mt-4 text-sm leading-relaxed text-ink/80">
-        Gold and silver at today&rsquo;s rates from the board, with your cash, savings and business.
-        A guide to the sum &mdash; a scholar has the last word on your own case.
-      </p>
 
       <Ayah />
 
@@ -170,10 +164,6 @@ export function ZakatScreen({ rates }: { rates: Cached<RateSnapshot> }) {
           Add gold of another purity
         </button>
 
-        <p className="mt-3 text-[13px] leading-relaxed text-ink/70">
-          Jewellery you wear counts too, in the Hanafi view most families here follow. 21K, 20K and
-          18K are worked from the pathor rate, as on the gold calculator.
-        </p>
         {result.unpriced > 0 ? (
           <p className="mt-2 text-[13px] text-destructive">
             One of these purities has no rate today, so it is not counted.
@@ -194,9 +184,6 @@ export function ZakatScreen({ rates }: { rates: Cached<RateSnapshot> }) {
           value={silver.unit}
           onChange={(unit) => setSilver((s) => ({ ...s, unit }))}
         />
-        <p className="mt-3 text-[13px] leading-relaxed text-ink/70">
-          Valued at the board&rsquo;s silver rate.
-        </p>
       </Card>
 
       <Card title="Money">
@@ -293,7 +280,6 @@ function Result({
   metalText: string;
 }) {
   const entered = result.total > 0 || result.debts > 0;
-  const nisab = nisabLine(result);
 
   return (
     <section
@@ -308,9 +294,8 @@ function Result({
           <Line label="Less debts" value={`− ${formatPKR(result.debts)}`} />
         ) : null}
         <Line label="Wealth for zakat" value={formatPKR(result.net)} strong />
+        <Line label={nisabLabel(result)} value={formatPKR(result.nisab.value)} />
       </dl>
-
-      <p className="mt-4 text-[13px] leading-relaxed text-champagne/85">{nisab}</p>
 
       <div className="mt-6 border-t border-gold/25 pt-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
@@ -333,8 +318,7 @@ function Result({
           <p className="nums mt-3 text-sm text-champagne/85">2.5% of {formatPKR(result.net)}</p>
         ) : null}
         <p className="mt-3 text-[12px] leading-relaxed text-champagne/75">
-          Due once a full lunar year has passed with your wealth at or above the nisab. Gold rate of{" "}
-          {formatRateDate(snapshot.date)}.
+          Gold rate of {formatRateDate(snapshot.date)}.
         </p>
       </div>
 
@@ -343,18 +327,17 @@ function Result({
   );
 }
 
-/** Which nisab was used, how much it is today, and why that one. */
-function nisabLine(result: ZakatResult): string {
-  const { nisab } = result;
-  const figure = formatPKR(nisab.value);
-
-  if (nisab.basis === "mixed") {
-    return `Measured against the silver nisab, ${SILVER_NISAB_TOLA} tola (${SILVER_NISAB_GRAMS} g) of silver — ${figure} today. When you own more than gold alone, the lower silver threshold applies, as most scholars in Pakistan hold.`;
-  }
-  if (nisab.basis === "no-silver-rate") {
-    return `The board has no silver rate today, so this is measured against the gold nisab, ${GOLD_NISAB_TOLA} tola (${GOLD_NISAB_GRAMS} g) — ${figure}. With money beside your gold the silver nisab would normally apply, and it is lower.`;
-  }
-  return `Measured against the gold nisab, ${GOLD_NISAB_TOLA} tola (${GOLD_NISAB_GRAMS} g) of gold — ${figure} for gold like yours today. It applies because you own gold and nothing else; add cash or silver and the lower silver nisab applies instead.`;
+/**
+ * Which nisab the sum was measured against, as a row label.
+ *
+ * Only the threshold, not the reasoning: the owner asked for the screen to
+ * carry figures rather than explanations (25 November 2026). lib/zakat.ts
+ * still says why each nisab applies.
+ */
+function nisabLabel(result: ZakatResult): string {
+  return result.nisab.metal === "silver"
+    ? `Nisab · ${SILVER_NISAB_TOLA} tola silver`
+    : `Nisab · ${GOLD_NISAB_TOLA} tola gold`;
 }
 
 /** The result in words, for WhatsApp or wherever it is going. */
@@ -467,9 +450,6 @@ function ShareActions({
           As text
         </AppButton>
       </div>
-      <p className="mt-3 text-[12px] leading-relaxed text-champagne/70">
-        Only the figures go, not your name. Choose who sees them.
-      </p>
       {failure ? (
         <p role="status" className="mt-2 text-xs text-rose-200">
           {failure}
