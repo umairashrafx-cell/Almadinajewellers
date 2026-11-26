@@ -551,13 +551,19 @@ function onDay(day: string | undefined): string {
   });
 }
 
-/** When the rate was taken, in the phone's own time. */
+/**
+ * When the rate was taken, in the phone's own time.
+ *
+ * hourCycle "h12", not hour12: see rateStampParts in lib/rates.ts. With en-GB,
+ * Android's WebView reads `hour12: true` as the clock that runs 0 to 11 and
+ * says "0:27 pm" for twenty-seven minutes past noon.
+ */
 function taken(iso: string): string {
   return new Date(iso).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
+    hourCycle: "h12",
   });
 }

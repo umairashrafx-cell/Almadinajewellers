@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import {
   FALLBACK_SNAPSHOT,
@@ -195,6 +195,26 @@ describe("the shop's clock", () => {
     const parts = rateStampParts(BOARD.publishedAt!);
     expect(parts?.date).toBe("02 November 2026");
     expect(parts?.time).toMatch(/^12:12\s*pm$/i);
+  });
+
+  test("asks for the clock that says 12, not the one that says 0", () => {
+    // Android's WebView reads `hour12: true` with en-GB as the 0-11 clock and
+    // printed a noon board as "0:27 pm". Node reads it as 1-12, so checking
+    // the output here cannot catch that; checking what is asked for can.
+    const spy = vi.spyOn(Date.prototype, "toLocaleTimeString");
+    try {
+      rateStampParts(BOARD.publishedAt!);
+      const options = spy.mock.calls[0]?.[1];
+      expect(options?.hourCycle).toBe("h12");
+      expect(options).not.toHaveProperty("hour12");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test("reads the minutes after midnight as 12, not 0", () => {
+    // 19:15 UTC is a quarter past midnight in Pakistan.
+    expect(rateStampParts("2026-11-25T19:15:00Z")?.time).toMatch(/^12:15\s*am$/i);
   });
 
   test("labels the zone so a bare time cannot be misread", () => {

@@ -71,17 +71,51 @@ async function ensureFonts(): Promise<void> {
 }
 
 /**
+ * Is this URL somewhere else? Anything relative, or on our own origin, is not.
+ *
+ * Deliberately pessimistic: a URL that cannot be parsed is treated as local,
+ * because the cost of being wrong that way is a tainted canvas on a photograph
+ * nobody has yet, and the cost of being wrong the other way is every bundled
+ * asset vanishing from the card.
+ */
+function isCrossOrigin(src: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URL(src, window.location.href).origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Loads one image for drawing.
  *
- * crossOrigin matters more than it looks: product photographs come from
- * Supabase storage, and drawing a cross-origin image without it taints the
- * canvas, at which point toBlob throws and the card fails at the last step.
- * Storage answers with Access-Control-Allow-Origin, so asking is enough.
+ * crossOrigin is asked for only when the picture really is somewhere else, and
+ * that condition is the whole point of this function.
+ *
+ * Product photographs come from Supabase storage. Drawing a cross-origin image
+ * without crossOrigin taints the canvas, and toBlob then throws — the card
+ * fails at the last step. Storage answers with Access-Control-Allow-Origin, so
+ * asking is enough, and for those it is asked.
+ *
+ * Everything else — the background photograph, the brand lockup, the four
+ * metal marks — is bundled with the app and served from our own origin, where
+ * asking is not free. Setting crossOrigin turns an ordinary image load into a
+ * CORS request, and inside the Android WebView, where the app is served by
+ * Capacitor's own local server rather than by a web server, that request is
+ * answered without the header it now requires and the load fails. Every
+ * picture on the card disappeared, silently, because loadMetalIcons and the
+ * lockup both treat a failure as "draw it without" — a card with empty discs,
+ * no logo and no photograph, which is what the shop was sending out.
+ *
+ * The <img> tags elsewhere in the app have always shown these same files
+ * correctly on the same phones. That was the clue: the only difference between
+ * the path that worked and the path that did not was this one line.
  */
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (isCrossOrigin(src)) img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error("That picture could not be loaded."));
     img.src = src;
@@ -449,6 +483,91 @@ async function loadMetalIcons(): Promise<Record<string, HTMLImageElement>> {
   );
 
   return Object.fromEntries(entries.filter((e): e is NonNullable<typeof e> => e !== null));
+}
+
+/**
+ * A coin into an open hand: the zakat card's one picture.
+ *
+ * The shop asked for something Islamic about helping the poor on that card,
+ * and this is drawn rather than photographed on purpose. A photograph of a
+ * poor person being given money is somebody's dignity used as decoration on a
+ * jeweller's advertisement, and a stock photograph of one is also a licence
+ * nobody here can evidence. A hand, open, with a coin falling into it is the
+ * oldest way of saying sadaqah and it belongs to no one.
+ *
+ * No faces and no figures, which keeps it inside what a shop can put on a
+ * religious card without anybody's objection. Drawn in the same gold line as
+ * the marks along the foot of the rate card, so it reads as the shop's own.
+ */
+function iconGiving(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  s: number,
+  colour: string,
+): void {
+  ctx.save();
+  ctx.strokeStyle = colour;
+  ctx.fillStyle = colour;
+  ctx.lineWidth = Math.max(1.8, s * 0.1);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  /*
+   * A heart carried in an open hand, and it took three attempts to get here.
+   *
+   * A coin above a cupped palm read as a face: circle over a wide curve is a
+   * nose over a smile. Dropping the coin into the palm and curling a thumb and
+   * fingers around it turned the whole thing into a purse with a minus sign in
+   * it. The lesson both times was that at this size — the mark is forty-odd
+   * pixels on a card eleven hundred wide — a hand is not a legible shape. A
+   * heart is: it is read from its silhouette alone, which is why it survives
+   * being small, and it is filled here rather than drawn in outline for the
+   * same reason.
+   *
+   * So the heart carries the meaning and the hand only has to say "held out".
+   * Nothing is symmetrical about it: the wrist leaves at the right, the spark
+   * sits at the left.
+   */
+  const h = s * 0.92;
+  const w = s * 0.78;
+  const hy = cy - s * 0.26;
+  ctx.beginPath();
+  ctx.moveTo(cx, hy + h * 0.62);
+  ctx.bezierCurveTo(cx - w * 1.25, hy + h * 0.04, cx - w * 0.72, hy - h * 0.78, cx, hy - h * 0.2);
+  ctx.bezierCurveTo(cx + w * 0.72, hy - h * 0.78, cx + w * 1.25, hy + h * 0.04, cx, hy + h * 0.62);
+  ctx.fill();
+
+  // The palm under it, open, and the wrist going off to one side.
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 1.12, cy + s * 0.46);
+  ctx.quadraticCurveTo(cx, cy + s * 1.1, cx + s * 1.02, cy + s * 0.42);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx + s * 1.02, cy + s * 0.42);
+  ctx.lineTo(cx + s * 1.3, cy + s * 0.78);
+  ctx.stroke();
+
+  // The thumb, a short tick off the near rim.
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 1.12, cy + s * 0.46);
+  ctx.lineTo(cx - s * 1.3, cy + s * 0.14);
+  ctx.stroke();
+
+  // One spark, off the axis.
+  const r = s * 0.19;
+  const px = cx - s * 1.16;
+  const py = cy - s * 0.88;
+  ctx.beginPath();
+  ctx.moveTo(px, py - r);
+  ctx.quadraticCurveTo(px, py, px + r, py);
+  ctx.quadraticCurveTo(px, py, px, py + r);
+  ctx.quadraticCurveTo(px, py, px - r, py);
+  ctx.quadraticCurveTo(px, py, px, py - r);
+  ctx.fill();
+
+  ctx.restore();
 }
 
 /** A rising bar chart, for the title banner. */
@@ -1226,18 +1345,30 @@ function drawAyahClosing(
   const bottom = CARD_H - 128;
   const max = R - L - 24;
 
-  const sep = ctx.createLinearGradient(L + 60, 0, R - 60, 0);
-  sep.addColorStop(0, "rgba(201,162,75,0)");
-  sep.addColorStop(0.5, "rgba(201,162,75,0.7)");
-  sep.addColorStop(1, "rgba(201,162,75,0)");
-  ctx.fillStyle = sep;
-  ctx.fillRect(L + 60, y, R - L - 120, 1.5);
-  ornament(ctx, mid, y, 11, LIGHT.gold);
+  /*
+   * The rule, in two halves, with the giving mark standing in the gap where
+   * the diamond used to be. Two fills rather than one and a plate drawn over
+   * it: the ground here is a gradient, so anything painted to hide the line
+   * would be a patch of almost-but-not-quite the right cream.
+   */
+  const gap = 46;
+  for (const [from, to] of [
+    [L + 60, mid - gap],
+    [mid + gap, R - 60],
+  ] as const) {
+    const sep = ctx.createLinearGradient(L + 60, 0, R - 60, 0);
+    sep.addColorStop(0, "rgba(201,162,75,0)");
+    sep.addColorStop(0.5, "rgba(201,162,75,0.7)");
+    sep.addColorStop(1, "rgba(201,162,75,0)");
+    ctx.fillStyle = sep;
+    ctx.fillRect(from, y, to - from, 1.5);
+  }
+  iconGiving(ctx, mid, y + 1, 23, LIGHT.gold);
 
   ctx.textAlign = "center";
   ctx.fillStyle = LIGHT.greenSoft;
   ctx.font = `400 20px ${SANS}`;
-  ctx.fillText(note, mid, y + 40);
+  ctx.fillText(note, mid, y + 62);
 
   let arSize = 32;
   let urSize = 23;
@@ -1245,7 +1376,7 @@ function drawAyahClosing(
   let urLines: string[] = [];
   let arStep = 0;
   let urStep = 0;
-  const top = y + 66;
+  const top = y + 88;
 
   for (;;) {
     ctx.font = `400 ${arSize}px ${ARABIC}`;
