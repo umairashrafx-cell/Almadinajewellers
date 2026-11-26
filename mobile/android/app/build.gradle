@@ -33,7 +33,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         /*
          * Play takes an update only if versionCode is higher than the live one.
-         * Release 11 (2.4.2) was built on 24 November 2026, so this is 12.
+         * Release 12 (2.5) was built on 24 November 2026, so this is 13.
          *
          * Read the live number off the Console before every release — what is
          * written here is a note of what was true once, not a source of truth.
@@ -41,7 +41,13 @@ android {
          * already gone out, and a bundle built against it would have been
          * rejected at upload.
          *
-         * versionName is what a customer sees. 2.5 adds the Zakat calculator,
+         * versionName is what a customer sees. 2.6 opens Home on a verse of
+         * the Quran each day, in Arabic with Jalandhri's Urdu, and puts
+         * today's rate right under it; shows Al-Baqarah 2:110 on the Zakat
+         * calculator; lets the gold calculator's rate chart go out as a
+         * picture; and puts back the logo, photograph and metal marks that
+         * every shared picture had been going out without inside the app.
+         * 2.5 adds the Zakat calculator,
          * sharing through Android's own share sheet (a zakat sum as a picture
          * or text, and a piece from the Shop), renames the world board's tab
          * to Live International, and takes Sell your gold out of the app.
@@ -57,8 +63,8 @@ android {
          * prices and a TradingView gold chart and added tola
          * weights; 2.1.1 added the one-time Play review prompt.
          */
-        versionCode 12
-        versionName "2.5"
+        versionCode 13
+        versionName "2.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

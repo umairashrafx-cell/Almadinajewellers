@@ -117,6 +117,26 @@ Weighed Honestly, Made Beautifully.
 
 ## What's new (500 characters max)
 
+For version 2.6 (versionCode 13):
+
+```
+Home now opens on a verse of the Quran each day, in Arabic with its Urdu
+translation, followed by today's gold rate. The Zakat calculator shows
+Al-Baqarah 2:110 and is quicker to read. In the gold calculator the rate chart
+can now be shared as a picture, and the pictures you share carry the shop's
+logo and photographs again.
+```
+
+Urdu (for the Urdu listing):
+
+```
+اب ہوم اسکرین ہر روز قرآن کی ایک آیت سے کھلتی ہے، عربی متن اور اردو ترجمے کے
+ساتھ، اور اس کے بعد آج کا سونے کا ریٹ۔ زکوٰۃ کیلکولیٹر میں سورۃ البقرہ ۲:۱۱۰
+شامل ہے اور اسے پڑھنا آسان ہو گیا ہے۔ گولڈ کیلکولیٹر کا ریٹ چارٹ اب تصویر کی
+شکل میں شیئر ہو سکتا ہے، اور شیئر کی گئی تصویروں میں دکان کا لوگو اور تصاویر
+دوبارہ نظر آتی ہیں۔
+```
+
 For version 2.3 (versionCode 8):
 
 ```
