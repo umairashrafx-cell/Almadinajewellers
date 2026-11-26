@@ -482,10 +482,18 @@ export function rateStampParts(iso: string): { date: string; time: string } | un
       year: "numeric",
       timeZone: SHOP_TIME_ZONE,
     }),
+    /*
+     * hourCycle, not hour12. `hour12: true` only asks for a twelve-hour clock
+     * and leaves the engine to choose which one, and with en-GB Android's
+     * WebView chooses the one that runs 0 to 11: a board published at 12:27
+     * went out as "0:27 pm", on screen and on every shared picture. Desktop
+     * Chrome and Node choose 1 to 12, which is why no test or preview ever
+     * showed it. "h12" names the clock a person reads: 12:27 pm, 12:15 am.
+     */
     time: at.toLocaleTimeString("en-GB", {
       hour: "numeric",
       minute: "2-digit",
-      hour12: true,
+      hourCycle: "h12",
       timeZone: SHOP_TIME_ZONE,
     }),
   };
